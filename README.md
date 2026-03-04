@@ -5,8 +5,8 @@ Tadreeb is a national training platform that connects university students with c
 ## Team Members
 
 - Abdullah Al-Mekhyal
-- [Team Member 2]
-- [Team Member 3]
+- Yousef Joudah
+- Abdulaziz alshammeri
 
 ## Project Structure
 
@@ -54,15 +54,16 @@ Server runs at `http://localhost:3000`
 
 ## Branch Workflow
 
-| Branch | Purpose |
-|--------|---------|
-| `main` | Final stable version |
-| `dev` | Team integration branch |
+| Branch      | Purpose                     |
+| ----------- | --------------------------- |
+| `main`      | Final stable version        |
+| `dev`       | Team integration branch     |
 | `feature/*` | Individual feature branches |
 
 ### How We Work
 
 1. Create a feature branch from `dev`
+
    ```bash
    git checkout dev
    git pull
@@ -70,6 +71,7 @@ Server runs at `http://localhost:3000`
    ```
 
 2. Push your changes
+
    ```bash
    git add .
    git commit -m "Add your message"
