@@ -1,0 +1,74 @@
+.student-applications-card {
+  margin-top: 4rem;
+  border: 1px solid rgba(25, 118, 210, 0.12);
+  border-radius: 24px;
+  background: var(--white);
+  box-shadow: 0 12px 24px rgba(13, 71, 161, 0.08);
+  padding: 1.5rem;
+}
+
+.student-applications-card h2 {
+  color: var(--deep-blue);
+  font-size: 2.4rem;
+  font-weight: 800;
+  margin-bottom: 0.35rem;
+}
+
+.student-applications-card p {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+.student-applications-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.student-applications-table thead {
+  background: var(--light-blue);
+}
+
+.student-applications-table th,
+.student-applications-table td {
+  padding: 1.1rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(25, 118, 210, 0.08);
+}
+
+.student-applications-table th {
+  color: var(--deep-blue);
+}
+
+.student-applications-table td {
+  color: var(--text-soft);
+}
+
+.student-status-badge {
+  display: inline-block;
+  padding: 0.45rem 0.95rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.student-status-badge.review {
+  background: #f8ecb8;
+  color: #b37a00;
+}
+
+.student-status-badge.accepted {
+  background: #cdeedc;
+  color: #167b53;
+}
+
+.student-status-badge.rejected {
+  background: #f5d7d7;
+  color: #b43c3c;
+}
+
+@media (max-width: 768px) {
+  .student-applications-table-wrap {
+    overflow-x: auto;
+  }
+}
