@@ -316,6 +316,21 @@
   color: var(--white);
 }
 
+.student-dropdown-logout {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  color: #d93025 !important;
+  font-weight: 700 !important;
+  padding-top: 0.55rem;
+  margin-top: 0.55rem;
+  border-top: 1px solid rgba(25, 118, 210, 0.08) !important;
+}
+
+.student-dropdown-logout svg {
+  font-size: 0.9rem;
+}
+
 
 
 /* footer */
@@ -363,6 +378,12 @@
 .student-footer hr {
   border-color: rgba(255, 255, 255, 0.25);
   margin: 2rem 0;
+}
+
+.student-brand--disabled {
+  cursor: default;
+  pointer-events: none;
+  opacity: 1;
 }
 
 @media (max-width: 768px) {

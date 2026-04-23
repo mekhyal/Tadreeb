@@ -105,7 +105,10 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
 
     if (!String(formData.seats).trim()) {
       nextErrors.seats = "Seats are required.";
-    } else if (Number(formData.seats) <= 0 || Number.isNaN(Number(formData.seats))) {
+    } else if (
+      Number(formData.seats) <= 0 ||
+      Number.isNaN(Number(formData.seats))
+    ) {
       nextErrors.seats = "Seats must be a number greater than 0.";
     }
 
@@ -116,7 +119,6 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
     }
 
     setErrors(nextErrors);
-
     return !Object.values(nextErrors).some(Boolean);
   };
 
@@ -136,120 +138,145 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
 
   return (
     <div className="company-modal-overlay" onClick={onClose}>
-      <div className="company-modal-card compact" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="company-modal-card compact"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="company-modal-head">
           <h2>{mode === "edit" ? "Edit Program" : "Add New Program"}</h2>
-          <button type="button" onClick={onClose}>×</button>
+          <button type="button" onClick={onClose}>
+            ×
+          </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="company-form company-form-scroll" noValidate>
-          <div className="company-form-group full">
-            <label>Title</label>
-            <input
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              placeholder="Example: Frontend Bootcamp"
-            />
-            {errors.title && <p className="company-form-error">{errors.title}</p>}
-          </div>
+        <form onSubmit={handleSubmit} className="company-program-modal-form" noValidate>
+          <div className="company-modal-body">
+            <div className="company-form company-form--compact">
+              <div className="company-form-group full">
+                <label>Title</label>
+                <input
+                  name="title"
+                  value={formData.title}
+                  onChange={handleChange}
+                  placeholder="Example: Frontend Bootcamp"
+                />
+                {errors.title && (
+                  <p className="company-form-error">{errors.title}</p>
+                )}
+              </div>
 
-          <div className="company-form-grid">
-            <div className="company-form-group">
-              <label>Date From</label>
-              <input
-                type="date"
-                name="dateFrom"
-                value={formData.dateFrom}
-                onChange={handleChange}
-              />
-              {errors.dateFrom && <p className="company-form-error">{errors.dateFrom}</p>}
+              <div className="company-form-grid">
+                <div className="company-form-group">
+                  <label>Date From</label>
+                  <input
+                    type="date"
+                    name="dateFrom"
+                    value={formData.dateFrom}
+                    onChange={handleChange}
+                  />
+                  {errors.dateFrom && (
+                    <p className="company-form-error">{errors.dateFrom}</p>
+                  )}
+                </div>
+
+                <div className="company-form-group">
+                  <label>Date To</label>
+                  <input
+                    type="date"
+                    name="dateTo"
+                    value={formData.dateTo}
+                    onChange={handleChange}
+                  />
+                  {errors.dateTo && (
+                    <p className="company-form-error">{errors.dateTo}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="company-form-grid">
+                <div className="company-form-group">
+                  <label>Seats</label>
+                  <input
+                    name="seats"
+                    value={formData.seats}
+                    onChange={handleChange}
+                    placeholder="Example: 20"
+                  />
+                  {errors.seats && (
+                    <p className="company-form-error">{errors.seats}</p>
+                  )}
+                </div>
+
+                <div className="company-form-group">
+                  <label>Location</label>
+                  <input
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    placeholder="Example: Kuwait City or Remote"
+                  />
+                  {errors.location && (
+                    <p className="company-form-error">{errors.location}</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="company-form-group full">
+                <label>Subtitle</label>
+                <input
+                  name="subtitle"
+                  value={formData.subtitle}
+                  onChange={handleChange}
+                  placeholder="Example: React and UI Development Program"
+                />
+                {errors.subtitle && (
+                  <p className="company-form-error">{errors.subtitle}</p>
+                )}
+              </div>
+
+              <div className="company-form-group full">
+                <label>Description</label>
+                <textarea
+                  name="description"
+                  rows="4"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Example: A practical training program focused on React, reusable components, and responsive UI."
+                ></textarea>
+                {errors.description && (
+                  <p className="company-form-error">{errors.description}</p>
+                )}
+              </div>
+
+              <div className="company-form-group full">
+                <label>Rules</label>
+                <textarea
+                  name="rules"
+                  rows="4"
+                  value={formData.rules}
+                  onChange={handleChange}
+                  placeholder="Example: Attend all sessions, submit weekly tasks, and complete the final project."
+                ></textarea>
+                {errors.rules && (
+                  <p className="company-form-error">{errors.rules}</p>
+                )}
+              </div>
+
+              <div className="company-form-group full">
+                <label>
+                  Image URL <span className="optional-text">(optional)</span>
+                </label>
+                <input
+                  name="image"
+                  value={formData.image}
+                  onChange={handleChange}
+                  placeholder="Example: https://example.com/program-image.jpg"
+                />
+              </div>
             </div>
-
-            <div className="company-form-group">
-              <label>Date To</label>
-              <input
-                type="date"
-                name="dateTo"
-                value={formData.dateTo}
-                onChange={handleChange}
-              />
-              {errors.dateTo && <p className="company-form-error">{errors.dateTo}</p>}
-            </div>
           </div>
 
-          <div className="company-form-grid">
-            <div className="company-form-group">
-              <label>Seats</label>
-              <input
-                name="seats"
-                value={formData.seats}
-                onChange={handleChange}
-                placeholder="Example: 20"
-              />
-              {errors.seats && <p className="company-form-error">{errors.seats}</p>}
-            </div>
-
-            <div className="company-form-group">
-              <label>Location</label>
-              <input
-                name="location"
-                value={formData.location}
-                onChange={handleChange}
-                placeholder="Example: Kuwait City or Remote"
-              />
-              {errors.location && <p className="company-form-error">{errors.location}</p>}
-            </div>
-          </div>
-
-          <div className="company-form-group full">
-            <label>Subtitle</label>
-            <input
-              name="subtitle"
-              value={formData.subtitle}
-              onChange={handleChange}
-              placeholder="Example: React and UI Development Program"
-            />
-            {errors.subtitle && <p className="company-form-error">{errors.subtitle}</p>}
-          </div>
-
-          <div className="company-form-group full">
-            <label>Description</label>
-            <textarea
-              name="description"
-              rows="4"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Example: A practical training program focused on React, reusable components, and responsive UI."
-            ></textarea>
-            {errors.description && <p className="company-form-error">{errors.description}</p>}
-          </div>
-
-          <div className="company-form-group full">
-            <label>Rules</label>
-            <textarea
-              name="rules"
-              rows="4"
-              value={formData.rules}
-              onChange={handleChange}
-              placeholder="Example: Attend all sessions, submit weekly tasks, and complete the final project."
-            ></textarea>
-            {errors.rules && <p className="company-form-error">{errors.rules}</p>}
-          </div>
-
-          <div className="company-form-group full">
-            <label>
-              Image URL <span className="optional-text">(optional)</span>
-            </label>
-            <input
-              name="image"
-              value={formData.image}
-              onChange={handleChange}
-              placeholder="Example: https://example.com/program-image.jpg"
-            />
-          </div>
-
-          <div className="company-form-actions">
+          <div className="company-modal-footer">
             <button type="button" className="secondary" onClick={onClose}>
               Cancel
             </button>

@@ -6,8 +6,15 @@ function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => {
+    setIsMenuOpen(false);
+  };
 
   const goToSection = (sectionId, tab = null) => {
+    closeMobileMenu();
+
     if (location.pathname !== "/") {
       navigate("/", { state: { scrollTo: sectionId, activeTab: tab } });
       return;
@@ -26,8 +33,12 @@ function Navbar() {
   };
 
   const delayedNavigate = (path) => {
-    if (location.pathname === path) return;
+    if (location.pathname === path) {
+      closeMobileMenu();
+      return;
+    }
 
+    closeMobileMenu();
     setIsNavigating(true);
 
     setTimeout(() => {
@@ -37,6 +48,7 @@ function Navbar() {
 
   const handleBrandClick = (e) => {
     e.preventDefault();
+    closeMobileMenu();
 
     if (location.pathname === "/") {
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -65,7 +77,11 @@ function Navbar() {
 
       <nav className="navbar navbar-expand-lg tadreeb-navbar">
         <div className="container navbar-custom-container">
-          <Link className="navbar-brand tadreeb-logo" to="/" onClick={handleBrandClick}>
+          <Link
+            className="navbar-brand tadreeb-logo"
+            to="/"
+            onClick={handleBrandClick}
+          >
             <span className="logo-dark">Tad</span>
             <span className="logo-blue">reeb</span>
           </Link>
@@ -73,16 +89,18 @@ function Navbar() {
           <button
             className="navbar-toggler custom-toggler"
             type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#mainNavbar"
             aria-controls="mainNavbar"
-            aria-expanded="false"
+            aria-expanded={isMenuOpen}
             aria-label="Toggle navigation"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
           >
             <span className="navbar-toggler-icon"></span>
           </button>
 
-          <div className="collapse navbar-collapse" id="mainNavbar">
+          <div
+            className={`collapse navbar-collapse ${isMenuOpen ? "show" : ""}`}
+            id="mainNavbar"
+          >
             <ul className="navbar-nav navbar-center-links mb-2 mb-lg-0">
               <li className="nav-item">
                 <button

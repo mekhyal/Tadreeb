@@ -267,6 +267,31 @@
   color: var(--text-muted);
   line-height: 1.7;
 }
+.company-program-modal-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.company-program-modal-form .company-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 0.5rem;
+}
+
+.company-program-modal-form .company-form {
+  padding-top: 0.95rem;
+}
+
+.company-program-modal-form .company-form-group textarea {
+  min-height: 110px;
+}
+
+.company-program-modal-form .company-modal-footer {
+  margin-top: auto;
+}
 
 @media (max-width: 900px) {
   .company-form-grid,

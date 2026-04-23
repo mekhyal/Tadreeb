@@ -167,8 +167,10 @@ function Login() {
           <div className="auth-form-side">
             <div className="auth-form-card">
               <div className="auth-brand">
-                <span className="logo-dark auth-logo-dark">Tad</span>
-                <span className="logo-blue">reeb</span>
+                <div className="auth-brand">
+                  <span className="auth-logo-dark">Tad</span>
+                  <span className="auth-logo-blue">reeb</span>
+                </div>
               </div>
 
               <h2 className="auth-title">Login into your account</h2>

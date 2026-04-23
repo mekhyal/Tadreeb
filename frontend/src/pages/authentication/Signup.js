@@ -107,8 +107,8 @@ function Signup() {
         <div className="auth-form-side signup-side">
           <div className="auth-form-card signup-card">
             <div className="auth-brand auth-brand-center">
-              <span className="logo-dark auth-logo-dark">Tad</span>
-              <span className="logo-blue">reeb</span>
+              <span className="auth-logo-dark">Tad</span>
+              <span className="auth-logo-blue">reeb</span>
             </div>
 
             <h2 className="auth-title">Sign up into your account</h2>

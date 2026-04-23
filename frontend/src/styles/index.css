@@ -14,12 +14,12 @@
 @import url("./company/company-participants.css");
 @import url("./company/company-profile.css");
 @import url("./company/company-modals.css");
-@import url("./admin-dashboard.css");
-@import url("./admin-programs.css");
-@import url("./admin-participants.css");
-@import url("./admin-companies.css");
-@import url("./admin-users.css");
-@import url("./admin-profile.css");
+@import url("./admin/admin-dashboard.css");
+@import url("./admin/admin-programs.css");
+@import url("./admin/admin-participants.css");
+@import url("./admin/admin-companies.css");
+@import url("./admin/admin-users.css");
+@import url("./admin/admin-profile.css");
 
 * {
   margin: 0;

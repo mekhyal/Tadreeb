@@ -109,7 +109,11 @@
 }
 
 .auth-logo-dark {
-  color: var(--deep-blue);
+  color: #000;
+}
+
+.auth-logo-blue {
+  color: var(--bright-blue);
 }
 
 .auth-title {

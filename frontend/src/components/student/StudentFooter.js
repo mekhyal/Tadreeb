@@ -6,7 +6,7 @@ import {
   FaInstagram,
   FaLinkedinIn,
 } from "react-icons/fa";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 function StudentFooter() {
   const location = useLocation();
@@ -35,16 +35,6 @@ function StudentFooter() {
     }, 450);
   };
 
-  const handleBrandClick = (e) => {
-    e.preventDefault();
-    setIsNavigating(true);
-
-    setTimeout(() => {
-      navigate("/");
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }, 450);
-  };
-
   return (
     <>
       {isNavigating && (
@@ -61,10 +51,10 @@ function StudentFooter() {
       <footer className="student-footer">
         <div className="container">
           <div className="student-footer-top">
-            <Link to="/" className="student-footer-brand" onClick={handleBrandClick}>
+            <span className="student-footer-brand student-brand--disabled">
               <span className="logo-dark">Tad</span>
               <span className="logo-blue">reeb</span>
-            </Link>
+            </span>
 
             <div className="student-footer-links">
               {!isHome && (

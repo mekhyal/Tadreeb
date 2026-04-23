@@ -258,6 +258,15 @@
   .tadreeb-logo {
     font-size: 1.55rem;
   }
+
+  .navbar-center-links .nav-item,
+  .navbar-center-links .nav-link-button,
+  .navbar-actions,
+  .navbar-actions .login-link,
+  .navbar-actions .login-link-button {
+    width: 100%;
+    text-align: left;
+  }
 }
 
 @media (max-width: 767px) {

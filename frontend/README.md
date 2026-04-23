@@ -163,5 +163,9 @@ npm run build
 * Ready for backend integration
 * Scalable and reusable structure
 
+<<<<<<< HEAD
 ## Done by : Abdulaziz
 
+=======
+## Done by : Abdulaziz
+>>>>>>> acdb74a (updates)

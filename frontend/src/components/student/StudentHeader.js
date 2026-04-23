@@ -1,14 +1,22 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { FaGlobe, FaChevronDown, FaUserCircle } from "react-icons/fa";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  FaGlobe,
+  FaChevronDown,
+  FaUserCircle,
+  FaSignOutAlt,
+} from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext";
 
 function StudentHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const menuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const user = useMemo(() => {
     const stored = localStorage.getItem("tadreebUser");
@@ -23,7 +31,10 @@ function StudentHeader() {
     };
 
     const handleEscape = (event) => {
-      if (event.key === "Escape") setMenuOpen(false);
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        setShowLogoutConfirm(false);
+      }
     };
 
     document.addEventListener("mousedown", handleOutsideClick);
@@ -46,14 +57,16 @@ function StudentHeader() {
 
     setTimeout(() => {
       navigate(path);
+      window.scrollTo({ top: 0, behavior: "auto" });
     }, 450);
   };
 
-  const handleBrandClick = (e) => {
-    e.preventDefault();
+  const handleLogout = () => {
+    setShowLogoutConfirm(false);
     setIsNavigating(true);
 
     setTimeout(() => {
+      logout();
       navigate("/");
       window.scrollTo({ top: 0, behavior: "auto" });
     }, 450);
@@ -72,12 +85,45 @@ function StudentHeader() {
         </div>
       )}
 
+      {showLogoutConfirm && (
+        <div
+          className="company-modal-overlay"
+          onClick={() => setShowLogoutConfirm(false)}
+        >
+          <div
+            className="student-confirm-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>Logout</h3>
+            <p>Are you sure you want to logout and return to the public home page?</p>
+
+            <div className="student-confirm-actions">
+              <button
+                type="button"
+                className="student-confirm-cancel"
+                onClick={() => setShowLogoutConfirm(false)}
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                className="student-confirm-apply"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header className="student-topbar">
         <div className="student-topbar__inner">
-          <Link to="/" className="student-brand" onClick={handleBrandClick}>
+          <span className="student-brand student-brand--disabled">
             <span className="logo-dark">Tad</span>
             <span className="logo-blue">reeb</span>
-          </Link>
+          </span>
 
           <div className="student-topbar__right">
             <div className="student-user-menu-wrap" ref={menuRef}>
@@ -127,6 +173,18 @@ function StudentHeader() {
                     onClick={() => delayedNavigate("/student/applications")}
                   >
                     Applications
+                  </button>
+
+                  <button
+                    type="button"
+                    className="student-dropdown-logout"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setShowLogoutConfirm(true);
+                    }}
+                  >
+                    <FaSignOutAlt />
+                    <span>Logout</span>
                   </button>
                 </div>
               )}
