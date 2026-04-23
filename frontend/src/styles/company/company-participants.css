@@ -1,0 +1,65 @@
+.clickable-row {
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.clickable-row:hover {
+  background: rgba(25, 118, 210, 0.04);
+}
+
+.company-status-badge {
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.company-status-badge.review {
+  background: rgba(144, 202, 249, 0.18);
+  color: #1565c0;
+}
+
+.company-status-badge.accepted {
+  background: rgba(66, 165, 245, 0.18);
+  color: #1976d2;
+}
+
+.company-status-badge.rejected {
+  background: rgba(96, 125, 139, 0.16);
+  color: #455a64;
+}
+
+.company-note-cell {
+  max-width: 260px;
+  color: var(--text-muted);
+}
+
+.company-pagination {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1.8rem;
+}
+
+.company-pagination button {
+  min-width: 42px;
+  height: 42px;
+  border: 1px solid rgba(25, 118, 210, 0.08);
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 0 0.85rem;
+  color: var(--text-dark);
+  font-weight: 600;
+}
+
+.company-pagination button.active {
+  background: var(--deep-blue);
+  color: #ffffff;
+  border-color: var(--deep-blue);
+}
+
+.company-pagination button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

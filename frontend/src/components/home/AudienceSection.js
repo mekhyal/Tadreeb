@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import studentsImage from "../../assets/group-of-students-3.jpg";
-import companyImage from "../../assets/company-image.jpeg";
+import companyImage from "../../assets/company-image-2.jpeg";
 
 function AudienceSection() {
   const [activeTab, setActiveTab] = useState("students");
@@ -31,14 +31,14 @@ function AudienceSection() {
   }, [location.state]);
 
   const delayedNavigate = (path) => {
-    if (location.pathname === path) return;
-
     setIsNavigating(true);
 
-    setTimeout(() => {
-      navigate(path);
-    }, 450);
-  };
+  setTimeout(() => {
+    navigate(path);
+    window.scrollTo({ top: 0, behavior: "auto" });
+    setIsNavigating(false);
+  }, 450);
+};
 
   const content = {
     students: {
@@ -126,7 +126,7 @@ function AudienceSection() {
                 <button
                   type="button"
                   className="primary-btn primary-btn-link small-btn"
-                  onClick={() => delayedNavigate("/login")}
+                  onClick={() => delayedNavigate(activeTab === "companies" ? "/company-request" : "/login")}
                 >
                   {current.buttonText}
                 </button>

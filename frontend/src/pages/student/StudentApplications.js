@@ -1,7 +1,7 @@
 import React from "react";
-import StudentTopbar from "../components/student/StudentTopbar";
-import StudentFooter from "../components/student/StudentFooter";
-import { applicationData } from "../data/studentData";
+import StudentTopbar from "../../components/student/StudentTopbar";
+import StudentFooter from "../../components/student/StudentFooter";
+import { applicationData } from "../../data/studentData";
 
 function StudentApplications() {
   const getStatusClass = (status) => {

@@ -266,6 +266,58 @@
   box-shadow: 0 10px 20px rgba(25, 118, 210, 0.16);
 }
 
+/* Confirm Card */
+.student-confirm-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--white);
+  border-radius: 22px;
+  padding: 2rem;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.student-confirm-card h3 {
+  color: var(--deep-blue);
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.85rem;
+}
+
+.student-confirm-card p {
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 1.4rem;
+}
+
+.student-confirm-actions {
+  display: flex;
+  gap: 0.85rem;
+  justify-content: center;
+}
+
+.student-confirm-cancel,
+.student-confirm-apply {
+  min-width: 150px;
+  height: 46px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.student-confirm-cancel {
+  border: 1px solid rgba(25, 118, 210, 0.12);
+  background: var(--white);
+  color: var(--text-dark);
+}
+
+.student-confirm-apply {
+  border: none;
+  background: linear-gradient(135deg, var(--primary-blue), var(--deep-blue));
+  color: var(--white);
+}
+
+
+
 /* footer */
 .student-footer {
   background: linear-gradient(90deg, var(--text-soft), var(--section-dark));
@@ -339,4 +391,15 @@
   .student-search-submit {
     width: 100%;
   }
+  
+  .student-confirm-actions {
+    flex-direction: column;
+  }
+
+  .student-confirm-cancel,
+  .student-confirm-apply {
+    width: 100%;
+  }
+
+
 }

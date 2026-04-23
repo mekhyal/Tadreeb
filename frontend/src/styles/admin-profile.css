@@ -1,0 +1,151 @@
+.admin-profile-page {
+  min-height: 70vh;
+  padding: 40px;
+}
+
+.admin-profile-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  margin-bottom: 1.4rem;
+}
+
+.admin-profile-heading h2 {
+  margin: 0 0 1rem;
+  font-size: 2rem;
+  color: var(--text-dark);
+}
+
+.admin-profile-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-profile-avatar {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #d7dee8, #c3cfde);
+  color: #1f2d3d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  box-shadow: 0 8px 18px rgba(13, 71, 161, 0.08);
+}
+
+.admin-profile-user h3 {
+  margin: 0 0 0.2rem;
+  color: var(--text-dark);
+  font-size: 1.6rem;
+}
+
+.admin-profile-user p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 1rem;
+}
+
+.admin-profile-save-btn {
+  min-width: 160px;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary-blue), var(--deep-blue));
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 10px 22px rgba(13, 71, 161, 0.14);
+  transition: 0.25s ease;
+}
+
+.admin-profile-save-btn:hover {
+  transform: translateY(-1px);
+}
+
+.admin-profile-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 1.15rem;
+  margin-bottom: 1.5rem;
+}
+
+.admin-profile-field label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.admin-profile-field input,
+.admin-profile-field select {
+  width: 100%;
+  height: 54px;
+  border: 1px solid rgba(25, 118, 210, 0.1);
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 0 1rem;
+  color: var(--text-dark);
+  box-shadow: 0 8px 18px rgba(13, 71, 161, 0.05);
+}
+
+.admin-profile-email-card {
+  max-width: 360px;
+}
+
+.admin-profile-email-card h4 {
+  margin: 0 0 1rem;
+  color: var(--text-dark);
+  font-size: 1.4rem;
+}
+
+.admin-profile-email-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 1rem;
+}
+
+.admin-profile-email-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(25, 118, 210, 0.08);
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-profile-email-row strong {
+  display: block;
+  color: var(--text-dark);
+  margin-bottom: 0.18rem;
+}
+
+.admin-profile-email-row p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.admin-profile-email-btn {
+  min-width: 160px;
+  height: 46px;
+  border: 1px solid rgba(25, 118, 210, 0.1);
+  border-radius: 12px;
+  background: #f6fbff;
+  color: var(--primary-blue);
+  font-weight: 700;
+}
+
+@media (max-width: 1000px) {
+  .admin-profile-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

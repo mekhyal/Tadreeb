@@ -1,0 +1,176 @@
+.admin-participants-page {
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.admin-participants-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-participants-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.admin-participants-filters button {
+  border: 1px solid rgba(25, 118, 210, 0.08);
+  background: #ffffff;
+  color: var(--text-soft);
+  border-radius: 12px;
+  padding: 0.7rem 1rem;
+  font-weight: 600;
+  transition: 0.25s ease;
+}
+
+.admin-participants-filters button:hover {
+  border-color: rgba(25, 118, 210, 0.16);
+  color: var(--deep-blue);
+  background: rgba(25, 118, 210, 0.04);
+}
+
+.admin-participants-filters button.active {
+  background: var(--deep-blue);
+  color: #ffffff;
+  border-color: var(--deep-blue);
+  box-shadow: 0 8px 18px rgba(13, 71, 161, 0.14);
+}
+
+.admin-participants-table-panel {
+  padding: 1rem;
+}
+
+.admin-visible-badge {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.admin-visible-badge.shown {
+  background: rgba(31, 157, 107, 0.12);
+  color: #1f9d6b;
+}
+
+.admin-visible-badge.hidden {
+  background: rgba(217, 48, 37, 0.12);
+  color: #d93025;
+}
+
+.admin-participant-modal-card {
+  max-width: 760px;
+}
+
+.admin-participant-review-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  padding: 0 1.15rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-participant-review-box {
+  background: #f8fbff;
+  border: 1px solid rgba(25, 118, 210, 0.08);
+  border-radius: 14px;
+  padding: 0.85rem 0.95rem;
+}
+
+.admin-participant-review-box label,
+.admin-participant-note-box label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.admin-review-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 96px;
+  height: 40px;
+  border-radius: 11px;
+  font-weight: 700;
+  padding: 0 0.95rem;
+}
+
+.admin-review-badge.review {
+  background: rgba(40, 117, 209, 0.12);
+  color: #2875d1;
+}
+
+.admin-review-badge.accepted {
+  background: rgba(31, 157, 107, 0.12);
+  color: #1f9d6b;
+}
+
+.admin-review-badge.rejected {
+  background: rgba(217, 48, 37, 0.12);
+  color: #d93025;
+}
+
+.admin-participant-note-box {
+  padding: 0 1.15rem;
+  margin-bottom: 0.7rem;
+}
+
+.admin-participant-note-content {
+  background: #ffffff;
+  border: 1px solid rgba(25, 118, 210, 0.1);
+  border-radius: 14px;
+  padding: 0.85rem 0.95rem;
+  line-height: 1.6;
+  color: var(--text-dark);
+  box-shadow: none;
+}
+
+.admin-participant-visibility-card {
+  padding: 0 1.15rem;
+  margin-bottom: 0.4rem;
+}
+
+.admin-participant-visibility-label.improved {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f3f8fe 100%);
+  border: 1px solid rgba(25, 118, 210, 0.08);
+  cursor: pointer;
+}
+
+.admin-participant-visibility-label.improved input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--primary-blue);
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.admin-participant-visibility-text {
+  color: var(--text-dark);
+  font-weight: 600;
+  line-height: 1.45;
+  font-size: 0.94rem;
+}
+
+@media (max-width: 768px) {
+  .admin-participants-toolbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-participant-review-grid {
+    grid-template-columns: 1fr;
+  }
+}

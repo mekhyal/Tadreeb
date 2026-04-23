@@ -1,15 +1,41 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaEnvelope, FaLock, FaHome } from "react-icons/fa";
-import loginImage from "../assets/login-image-2.svg";
+import { useAuth } from "../../context/AuthContext";
+import loginImage from "../../assets/login-image-2.svg";
 
 const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const PWD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+={}[\]|\\:;"'<>,.?/`~]).{8,24}$/;
 
+const mockUsers = [
+  {
+    id: 1,
+    name: "Roselle Ehrman",
+    email: "student@tadreeb.com",
+    password: "Student123!",
+    role: "student",
+  },
+  {
+    id: 2,
+    name: "Creative Tech",
+    email: "company@tadreeb.com",
+    password: "Company123!",
+    role: "company",
+  },
+  {
+    id: 3,
+    name: "Abdulaziz",
+    email: "admin@tadreeb.com",
+    password: "Admin123!",
+    role: "admin",
+  },
+];
+
 function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     email: "",
@@ -18,11 +44,7 @@ function Login() {
 
   const [errors, setErrors] = useState({});
   const [isNavigatingHome, setIsNavigatingHome] = useState(false);
-
-  const testUser = {
-    email: "student@tadreeb.com",
-    password: "StrongPass1!",
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -64,24 +86,49 @@ function Login() {
       return;
     }
 
-    if (
-      formData.email === testUser.email &&
-      formData.password === testUser.password
-    ) {
-      localStorage.setItem(
-        "tadreebUser",
-        JSON.stringify({
-          role: "student",
-          email: formData.email,
-        })
-      );
+    const matchedUser = mockUsers.find(
+      (user) =>
+        user.email.toLowerCase() === formData.email.toLowerCase() &&
+        user.password === formData.password
+    );
 
-      navigate("/student");
-    } else {
+    if (!matchedUser) {
       setErrors({
         general: "Invalid email or password.",
       });
+      return;
     }
+
+    setIsSubmitting(true);
+
+    const userData = {
+      id: matchedUser.id,
+      name: matchedUser.name,
+      email: matchedUser.email,
+      role: matchedUser.role,
+    };
+
+    login(userData);
+
+    setTimeout(() => {
+      if (matchedUser.role === "student") {
+        navigate("/student", { replace: true });
+        return;
+      }
+
+      if (matchedUser.role === "company") {
+        navigate("/company/dashboard", { replace: true });
+        return;
+      }
+
+      if (matchedUser.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+        return;
+      }
+
+      const from = location.state?.from?.pathname || "/";
+      navigate(from, { replace: true });
+    }, 500);
   };
 
   const delayedNavigateHome = () => {
@@ -96,14 +143,14 @@ function Login() {
 
   return (
     <>
-      {isNavigatingHome && (
+      {(isNavigatingHome || isSubmitting) && (
         <div className="app-global-loader">
           <div className="app-loader-dots">
             <span></span>
             <span></span>
             <span></span>
           </div>
-          <p>Loading page...</p>
+          <p>{isSubmitting ? "Signing in..." : "Loading page..."}</p>
         </div>
       )}
 

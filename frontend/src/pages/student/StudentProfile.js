@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { FaUserCircle, FaEnvelope } from "react-icons/fa";
-import StudentTopbar from "../components/student/StudentTopbar";
-import StudentFooter from "../components/student/StudentFooter";
+import { FaUserCircle, FaEnvelope, FaCheckCircle } from "react-icons/fa";
+import StudentTopbar from "../../components/student/StudentTopbar";
+import StudentFooter from "../../components/student/StudentFooter";
 
 function StudentProfile() {
   const storedUser = useMemo(() => {
@@ -23,7 +23,6 @@ function StudentProfile() {
     email: storedUser?.email || "abdulaziz@gmail.com",
   });
 
-  const [saveMessage, setSaveMessage] = useState("");
   const [showSavePopup, setShowSavePopup] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -33,7 +32,6 @@ function StudentProfile() {
       ...prev,
       [name]: value,
     }));
-    setSaveMessage("");
   };
 
   const handleSave = () => {
@@ -49,13 +47,12 @@ function StudentProfile() {
         })
       );
 
-      setSaveMessage("Profile changes saved successfully.");
       setShowSavePopup(true);
       setIsSaving(false);
 
       setTimeout(() => {
         setShowSavePopup(false);
-      }, 3000);
+      }, 5000);
     }, 500);
   };
 
@@ -65,8 +62,12 @@ function StudentProfile() {
 
       <main className="student-profile-page container">
         {showSavePopup && (
-          <div className="student-save-popup">
-            Profile changes saved successfully.
+          <div className="student-save-toast">
+            <div className="student-save-toast__content">
+              <FaCheckCircle className="student-save-toast__icon" />
+              <span>Profile changes saved successfully.</span>
+            </div>
+            <div className="student-save-toast__progress"></div>
           </div>
         )}
 
@@ -88,13 +89,9 @@ function StudentProfile() {
             onClick={handleSave}
             disabled={isSaving}
           >
-            {isSaving ? "Saving..." : "Save Change"}
+            {isSaving ? "Saving..." : "Save Changes"}
           </button>
         </div>
-
-        {saveMessage && !showSavePopup && (
-          <p className="student-save-message">{saveMessage}</p>
-        )}
 
         <div className="student-profile-form-grid">
           <div className="student-form-group">
@@ -203,7 +200,7 @@ function StudentProfile() {
         </div>
 
         <div className="student-email-section">
-          <h3>My email Address</h3>
+          <h3>My Email Address</h3>
 
           <div className="student-email-card">
             <div className="student-email-icon">

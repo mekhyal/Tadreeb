@@ -1,0 +1,132 @@
+import React, { useEffect, useState } from "react";
+
+function AdminCompanyDetailsModal({ company, onClose, onSave }) {
+  const [status, setStatus] = useState(company?.status || "Review");
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, []);
+
+  if (!company) return null;
+
+  const handleSave = () => {
+    onSave(company.id, status);
+  };
+
+  return (
+    <div className="company-modal-overlay" onClick={onClose}>
+      <div className="admin-company-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="admin-company-modal__header">
+          <div className="admin-company-modal__identity">
+            <div className="admin-company-modal__avatar">
+              {company.companyName.charAt(0)}
+            </div>
+
+            <div>
+              <div className="admin-company-modal__title-row">
+                <h3>{company.companyName}</h3>
+                <span className={`admin-company-status-badge ${status.toLowerCase()}`}>
+                  {status}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <button type="button" className="admin-company-modal__close" onClick={onClose}>
+            ×
+          </button>
+        </div>
+
+        <div className="admin-company-modal__body">
+          <div className="admin-company-modal__section-title">Details</div>
+
+          <div className="admin-company-modal__grid">
+            <div>
+              <label>Company ID</label>
+              <p>{company.requestId}</p>
+            </div>
+
+            <div>
+              <label>Industry</label>
+              <p>{company.industry}</p>
+            </div>
+
+            <div>
+              <label>Email</label>
+              <p>{company.companyEmail}</p>
+            </div>
+
+            <div>
+              <label>Phone</label>
+              <p>{company.phone}</p>
+            </div>
+
+            <div>
+              <label>Website</label>
+              <p>{company.website}</p>
+            </div>
+
+            <div>
+              <label>Company Size</label>
+              <p>{company.companySize}</p>
+            </div>
+
+            <div>
+              <label>Location</label>
+              <p>{company.location}</p>
+            </div>
+
+            <div>
+              <label>Founded Year</label>
+              <p>{company.foundedYear}</p>
+            </div>
+
+            <div>
+              <label>Contact Person</label>
+              <p>{company.contactPerson}</p>
+            </div>
+
+            <div>
+              <label>Job Title</label>
+              <p>{company.jobTitle}</p>
+            </div>
+          </div>
+
+          <div className="admin-company-modal__full">
+            <label>Company Description</label>
+            <p>{company.companyDescription}</p>
+          </div>
+
+          <div className="admin-company-modal__full">
+            <label>Why do you want to join?</label>
+            <p>{company.joinReason}</p>
+          </div>
+
+          <div className="admin-company-modal__status-box">
+            <label>Update Status</label>
+            <select value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="Pending">Pending</option>
+              <option value="Review">Review</option>
+              <option value="Accepted">Accepted</option>
+              <option value="Rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="admin-company-modal__actions">
+          <button type="button" className="secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="button" className="primary" onClick={handleSave}>
+            Save Update
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default AdminCompanyDetailsModal;

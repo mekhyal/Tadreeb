@@ -1,7 +1,17 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 
 function StudentProgramModal({ program, onClose, onApply }) {
+  useEffect(() => {
+    if (program) {
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [program]);
+
   if (!program) return null;
 
   const isClosed = program.status === "Complete";

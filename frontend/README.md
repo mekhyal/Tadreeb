@@ -1,70 +1,167 @@
-# Getting Started with Create React App
+```md
+# Tadreeb Platform — Frontend
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern training platform that connects **students** with **companies**, while allowing **admins** to manage the entire system in a structured and scalable way.
 
-## Available Scripts
+---
 
-In the project directory, you can run:
+## Overview
 
-### `npm start`
+Tadreeb supports three user roles:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Students** → explore and apply for training programs  
+- **Companies** → publish programs and manage participants  
+- **Admins** → manage users, companies, and the full system  
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+The platform uses a **role-based architecture**, so each user sees only what is relevant to them.
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Features
 
-### `npm run build`
+### Public Pages
+- Home page with modern UI
+- Smooth section navigation
+- Login / Signup pages
+- Company request form
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Authentication (Frontend)
+- Role-based login (Student / Company / Admin)
+- Route protection using React Context
+- Redirect based on role after login
+- Public routes blocked after login
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Student Portal
+- Browse training programs
+- Apply to opportunities
+- Track application status
+- Manage profile
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### Company Portal
+- Dashboard with statistics
+- Create / edit programs
+- Manage participants
+- Add notes and update status
+- Profile management
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+---
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+### Admin Portal
+- System-wide dashboard
+- Manage all programs
+- Manage participants (review / approve / reject)
+- Manage companies (approve / reject requests)
+- Manage users (students, companies, admins)
+- Profile management
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+---
 
-## Learn More
+## UI & UX
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- Responsive design (mobile → desktop)
+- Smooth navigation with loaders
+- Modal-based interactions
+- Pagination for large data
+- Clean and consistent design system
+- Custom icons for statistics
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+---
 
-### Code Splitting
+## Project Structure
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+```
 
-### Analyzing the Bundle Size
+src/
+├── components/
+├── pages/
+│   ├── authentication/
+│   ├── student/
+│   ├── company/
+│   ├── admin/
+├── context/
+├── data/
+├── styles/
+└── assets/
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```
 
-### Making a Progressive Web App
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Technologies
 
-### Advanced Configuration
+- React.js
+- React Router
+- Context API
+- Bootstrap
+- Custom CSS
+- React Icons
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## Route Protection
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- `/student/*` → student only  
+- `/company/*` → company only  
+- `/admin/*` → admin only  
 
-### `npm run build` fails to minify
+Uses:
+- `ProtectedRoute`
+- `PublicOnlyRoute`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+---
+
+## Test Accounts
+
+```
+
+Student
+[student@tadreeb.com](mailto:student@tadreeb.com)
+Student123!
+
+Company
+[company@tadreeb.com](mailto:company@tadreeb.com)
+Company123!
+
+Admin
+[admin@tadreeb.com](mailto:admin@tadreeb.com)
+Admin123!
+
+````
+
+---
+
+## Run Project
+
+```bash
+npm install
+npm start
+````
+
+Open:
+
+```
+http://localhost:3000
+```
+
+---
+
+## Build
+
+```bash
+npm run build
+```
+
+---
+
+## Notes
+
+* Frontend uses mock authentication (localStorage)
+* Ready for backend integration
+* Scalable and reusable structure
+
+```
+```

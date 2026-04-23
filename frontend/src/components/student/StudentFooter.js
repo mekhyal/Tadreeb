@@ -35,6 +35,16 @@ function StudentFooter() {
     }, 450);
   };
 
+  const handleBrandClick = (e) => {
+    e.preventDefault();
+    setIsNavigating(true);
+
+    setTimeout(() => {
+      navigate("/");
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }, 450);
+  };
+
   return (
     <>
       {isNavigating && (
@@ -51,7 +61,7 @@ function StudentFooter() {
       <footer className="student-footer">
         <div className="container">
           <div className="student-footer-top">
-            <Link to="/" className="student-footer-brand">
+            <Link to="/" className="student-footer-brand" onClick={handleBrandClick}>
               <span className="logo-dark">Tad</span>
               <span className="logo-blue">reeb</span>
             </Link>

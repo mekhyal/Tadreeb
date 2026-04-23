@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import StudentTopbar from "../components/student/StudentTopbar";
-import StudentFooter from "../components/student/StudentFooter";
-import StudentCard from "../components/student/StudentCard";
-import StudentProgramModal from "../components/student/StudentProgramModal";
-import { studentPrograms as initialPrograms } from "../data/studentData";
+import StudentTopbar from "../../components/student/StudentTopbar";
+import StudentFooter from "../../components/student/StudentFooter";
+import StudentCard from "../../components/student/StudentCard";
+import StudentProgramModal from "../../components/student/StudentProgramModal";
+import StudentApplyConfirmModal from "../../components/student/StudentApplyConfirmModal";
+import { studentPrograms as initialPrograms } from "../../data/studentData";
 
 const PROGRAMS_PER_PAGE = 6;
 
@@ -12,8 +13,17 @@ function StudentHome() {
   const [activeSearch, setActiveSearch] = useState("");
   const [programs, setPrograms] = useState(initialPrograms);
   const [selectedProgram, setSelectedProgram] = useState(null);
+  const [programToConfirm, setProgramToConfirm] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+
+  const [tempCategory, setTempCategory] = useState("All");
+  const [tempFromDate, setTempFromDate] = useState("");
+  const [tempToDate, setTempToDate] = useState("");
+
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
@@ -53,6 +63,18 @@ function StudentHome() {
     };
   }, []);
 
+  useEffect(() => {
+  const handleScroll = () => {
+    setShowFilterMenu(false);
+  };
+
+  window.addEventListener("scroll", handleScroll);
+
+  return () => {
+    window.removeEventListener("scroll", handleScroll);
+  };
+  }, []);
+
   const filteredPrograms = useMemo(() => {
     return programs.filter((program) => {
       const matchesSearch = program.title
@@ -62,9 +84,14 @@ function StudentHome() {
       const matchesCategory =
         selectedCategory === "All" || program.category === selectedCategory;
 
-      return matchesSearch && matchesCategory;
+      const matchesDate =
+        (!fromDate && !toDate) ||
+        ((!toDate || new Date(program.startDate) <= new Date(toDate)) &&
+          (!fromDate || new Date(program.endDate) >= new Date(fromDate)));
+
+      return matchesSearch && matchesCategory && matchesDate;
     });
-  }, [programs, activeSearch, selectedCategory]);
+  }, [programs, activeSearch, selectedCategory, fromDate, toDate]);
 
   const totalPages = Math.max(
     1,
@@ -92,7 +119,7 @@ function StudentHome() {
     return startA <= endB && startB <= endA;
   };
 
-  const handleApply = (programId) => {
+  const runApplyLogic = (programId) => {
     const targetProgram = programs.find((program) => program.id === programId);
     if (!targetProgram) return;
 
@@ -144,15 +171,54 @@ function StudentHome() {
     setSelectedProgram(appliedProgram);
   };
 
+  const handleApplyRequest = (programId) => {
+    const targetProgram = programs.find((program) => program.id === programId);
+    if (!targetProgram) return;
+
+    if (targetProgram.status === "Complete" || targetProgram.applied) {
+      runApplyLogic(programId);
+      return;
+    }
+
+    setProgramToConfirm(targetProgram);
+  };
+
+  const handleConfirmApply = () => {
+    if (!programToConfirm) return;
+    runApplyLogic(programToConfirm.id);
+    setProgramToConfirm(null);
+  };
+
   const handleFilterClick = () => {
+    setTempCategory(selectedCategory);
+    setTempFromDate(fromDate);
+    setTempToDate(toDate);
     setShowFilterMenu((prev) => !prev);
   };
 
-  const handleCategorySelect = (category) => {
+  const handleApplyFilters = () => {
     setIsFiltering(true);
 
     setTimeout(() => {
-      setSelectedCategory(category);
+      setSelectedCategory(tempCategory);
+      setFromDate(tempFromDate);
+      setToDate(tempToDate);
+      setCurrentPage(1);
+      setShowFilterMenu(false);
+      setIsFiltering(false);
+    }, 450);
+  };
+
+  const handleResetFilters = () => {
+    setIsFiltering(true);
+
+    setTimeout(() => {
+      setTempCategory("All");
+      setTempFromDate("");
+      setTempToDate("");
+      setSelectedCategory("All");
+      setFromDate("");
+      setToDate("");
       setCurrentPage(1);
       setShowFilterMenu(false);
       setIsFiltering(false);
@@ -174,6 +240,11 @@ function StudentHome() {
     setSearchInput("");
     setActiveSearch("");
     setSelectedCategory("All");
+    setFromDate("");
+    setToDate("");
+    setTempCategory("All");
+    setTempFromDate("");
+    setTempToDate("");
     setCurrentPage(1);
   };
 
@@ -240,18 +311,68 @@ function StudentHome() {
         <div className="student-filter-dropdown-wrap" ref={filterRef}>
           {showFilterMenu && (
             <div className="student-filter-dropdown">
-              {categories.map((category) => (
+              <div className="student-filter-section">
+                <p className="student-filter-title">Category</p>
+
+                <div className="student-filter-tags">
+                  {categories.map((category) => (
+                    <button
+                      type="button"
+                      key={category}
+                      className={`student-filter-tag ${
+                        tempCategory === category ? "active" : ""
+                      }`}
+                      onClick={() => setTempCategory(category)}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="student-filter-section">
+                <p className="student-filter-title">Date Range</p>
+
+                <div className="student-filter-date-grid">
+                  <div className="student-filter-date-group">
+                    <label htmlFor="fromDate">From Date</label>
+                    <input
+                      id="fromDate"
+                      type="date"
+                      value={tempFromDate}
+                      onChange={(e) => setTempFromDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="student-filter-date-group">
+                    <label htmlFor="toDate">To Date</label>
+                    <input
+                      id="toDate"
+                      type="date"
+                      value={tempToDate}
+                      onChange={(e) => setTempToDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="student-filter-actions">
                 <button
                   type="button"
-                  key={category}
-                  className={`student-filter-tag ${
-                    selectedCategory === category ? "active" : ""
-                  }`}
-                  onClick={() => handleCategorySelect(category)}
+                  className="student-filter-apply"
+                  onClick={handleApplyFilters}
                 >
-                  {category}
+                  Apply Filters
                 </button>
-              ))}
+
+                <button
+                  type="button"
+                  className="student-filter-reset"
+                  onClick={handleResetFilters}
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -260,7 +381,7 @@ function StudentHome() {
           <div className="student-empty-state">
             <h3>No programs found</h3>
             <p>
-              No available programs match your search or selected category.
+              No available programs match your search or selected filters.
             </p>
             <button
               type="button"
@@ -321,7 +442,13 @@ function StudentHome() {
       <StudentProgramModal
         program={selectedProgram}
         onClose={() => setSelectedProgram(null)}
-        onApply={handleApply}
+        onApply={handleApplyRequest}
+      />
+
+      <StudentApplyConfirmModal
+        program={programToConfirm}
+        onCancel={() => setProgramToConfirm(null)}
+        onConfirm={handleConfirmApply}
       />
     </div>
   );

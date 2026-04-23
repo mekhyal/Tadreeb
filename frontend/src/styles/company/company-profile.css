@@ -1,0 +1,89 @@
+.company-profile-section {
+  min-height: 75vh;
+}
+
+.company-profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.8rem;
+  gap: 1rem;
+}
+
+.company-profile-user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.company-profile-avatar {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-blue), var(--deep-blue));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2rem;
+  box-shadow: 0 10px 20px rgba(13, 71, 161, 0.14);
+}
+
+.company-profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem 1.2rem;
+}
+
+.company-save-btn {
+  min-width: 170px;
+  height: 48px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary-blue), var(--deep-blue));
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.company-email-section {
+  margin-top: 1.8rem;
+}
+
+.company-email-card {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.company-email-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: rgba(25, 118, 210, 0.1);
+  color: var(--primary-blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.company-update-btn {
+  margin-top: 1rem;
+  min-width: 170px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(25, 118, 210, 0.12);
+  color: var(--primary-blue);
+  font-weight: 700;
+}
+
+@media (max-width: 900px) {
+  .company-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .company-profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

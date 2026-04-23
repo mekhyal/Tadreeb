@@ -35,6 +35,21 @@ function Navbar() {
     }, 450);
   };
 
+  const handleBrandClick = (e) => {
+    e.preventDefault();
+
+    if (location.pathname === "/") {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
+    setIsNavigating(true);
+
+    setTimeout(() => {
+      navigate("/");
+    }, 450);
+  };
+
   return (
     <>
       {isNavigating && (
@@ -50,7 +65,7 @@ function Navbar() {
 
       <nav className="navbar navbar-expand-lg tadreeb-navbar">
         <div className="container navbar-custom-container">
-          <Link className="navbar-brand tadreeb-logo" to="/">
+          <Link className="navbar-brand tadreeb-logo" to="/" onClick={handleBrandClick}>
             <span className="logo-dark">Tad</span>
             <span className="logo-blue">reeb</span>
           </Link>
