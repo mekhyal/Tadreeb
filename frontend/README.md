@@ -1,10 +1,6 @@
 # Tadreeb Platform — Frontend
 
 
-A modern training platform that connects **students** with **companies**, while allowing **admins** to manage the entire system in a structured and scalable way.
-
----
-
 ## Overview
 
 Tadreeb supports three user roles:
@@ -119,15 +115,15 @@ Uses:
 ```
 
 Student
-[student@tadreeb.com](mailto:student@tadreeb.com)
+[student@tadreeb.com]
 Student123!
 
 Company
-[company@tadreeb.com](mailto:company@tadreeb.com)
+[company@tadreeb.com]
 Company123!
 
 Admin
-[admin@tadreeb.com](mailto:admin@tadreeb.com)
+[admin@tadreeb.com]
 Admin123!
 
 ````
@@ -163,9 +159,6 @@ npm run build
 * Ready for backend integration
 * Scalable and reusable structure
 
-<<<<<<< HEAD
+
 ## Done by : Abdulaziz
 
-=======
-## Done by : Abdulaziz
->>>>>>> acdb74a (updates)
