@@ -9,7 +9,10 @@ require('dotenv').config(); // load variables from the .env file into process.en
 const connectDB = require('./config/db'); // import the reusable DB connection helper from config/db.js
 
 const authRoutes = require('./routes/authRoutes');
-// const adminRoutes = require('./routes/adminRoutes'); // import the admin/user route handlers (note: adminRoutes.js must export an express.Router)
+const adminRoutes = require('./routes/adminRoutes'); // import the admin/user route handlers (note: adminRoutes.js must export an express.Router)
+const opportunityRoutes = require('./routes/opportunityRoutes');
+const applicationRoutes = require('./routes/applicationRoutes');
+
 const app = express(); // create the Express application instance
 
 // middleware
@@ -18,7 +21,10 @@ app.use(morgan('dev')); // log HTTP requests to the console (method, URL, status
 app.use(express.json()); // parse incoming JSON request bodies and attach the data to req.body
 
 // routes
-app.use('/api/auth', authRoutes); // mount the user routes so every request starting with /api/users is handled by userRoutes
+app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/opportunities', opportunityRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // test route
 app.get('/', (req, res) => { // handle GET requests to the root URL "/" (simple health-check endpoint)
