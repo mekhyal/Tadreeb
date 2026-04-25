@@ -2,8 +2,7 @@ const bcrypt = require('bcryptjs');
 const Student = require('../models/Student');
 const Company = require('../models/Company');
 const Admin = require('../models/Admin');
-const generationToken = require('../utils/generateToken');
-const { token } = require('morgan');
+const generateToken = require('../utils/generateToken');
 
 
 // student register
@@ -28,7 +27,7 @@ const registerStudent = async (req, res) => {
         !major || !year
     ) {
         return res.status(400).json({
-            message: 'Please all required student fields',
+            message: 'Please provide all required student fields',
         });
     }
 
@@ -52,9 +51,9 @@ const registerStudent = async (req, res) => {
       skills: Array.isArray(skills) ? skills : [],
     });
 
-    res.status(201).json({
+    return res.status(201).json({
         message: 'Student registered successfully',
-        token: generationToken(student._id, student.role),
+        token: generateToken(student._id, student.role),
         student: {
             id: student._id,
             universityID: student.universityID,
@@ -71,7 +70,7 @@ const registerStudent = async (req, res) => {
         },
     });
     } catch (error) {
-        res.status(500).json({ message: error.message});
+        return res.status(500).json({ message: error.message});
     }
 };
 
@@ -89,10 +88,9 @@ const loginStudent = async (req,res) => {
             return res.status(400).json({ message: 'Invalid email or password'});
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             message: 'Student login successful',
-            token: generationToken(student._id, student.role),
-            student: {
+            token: generateToken(student._id, student.role),            student: {
                 id: student._id,
                 universityID: student.universityID,
                 firstName: student.firstName,
@@ -109,9 +107,20 @@ const loginStudent = async (req,res) => {
         });
 
     } catch(error){
-        res.status(500).json({ message: error.message});
+        return res.status(500).json({ message: error.message});
     }
 };
+
+// get student
+const getStudents = async(req,res) => {
+    try {
+        const students = await Student.find().select('-password');
+        return res.status(200).json(students);
+    } catch (error){
+        return res.status(500).json({ message: error.message});
+    }
+};
+
 
 // company Login
 const loginCompany = async (req,res) => {
@@ -120,30 +129,39 @@ const loginCompany = async (req,res) => {
 
         const company = await Company.findOne({email});
         if(!company){
-            res.status(400).json({message: 'Invalid email or password'});
+            return res.status(400).json({message: 'Invalid email or password'});
         }
         const isMatch = await bcrypt.compare(password, company.password);
         if(!isMatch){
-            res.status(400).json({message: 'Invalid email or password'});
-
-            res.status(200).json({
-                message: 'Company login successful',
-                token: generationToken(company._id,  company.role),
-                company: {
-                    id: company._id, 
-                    email: company.email,
-                    industry: company.industry,
-                    location: company.location,
-                    status: company.status,
-                    role: company.role,
-                },
-            });
+            return res.status(400).json({message: 'Invalid email or password'});
         }
+
+        return res.status(200).json({
+            message: 'Company login successful',
+            token: generateToken(company._id,  company.role),
+            company: {
+                id: company._id, 
+                email: company.email,
+                industry: company.industry,
+                location: company.location,
+                status: company.status,
+                role: company.role,
+            },
+        });
     } 
     catch (error) {
-        res.status(500).json({message: error.message});
+        return res.status(500).json({message: error.message});
     }
-}
+};
+
+const getCompany = async (req,res) => {
+    try {
+        const companies = await Company.find().select('-password');
+        return res.status(200).json(companies);
+    } catch (error){
+        return res.status(500).json({ message: error.message });
+    }
+};
 
 // Admin login 
 const loginAdmin = async (req, res) => {
@@ -152,18 +170,18 @@ const loginAdmin = async (req, res) => {
 
         const admin = await Admin.findOne({ email });
         if(!admin){
-            res.status(400).json({ message: 'Inavlid email or password'});
+            return res.status(400).json({ message: 'Invalid email or password'});
         }
 
         const isMatch = await bcrypt.compare(password, admin.password);
         if(!isMatch)
         {
-            res.status(400).json({ message: 'Invalid email or password'});
+            return res.status(400).json({ message: 'Invalid email or password'});
         }
 
-        res.status(200).json({
+        return res.status(200).json({
             message: 'Admin login successful',
-            token: generationToken(admin._id, admin.role),
+            token: generateToken(admin._id, admin.role),
             admin: {
                 id: admin._id,
                 firstName: admin.firstName,
@@ -174,14 +192,25 @@ const loginAdmin = async (req, res) => {
             },
         });
     } catch(error){
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({ message: error.message });
     }
 };
 
+const getAdmins = async (req, res) => {
+    try {
+        const admins = await Admin.find().select('-password');
+        return res.status(200).json(admins);
+    } catch (error){
+        return res.status(500).json({ message: error.message });
+    }
+};
 
 module.exports = {
     registerStudent,
     loginStudent,
+    getStudents,
     loginCompany,
+    getCompany,
     loginAdmin,
+    getAdmins,
 };

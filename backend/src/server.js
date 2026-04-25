@@ -4,9 +4,11 @@ const cors = require('cors'); // import CORS middleware so the frontend (differe
 const morgan = require('morgan'); // import Morgan for HTTP request logging
 require('dotenv').config(); // load variables from the .env file into process.env (PORT, MONGO_URI, JWT_SECRET, ...)
 
-const connectDB = require('./config/db'); // import the reusable DB connection helper from config/db.js
-const authRoutes = require('./routes/authRoutes');
+// console.log("1 server started");
 
+const connectDB = require('./config/db'); // import the reusable DB connection helper from config/db.js
+
+const authRoutes = require('./routes/authRoutes');
 // const adminRoutes = require('./routes/adminRoutes'); // import the admin/user route handlers (note: adminRoutes.js must export an express.Router)
 const app = express(); // create the Express application instance
 

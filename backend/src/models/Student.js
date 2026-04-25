@@ -1,6 +1,12 @@
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
+    universityID: {
+        type: String,
+        required: true,
+        trim: true,
+        unique: true,
+    },
     firstName: {
         type: String,
         required: true,
@@ -45,7 +51,7 @@ const studentSchema = new mongoose.Schema({
     year: {
         type: Number,
         required: true,
-        min: 1,
+        enum: [1,2,3,4,5],
     },
     skills: [
         {
