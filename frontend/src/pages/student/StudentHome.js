@@ -4,14 +4,45 @@ import StudentFooter from "../../components/student/StudentFooter";
 import StudentCard from "../../components/student/StudentCard";
 import StudentProgramModal from "../../components/student/StudentProgramModal";
 import StudentApplyConfirmModal from "../../components/student/StudentApplyConfirmModal";
-import { studentPrograms as initialPrograms } from "../../data/studentData";
+import { getOpportunities } from "../../api/opportunityAPI";
+import { applyToProgram } from "../../api/applicationAPI";
 
 const PROGRAMS_PER_PAGE = 6;
+
+const normalizeProgram = (item) => {
+  const company = item.companyID || {};
+
+  return {
+    id: item._id,
+    title: item.title || "",
+    shortDescription: item.subtitle || item.description || "",
+    fullDescription: item.description || "",
+    startDate: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
+    endDate: item.dateTo ? item.dateTo.slice(0, 10) : "",
+    rules: Array.isArray(item.rules)
+      ? item.rules
+      : String(item.rules || "")
+          .split("\n")
+          .map((rule) => rule.trim())
+          .filter(Boolean),
+    location: item.location || "",
+    image:
+      item.imageURL ||
+      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
+    status: item.status === "Completed" ? "Complete" : "Register Now",
+    category: item.category || "Software",
+    openTo: item.openTo || "Students",
+    company: company.companyName || company.email || "Company",
+    applied: false,
+    actionMessage: "",
+    actionType: "",
+  };
+};
 
 function StudentHome() {
   const [searchInput, setSearchInput] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
-  const [programs, setPrograms] = useState(initialPrograms);
+  const [programs, setPrograms] = useState([]);
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [programToConfirm, setProgramToConfirm] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,6 +60,8 @@ function StudentHome() {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [isPaging, setIsPaging] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
+  const [pageError, setPageError] = useState("");
 
   const filterRef = useRef(null);
 
@@ -42,11 +75,32 @@ function StudentHome() {
   ];
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsPageLoading(false);
-    }, 450);
+    const fetchPrograms = async () => {
+      setIsPageLoading(true);
+      setPageError("");
 
-    return () => clearTimeout(timer);
+      try {
+        const response = await getOpportunities();
+        const normalizedPrograms = response.data.map(normalizeProgram);
+
+        const sortedPrograms = normalizedPrograms.sort((a, b) => {
+          if (a.status === "Complete" && b.status !== "Complete") return 1;
+          if (a.status !== "Complete" && b.status === "Complete") return -1;
+          return 0;
+        });
+
+        setPrograms(sortedPrograms);
+      } catch (error) {
+        setPageError(
+          error.response?.data?.message ||
+            "Could not load programs. Please try again."
+        );
+      } finally {
+        setIsPageLoading(false);
+      }
+    };
+
+    fetchPrograms();
   }, []);
 
   useEffect(() => {
@@ -64,15 +118,15 @@ function StudentHome() {
   }, []);
 
   useEffect(() => {
-  const handleScroll = () => {
-    setShowFilterMenu(false);
-  };
+    const handleScroll = () => {
+      setShowFilterMenu(false);
+    };
 
-  window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll);
 
-  return () => {
-    window.removeEventListener("scroll", handleScroll);
-  };
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
   }, []);
 
   const filteredPrograms = useMemo(() => {
@@ -119,17 +173,42 @@ function StudentHome() {
     return startA <= endB && startB <= endA;
   };
 
-  const runApplyLogic = (programId) => {
+  const setProgramMessage = (programId, message, type, applied = false) => {
+    setPrograms((prev) =>
+      prev.map((program) =>
+        program.id === programId
+          ? {
+              ...program,
+              applied,
+              actionMessage: message,
+              actionType: type,
+            }
+          : program
+      )
+    );
+
+    setSelectedProgram((prev) =>
+      prev && prev.id === programId
+        ? {
+            ...prev,
+            applied,
+            actionMessage: message,
+            actionType: type,
+          }
+        : prev
+    );
+  };
+
+  const runApplyLogic = async (programId) => {
     const targetProgram = programs.find((program) => program.id === programId);
     if (!targetProgram) return;
 
     if (targetProgram.status === "Complete") {
-      setSelectedProgram({
-        ...targetProgram,
-        actionMessage:
-          "This program is already full and no longer accepts applications.",
-        actionType: "error",
-      });
+      setProgramMessage(
+        programId,
+        "This program is already full and no longer accepts applications.",
+        "error"
+      );
       return;
     }
 
@@ -146,29 +225,35 @@ function StudentHome() {
     );
 
     if (conflictingProgram) {
-      setSelectedProgram({
-        ...targetProgram,
-        actionMessage: `You cannot apply because you already joined "${conflictingProgram.title}" during an overlapping period.`,
-        actionType: "error",
-      });
+      setProgramMessage(
+        programId,
+        `You cannot apply because you already joined "${conflictingProgram.title}" during an overlapping period.`,
+        "error"
+      );
       return;
     }
 
-    const updated = programs.map((program) =>
-      program.id === programId
-        ? {
-            ...program,
-            applied: true,
-            actionMessage: "Your application was submitted successfully.",
-            actionType: "success",
-          }
-        : program
-    );
+    setIsApplying(true);
 
-    setPrograms(updated);
+    try {
+      await applyToProgram(programId);
 
-    const appliedProgram = updated.find((program) => program.id === programId);
-    setSelectedProgram(appliedProgram);
+      setProgramMessage(
+        programId,
+        "Your application was submitted successfully.",
+        "success",
+        true
+      );
+    } catch (error) {
+      setProgramMessage(
+        programId,
+        error.response?.data?.message ||
+          "Could not submit application. Please try again.",
+        "error"
+      );
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   const handleApplyRequest = (programId) => {
@@ -377,12 +462,15 @@ function StudentHome() {
           )}
         </div>
 
-        {filteredPrograms.length === 0 ? (
+        {pageError ? (
+          <div className="student-empty-state">
+            <h3>Unable to load programs</h3>
+            <p>{pageError}</p>
+          </div>
+        ) : filteredPrograms.length === 0 ? (
           <div className="student-empty-state">
             <h3>No programs found</h3>
-            <p>
-              No available programs match your search or selected filters.
-            </p>
+            <p>No available programs match your search or selected filters.</p>
             <button
               type="button"
               className="student-reset-search-btn"
@@ -443,6 +531,7 @@ function StudentHome() {
         program={selectedProgram}
         onClose={() => setSelectedProgram(null)}
         onApply={handleApplyRequest}
+        isApplying={isApplying}
       />
 
       <StudentApplyConfirmModal

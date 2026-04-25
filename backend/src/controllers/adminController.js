@@ -5,36 +5,55 @@ const Admin = require('../models/Admin');
 
 // create Admin account
 const createAdmin = async (req, res) => {
-    try {
-      const { firstName, lastName, email, phone, password } = req.body;
-  
-      if (!firstName || !lastName || !email || !phone || !password) {
-        return res.status(400).json({ message: 'Please fill all required fields' });
-      }
-  
-      const existingAdmin = await Admin.findOne({ email });
-      if (existingAdmin) {
-        return res.status(400).json({ message: 'Admin already exists' });
-      }
-  
-      const hashedPassword = await bcrypt.hash(password, 10);
-  
-      const admin = await Admin.create({
-        firstName,
-        lastName,
-        email,
-        phone,
-        password: hashedPassword,
-      });
-  
-      return res.status(201).json({
-        message: 'Admin created successfully',
-        admin,
-      });
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
+  try {
+    const {
+      firstName,
+      lastName,
+      email,
+      phone,
+      password,
+      jobTitle,
+      gender,
+      country,
+      language,
+      extraInfo,
+      status,
+    } = req.body;
+
+    if (!firstName || !lastName || !email || !phone || !password) {
+      return res.status(400).json({ message: 'Please fill all required fields' });
     }
-  };
+
+    const existingAdmin = await Admin.findOne({ email });
+
+    if (existingAdmin) {
+      return res.status(400).json({ message: 'Admin already exists' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const admin = await Admin.create({
+      firstName,
+      lastName,
+      email,
+      phone,
+      password: hashedPassword,
+      jobTitle,
+      gender,
+      country,
+      language,
+      extraInfo,
+      status: status || 'Active',
+    });
+
+    return res.status(201).json({
+      message: 'Admin created successfully',
+      admin,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 
   //create company
   const createCompany = async (req, res) => {

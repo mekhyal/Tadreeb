@@ -6,25 +6,28 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem("tadreebUser");
+    const savedUser = localStorage.getItem("tadreeb_user");
 
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (error) {
-        localStorage.removeItem("tadreebUser");
+        localStorage.removeItem("tadreeb_user");
+        localStorage.removeItem("tadreeb_token");
       }
     }
   }, []);
 
-  const login = (userData) => {
+  const login = (userData, token) => {
     setUser(userData);
-    localStorage.setItem("tadreebUser", JSON.stringify(userData));
+    localStorage.setItem("tadreeb_user", JSON.stringify(userData));
+    localStorage.setItem("tadreeb_token", token);
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("tadreebUser");
+    localStorage.removeItem("tadreeb_user");
+    localStorage.removeItem("tadreeb_token");
   };
 
   const value = useMemo(

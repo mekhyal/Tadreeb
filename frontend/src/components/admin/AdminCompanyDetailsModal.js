@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-function AdminCompanyDetailsModal({ company, onClose, onSave }) {
+function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
   const [status, setStatus] = useState(company?.status || "Review");
 
   useEffect(() => {
@@ -22,13 +22,17 @@ function AdminCompanyDetailsModal({ company, onClose, onSave }) {
         <div className="admin-company-modal__header">
           <div className="admin-company-modal__identity">
             <div className="admin-company-modal__avatar">
-              {company.companyName.charAt(0)}
+              {company.companyName?.charAt(0)}
             </div>
 
             <div>
               <div className="admin-company-modal__title-row">
                 <h3>{company.companyName}</h3>
-                <span className={`admin-company-status-badge ${status.toLowerCase()}`}>
+                <span
+                  className={`admin-company-status-badge ${status
+                    .toLowerCase()
+                    .replace(/\s+/g, "-")}`}
+                >
                   {status}
                 </span>
               </div>
@@ -66,12 +70,12 @@ function AdminCompanyDetailsModal({ company, onClose, onSave }) {
 
             <div>
               <label>Website</label>
-              <p>{company.website}</p>
+              <p>{company.website || "-"}</p>
             </div>
 
             <div>
               <label>Company Size</label>
-              <p>{company.companySize}</p>
+              <p>{company.companySize || "-"}</p>
             </div>
 
             <div>
@@ -81,28 +85,28 @@ function AdminCompanyDetailsModal({ company, onClose, onSave }) {
 
             <div>
               <label>Founded Year</label>
-              <p>{company.foundedYear}</p>
+              <p>{company.foundedYear || "-"}</p>
             </div>
 
             <div>
               <label>Contact Person</label>
-              <p>{company.contactPerson}</p>
+              <p>{company.contactPerson || "-"}</p>
             </div>
 
             <div>
-              <label>Job Title</label>
-              <p>{company.jobTitle}</p>
+              <label>Request Date</label>
+              <p>{company.requestDate}</p>
             </div>
           </div>
 
           <div className="admin-company-modal__full">
             <label>Company Description</label>
-            <p>{company.companyDescription}</p>
+            <p>{company.companyDescription || "-"}</p>
           </div>
 
           <div className="admin-company-modal__full">
             <label>Why do you want to join?</label>
-            <p>{company.joinReason}</p>
+            <p>{company.joinReason || "-"}</p>
           </div>
 
           <div className="admin-company-modal__status-box">
@@ -110,8 +114,9 @@ function AdminCompanyDetailsModal({ company, onClose, onSave }) {
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="Pending">Pending</option>
               <option value="Review">Review</option>
-              <option value="Accepted">Accepted</option>
+              <option value="Approved">Approved</option>
               <option value="Rejected">Rejected</option>
+              <option value="Active">Active</option>
             </select>
           </div>
         </div>
@@ -120,8 +125,8 @@ function AdminCompanyDetailsModal({ company, onClose, onSave }) {
           <button type="button" className="secondary" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="primary" onClick={handleSave}>
-            Save Update
+          <button type="button" className="primary" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Update"}
           </button>
         </div>
       </div>

@@ -1,9 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 
-function CompanyParticipantModal({ participant, onClose, onSave }) {
+const LIMITS = {
+  note: 250,
+};
+
+function CompanyParticipantModal({ participant, onClose, onSave, isSaving }) {
   const [note, setNote] = useState(participant?.note || "");
-  const [status, setStatus] = useState(participant?.status || "Review");
+  const [status, setStatus] = useState(participant?.status || "Under Review");
+  const [error, setError] = useState("");
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -14,16 +19,23 @@ function CompanyParticipantModal({ participant, onClose, onSave }) {
 
   const avatarTone = useMemo(() => {
     const tones = ["blue", "green", "orange", "purple"];
-    return tones[participant.id % tones.length];
+    return tones[(participant?.id?.length || 0) % tones.length];
   }, [participant]);
 
   if (!participant) return null;
 
   const handleSave = () => {
-    onSave(participant.id, {
-      note,
-      status,
-    });
+    if (!status) {
+      setError("Status is required.");
+      return;
+    }
+
+    if (note.trim().length > LIMITS.note) {
+      setError(`Company note must be ${LIMITS.note} characters or less.`);
+      return;
+    }
+
+    onSave(participant.id, note.trim(), status);
   };
 
   return (
@@ -89,8 +101,12 @@ function CompanyParticipantModal({ participant, onClose, onSave }) {
               <textarea
                 rows="4"
                 value={note}
-                onChange={(e) => setNote(e.target.value)}
+                onChange={(e) => {
+                  setNote(e.target.value);
+                  setError("");
+                }}
                 placeholder="Write note here..."
+                maxLength={LIMITS.note}
               ></textarea>
             </div>
 
@@ -98,13 +114,18 @@ function CompanyParticipantModal({ participant, onClose, onSave }) {
               <label>Status</label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setError("");
+                }}
               >
-                <option value="Review">Review</option>
+                <option value="Under Review">Under Review</option>
                 <option value="Accepted">Accepted</option>
                 <option value="Rejected">Rejected</option>
               </select>
             </div>
+
+            {error && <p className="company-form-error">{error}</p>}
           </div>
         </div>
 
@@ -112,8 +133,14 @@ function CompanyParticipantModal({ participant, onClose, onSave }) {
           <button type="button" className="secondary" onClick={onClose}>
             Cancel
           </button>
-          <button type="button" className="primary" onClick={handleSave}>
-            Save Update
+
+          <button
+            type="button"
+            className="primary"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            {isSaving ? "Saving..." : "Save Update"}
           </button>
         </div>
       </div>

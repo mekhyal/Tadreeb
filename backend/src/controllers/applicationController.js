@@ -61,7 +61,7 @@ const getCompanyApplications = async (req, res) => {
     const applications = await Application.find({
       programID: { $in: programIds },
     })
-      .populate('studentID', 'firstName lastName email major universityName skills')
+      .populate('studentID', 'firstName lastName email major universityName year skills')
       .populate('programID', 'title location dateFrom dateTo');
 
     return res.status(200).json(applications);

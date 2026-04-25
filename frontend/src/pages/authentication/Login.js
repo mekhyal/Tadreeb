@@ -2,34 +2,33 @@ import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaEnvelope, FaLock, FaHome } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
+import {
+  loginStudent,
+  loginCompany,
+  loginAdmin,
+} from "../../api/authAPI";
 import loginImage from "../../assets/login-image-2.svg";
+
+const LIMITS = {
+  email: 120,
+  passwordMin: 8,
+  passwordMax: 24,
+};
 
 const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const PWD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+={}[\]|\\:;"'<>,.?/`~]).{8,24}$/;
 
-const mockUsers = [
-  {
-    id: 1,
-    name: "Roselle Ehrman",
-    email: "student@tadreeb.com",
-    password: "Student123!",
-    role: "student",
-  },
-  {
-    id: 2,
-    name: "Creative Tech",
-    email: "company@tadreeb.com",
-    password: "Company123!",
-    role: "company",
-  },
-  {
-    id: 3,
-    name: "Abdulaziz",
-    email: "admin@tadreeb.com",
-    password: "Admin123!",
-    role: "admin",
-  },
+const ALLOWED_EMAIL_DOMAINS = [
+  "gmail.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "yahoo.com",
+  "icloud.com",
+  "proton.me",
+  "protonmail.com",
+  "tadreeb.com",
 ];
 
 function Login() {
@@ -45,6 +44,15 @@ function Login() {
   const [errors, setErrors] = useState({});
   const [isNavigatingHome, setIsNavigatingHome] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const getEmailDomain = (email) => {
+    return email.trim().toLowerCase().split("@")[1] || "";
+  };
+
+  const isAllowedEmailDomain = (email) => {
+    const domain = getEmailDomain(email);
+    return ALLOWED_EMAIL_DOMAINS.includes(domain);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -63,12 +71,22 @@ function Login() {
 
   const validateForm = () => {
     const newErrors = {};
+    const email = formData.email.trim();
 
-    if (!EMAIL_REGEX.test(formData.email)) {
+    if (!email) {
+      newErrors.email = "Email is required.";
+    } else if (email.length > LIMITS.email) {
+      newErrors.email = `Email must be ${LIMITS.email} characters or less.`;
+    } else if (!EMAIL_REGEX.test(email)) {
       newErrors.email = "Please enter a valid email address.";
+    } else if (!isAllowedEmailDomain(email)) {
+      newErrors.email =
+        "Please use a supported email provider such as Gmail, Outlook, Hotmail, Yahoo, iCloud, or Proton.";
     }
 
-    if (!PWD_REGEX.test(formData.password)) {
+    if (!formData.password.trim()) {
+      newErrors.password = "Password is required.";
+    } else if (!PWD_REGEX.test(formData.password)) {
       newErrors.password =
         "Password must be 8-24 characters and include uppercase, lowercase, number, and special character.";
     }
@@ -76,7 +94,11 @@ function Login() {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const getUserFromResponse = (data) => {
+    return data.user || data.student || data.company || data.admin;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const validationErrors = validateForm();
@@ -86,49 +108,63 @@ function Login() {
       return;
     }
 
-    const matchedUser = mockUsers.find(
-      (user) =>
-        user.email.toLowerCase() === formData.email.toLowerCase() &&
-        user.password === formData.password
-    );
-
-    if (!matchedUser) {
-      setErrors({
-        general: "Invalid email or password.",
-      });
-      return;
-    }
-
     setIsSubmitting(true);
 
-    const userData = {
-      id: matchedUser.id,
-      name: matchedUser.name,
-      email: matchedUser.email,
-      role: matchedUser.role,
-    };
+    try {
+      const loginData = {
+        email: formData.email.trim().toLowerCase(),
+        password: formData.password,
+      };
 
-    login(userData);
+      let response;
 
-    setTimeout(() => {
-      if (matchedUser.role === "student") {
+      try {
+        response = await loginStudent(loginData);
+      } catch {
+        try {
+          response = await loginCompany(loginData);
+        } catch {
+          response = await loginAdmin(loginData);
+        }
+      }
+
+      const token = response.data.token;
+      const user = getUserFromResponse(response.data);
+
+      if (!token || !user) {
+        setErrors({
+          general: "Login response is missing user or token.",
+        });
+        return;
+      }
+
+      login(user, token);
+
+      if (user.role === "student") {
         navigate("/student", { replace: true });
         return;
       }
 
-      if (matchedUser.role === "company") {
+      if (user.role === "company") {
         navigate("/company/dashboard", { replace: true });
         return;
       }
 
-      if (matchedUser.role === "admin") {
+      if (user.role === "admin") {
         navigate("/admin/dashboard", { replace: true });
         return;
       }
 
       const from = location.state?.from?.pathname || "/";
       navigate(from, { replace: true });
-    }, 500);
+    } catch (error) {
+      setErrors({
+        general:
+          error.response?.data?.message || "Invalid email or password.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const delayedNavigateHome = () => {
@@ -167,10 +203,8 @@ function Login() {
           <div className="auth-form-side">
             <div className="auth-form-card">
               <div className="auth-brand">
-                <div className="auth-brand">
-                  <span className="auth-logo-dark">Tad</span>
-                  <span className="auth-logo-blue">reeb</span>
-                </div>
+                <span className="auth-logo-dark">Tad</span>
+                <span className="auth-logo-blue">reeb</span>
               </div>
 
               <h2 className="auth-title">Login into your account</h2>
@@ -187,6 +221,7 @@ function Login() {
                       value={formData.email}
                       onChange={handleChange}
                       autoComplete="email"
+                      maxLength={LIMITS.email}
                     />
                     <span className="auth-input-icon">
                       <FaEnvelope />
@@ -206,6 +241,7 @@ function Login() {
                       value={formData.password}
                       onChange={handleChange}
                       autoComplete="current-password"
+                      maxLength={LIMITS.passwordMax}
                     />
                     <span className="auth-input-icon">
                       <FaLock />
@@ -223,7 +259,9 @@ function Login() {
                 </div>
 
                 {errors.general && (
-                  <p className="auth-error auth-error-general">{errors.general}</p>
+                  <p className="auth-error auth-error-general">
+                    {errors.general}
+                  </p>
                 )}
 
                 <button type="submit" className="auth-main-btn">

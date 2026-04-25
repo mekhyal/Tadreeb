@@ -16,9 +16,11 @@ const {
 router.get('/', getOpportunities);
 router.get('/:id', getOpportunityById);
 
-// company-only writes
+// company creates programs
 router.post('/', protect, allowRoles('company'), createOpportunity);
-router.put('/:id', protect, allowRoles('company'), updateOpportunity);
-router.delete('/:id', protect, allowRoles('company'), deleteOpportunity);
+
+// company or admin can update/delete
+router.put('/:id', protect, allowRoles('company', 'admin'), updateOpportunity);
+router.delete('/:id', protect, allowRoles('company', 'admin'), deleteOpportunity);
 
 module.exports = router;

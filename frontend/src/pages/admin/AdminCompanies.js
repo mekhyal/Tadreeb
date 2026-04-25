@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import PortalLayout from "../../components/portal/PortalLayout";
 import PortalTopbar from "../../components/portal/PortalTopbar";
 import PortalStatCard from "../../components/portal/PortalStatCard";
 import AdminCompanyDetailsModal from "../../components/admin/AdminCompanyDetailsModal";
-import { adminCompanies as initialCompanies } from "../../data/adminData";
+import { getCompanies, updateCompanyStatus } from "../../api/adminAPI";
 
 const COMPANIES_PER_PAGE = 8;
 
@@ -15,26 +15,65 @@ const adminNavItems = [
   { key: "users", label: "Users", path: "/admin/users" },
 ];
 
+const normalizeCompany = (item) => ({
+  id: item._id,
+  requestId: item._id?.slice(-6).toUpperCase(),
+  companyName: item.companyName || "",
+  companyEmail: item.email || "",
+  industry: item.industry || "",
+  phone: item.phone || "",
+  website: item.website || "",
+  companySize: item.size || "",
+  location: item.location || "",
+  foundedYear: item.foundedYear || "",
+  contactPerson: item.contactPerson || "",
+  companyDescription: item.description || "",
+  joinReason: item.joinReason || "",
+  requestDate: item.createdAt ? item.createdAt.slice(0, 10) : "",
+  status: item.status || "Pending",
+});
+
 function AdminCompanies() {
-  const [companies, setCompanies] = useState(initialCompanies);
+  const [companies, setCompanies] = useState([]);
   const [activeFilter, setActiveFilter] = useState("All");
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [toast, setToast] = useState("");
+  const [error, setError] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const fetchCompanies = async () => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const res = await getCompanies();
+      setCompanies(res.data.map(normalizeCompany));
+    } catch (err) {
+      setError(err.response?.data?.message || "Could not load companies.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCompanies();
+  }, []);
 
   const stats = useMemo(() => {
     const total = companies.length;
     const pending = companies.filter((item) => item.status === "Pending").length;
     const review = companies.filter((item) => item.status === "Review").length;
-    const accepted = companies.filter((item) => item.status === "Accepted").length;
+    const approved = companies.filter((item) => item.status === "Approved").length;
     const rejected = companies.filter((item) => item.status === "Rejected").length;
 
     return [
-      { id: 1, title: "Total Companies", value: total, subtitle: "All requests", type: "programs" },
-      { id: 2, title: "Pending", value: pending, subtitle: "Waiting action", type: "requests" },
-      { id: 3, title: "In Review", value: review, subtitle: "Under review", type: "participants" },
-      { id: 4, title: "Accepted", value: accepted, subtitle: "Approved", type: "programs" },
-      { id: 5, title: "Rejected", value: rejected, subtitle: "Declined", type: "participants" },
+      { id: 1, title: "Total Companies", value: total, subtitle: "All requests" },
+      { id: 2, title: "Pending", value: pending, subtitle: "Waiting action" },
+      { id: 3, title: "In Review", value: review, subtitle: "Under review" },
+      { id: 4, title: "Approved", value: approved, subtitle: "Approved" },
+      { id: 5, title: "Rejected", value: rejected, subtitle: "Declined" },
     ];
   }, [companies]);
 
@@ -53,13 +92,25 @@ function AdminCompanies() {
     return filteredCompanies.slice(start, start + COMPANIES_PER_PAGE);
   }, [filteredCompanies, currentPage]);
 
-  const handleSaveStatus = (companyId, status) => {
-    setCompanies((prev) =>
-      prev.map((item) => (item.id === companyId ? { ...item, status } : item))
-    );
-    setSelectedCompany(null);
-    setToast("Company request updated successfully.");
-    setTimeout(() => setToast(""), 3000);
+  const handleSaveStatus = async (companyId, status) => {
+    setIsSaving(true);
+
+    try {
+      const res = await updateCompanyStatus(companyId, status);
+      const updatedCompany = normalizeCompany(res.data.company);
+
+      setCompanies((prev) =>
+        prev.map((item) => (item.id === companyId ? updatedCompany : item))
+      );
+
+      setSelectedCompany(null);
+      setToast("Company request updated successfully.");
+    } catch (err) {
+      setToast(err.response?.data?.message || "Could not update company status.");
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setToast(""), 3000);
+    }
   };
 
   const handleFilterChange = (filter) => {
@@ -74,11 +125,7 @@ function AdminCompanies() {
   };
 
   return (
-    <PortalLayout
-      activeKey="companies"
-      navItems={adminNavItems}
-      profilePath="/admin/profile"
-    >
+    <PortalLayout activeKey="companies" navItems={adminNavItems} profilePath="/admin/profile">
       <PortalTopbar title="Companies" companyName="Abdulaziz" />
 
       {toast && (
@@ -96,7 +143,7 @@ function AdminCompanies() {
         </div>
 
         <div className="admin-companies-filters">
-          {["All", "Pending", "Review", "Accepted", "Rejected"].map((filter) => {
+          {["All", "Pending", "Review", "Approved", "Rejected", "Active"].map((filter) => {
             const count =
               filter === "All"
                 ? companies.length
@@ -120,88 +167,100 @@ function AdminCompanies() {
             <h2>Companies Requests</h2>
           </div>
 
-          <div className="company-table-wrap">
-            <table className="company-table">
-              <thead>
-                <tr>
-                  <th>Company</th>
-                  <th>Request ID</th>
-                  <th>Industry</th>
-                  <th>Founded</th>
-                  <th>Request Date</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
+          {isLoading ? (
+            <p>Loading companies...</p>
+          ) : error ? (
+            <p className="company-form-error">{error}</p>
+          ) : (
+            <>
+              <div className="company-table-wrap">
+                <table className="company-table">
+                  <thead>
+                    <tr>
+                      <th>Company</th>
+                      <th>Request ID</th>
+                      <th>Industry</th>
+                      <th>Founded</th>
+                      <th>Request Date</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
 
-              <tbody>
-                {paginatedCompanies.map((item) => (
-                  <tr key={item.id}>
-                    <td>
-                      <div className="admin-company-cell">
-                        <div className={`admin-company-avatar tone-${item.id % 4}`}>
-                          {item.companyName.charAt(0)}
-                        </div>
+                  <tbody>
+                    {paginatedCompanies.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <div className="admin-company-cell">
+                            <div className={`admin-company-avatar tone-${item.id.length % 4}`}>
+                              {item.companyName.charAt(0)}
+                            </div>
 
-                        <div>
-                          <strong>{item.companyName}</strong>
-                          <span>{item.companyEmail}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>{item.requestId}</td>
-                    <td>{item.industry}</td>
-                    <td>{item.foundedYear}</td>
-                    <td>{item.requestDate}</td>
-                    <td>
-                      <span className={`admin-company-status-text ${item.status.toLowerCase()}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className="admin-company-view-btn"
-                        onClick={() => setSelectedCompany(item)}
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                            <div>
+                              <strong>{item.companyName}</strong>
+                              <span>{item.companyEmail}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{item.requestId}</td>
+                        <td>{item.industry}</td>
+                        <td>{item.foundedYear || "-"}</td>
+                        <td>{item.requestDate}</td>
+                        <td>
+                          <span
+                            className={`admin-company-status-text ${item.status
+                              .toLowerCase()
+                              .replace(/\s+/g, "-")}`}
+                          >
+                            {item.status}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            type="button"
+                            className="admin-company-view-btn"
+                            onClick={() => setSelectedCompany(item)}
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
 
-          {totalPages > 1 && (
-            <div className="admin-pagination">
-              <button
-                type="button"
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-              >
-                Prev
-              </button>
+              {totalPages > 1 && (
+                <div className="admin-pagination">
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    Prev
+                  </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  className={currentPage === page ? "active" : ""}
-                  onClick={() => handlePageChange(page)}
-                >
-                  {page}
-                </button>
-              ))}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      className={currentPage === page ? "active" : ""}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </button>
+                  ))}
 
-              <button
-                type="button"
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-              >
-                Next
-              </button>
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       </section>
@@ -211,6 +270,7 @@ function AdminCompanies() {
           company={selectedCompany}
           onClose={() => setSelectedCompany(null)}
           onSave={handleSaveStatus}
+          isSaving={isSaving}
         />
       )}
     </PortalLayout>

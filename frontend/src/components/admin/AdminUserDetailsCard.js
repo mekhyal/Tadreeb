@@ -13,75 +13,71 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
   const renderRoleFields = () => {
     if (user.role === "Student") {
       return (
-        <>
-          <div className="admin-user-details-grid">
-            <div>
-              <label>Student ID</label>
-              <p>{user.studentId}</p>
-            </div>
-            <div>
-              <label>University</label>
-              <p>{user.universityName}</p>
-            </div>
-            <div>
-              <label>Major</label>
-              <p>{user.major}</p>
-            </div>
-            <div>
-              <label>Year</label>
-              <p>{user.year}</p>
-            </div>
-            <div>
-              <label>Gender</label>
-              <p>{user.gender}</p>
-            </div>
-            <div>
-              <label>Country</label>
-              <p>{user.country}</p>
-            </div>
-            <div className="admin-user-details-wide">
-              <label>Skills</label>
-              <p>{user.skills}</p>
-            </div>
+        <div className="admin-user-details-grid">
+          <div>
+            <label>Student ID</label>
+            <p>{user.studentId}</p>
           </div>
-        </>
+          <div>
+            <label>University</label>
+            <p>{user.universityName}</p>
+          </div>
+          <div>
+            <label>Major</label>
+            <p>{user.major}</p>
+          </div>
+          <div>
+            <label>Year</label>
+            <p>{user.year}</p>
+          </div>
+          <div>
+            <label>Gender</label>
+            <p>{user.gender}</p>
+          </div>
+          <div>
+            <label>Country</label>
+            <p>{user.country}</p>
+          </div>
+          <div className="admin-user-details-wide">
+            <label>Skills</label>
+            <p>{user.skills}</p>
+          </div>
+        </div>
       );
     }
 
     if (user.role === "Company") {
       return (
-        <>
-          <div className="admin-user-details-grid">
-            <div>
-              <label>Company ID</label>
-              <p>{user.companyId}</p>
-            </div>
-            <div>
-              <label>Industry</label>
-              <p>{user.industry}</p>
-            </div>
-            <div>
-              <label>Website</label>
-              <p>{user.website}</p>
-            </div>
-            <div>
-              <label>Company Size</label>
-              <p>{user.companySize}</p>
-            </div>
-            <div>
-              <label>Founded Year</label>
-              <p>{user.foundedYear}</p>
-            </div>
-            <div>
-              <label>Contact Person</label>
-              <p>{user.contactPerson}</p>
-            </div>
-            <div className="admin-user-details-wide">
-              <label>Internship Availability</label>
-              <p>{user.internshipAvailability}</p>
-            </div>
+        <div className="admin-user-details-grid">
+          <div>
+            <label>Company ID</label>
+            <p>{user.companyId}</p>
           </div>
-        </>
+          <div>
+            <label>Industry</label>
+            <p>{user.industry}</p>
+          </div>
+          <div>
+            <label>Website</label>
+            <p>{user.website}</p>
+          </div>
+          <div>
+            <label>Company Size</label>
+            <p>{user.companySize}</p>
+          </div>
+          <div>
+            <label>Founded Year</label>
+            <p>{user.foundedYear}</p>
+          </div>
+          <div>
+            <label>Contact Person</label>
+            <p>{user.contactPerson}</p>
+          </div>
+          <div className="admin-user-details-wide">
+            <label>Internship Availability</label>
+            <p>{user.internshipAvailability}</p>
+          </div>
+        </div>
       );
     }
 
@@ -133,6 +129,11 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
 
       <div className="admin-user-details-grid base-grid">
         <div>
+          <label>System ID</label>
+          <p>{user.systemId}</p>
+        </div>
+
+        <div>
           <label>Role</label>
           <p>{user.role}</p>
         </div>
@@ -145,9 +146,21 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
               value={user.status}
               onChange={(e) => onStatusChange(user.id, e.target.value)}
             >
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Pending">Pending</option>
+              {user.role === "Company" ? (
+                <>
+                  <option value="Pending">Pending</option>
+                  <option value="Review">Review</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="Active">Active</option>
+                </>
+              ) : (
+                <>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                  <option value="Pending">Pending</option>
+                </>
+              )}
             </select>
           </div>
         </div>
@@ -162,7 +175,7 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
           <p>{user.location}</p>
         </div>
 
-        <div className="admin-user-details-wide">
+        <div>
           <label>Created At</label>
           <p>{user.createdAt}</p>
         </div>

@@ -3,6 +3,18 @@ import { FaUserCircle, FaEnvelope, FaCheckCircle } from "react-icons/fa";
 import StudentTopbar from "../../components/student/StudentTopbar";
 import StudentFooter from "../../components/student/StudentFooter";
 
+const LIMITS = {
+  firstName: 40,
+  lastName: 40,
+  passwordMin: 8,
+  passwordMax: 24,
+  mobile: 20,
+  university: 100,
+  major: 80,
+  skills: 150,
+  studentId: 30,
+};
+
 function StudentProfile() {
   const storedUser = useMemo(() => {
     const user = localStorage.getItem("tadreebUser");
@@ -23,18 +35,104 @@ function StudentProfile() {
     email: storedUser?.email || "abdulaziz@gmail.com",
   });
 
+  const [errors, setErrors] = useState({});
   const [showSavePopup, setShowSavePopup] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  const checkLength = (field, label, limit, nextErrors) => {
+    if (formData[field].trim().length > limit) {
+      nextErrors[field] = `${label} must be ${limit} characters or less.`;
+    }
+  };
+
+  const validateForm = () => {
+    const nextErrors = {};
+
+    if (!formData.firstName.trim()) {
+      nextErrors.firstName = "First name is required.";
+    } else if (formData.firstName.trim().length < 2) {
+      nextErrors.firstName = "First name must be at least 2 characters.";
+    } else {
+      checkLength("firstName", "First name", LIMITS.firstName, nextErrors);
+    }
+
+    if (!formData.lastName.trim()) {
+      nextErrors.lastName = "Last name is required.";
+    } else if (formData.lastName.trim().length < 2) {
+      nextErrors.lastName = "Last name must be at least 2 characters.";
+    } else {
+      checkLength("lastName", "Last name", LIMITS.lastName, nextErrors);
+    }
+
+    if (formData.password.trim()) {
+      if (formData.password.length < LIMITS.passwordMin) {
+        nextErrors.password = `Password must be at least ${LIMITS.passwordMin} characters.`;
+      } else if (formData.password.length > LIMITS.passwordMax) {
+        nextErrors.password = `Password must be ${LIMITS.passwordMax} characters or less.`;
+      }
+    }
+
+    if (!formData.mobile.trim()) {
+      nextErrors.mobile = "Mobile number is required.";
+    } else if (formData.mobile.trim().length < 7) {
+      nextErrors.mobile = "Mobile number must be at least 7 characters.";
+    } else {
+      checkLength("mobile", "Mobile number", LIMITS.mobile, nextErrors);
+    }
+
+    if (!formData.gender) {
+      nextErrors.gender = "Gender is required.";
+    }
+
+    if (!formData.year) {
+      nextErrors.year = "Year is required.";
+    }
+
+    if (!formData.university.trim()) {
+      nextErrors.university = "University name is required.";
+    } else {
+      checkLength("university", "University name", LIMITS.university, nextErrors);
+    }
+
+    if (!formData.major.trim()) {
+      nextErrors.major = "Major is required.";
+    } else {
+      checkLength("major", "Major", LIMITS.major, nextErrors);
+    }
+
+    if (!formData.skills.trim()) {
+      nextErrors.skills = "Skills are required.";
+    } else {
+      checkLength("skills", "Skills", LIMITS.skills, nextErrors);
+    }
+
+    if (!formData.studentId.trim()) {
+      nextErrors.studentId = "Student ID is required.";
+    } else {
+      checkLength("studentId", "Student ID", LIMITS.studentId, nextErrors);
+    }
+
+    setErrors(nextErrors);
+    return !Object.values(nextErrors).some(Boolean);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+
+    setErrors((prev) => ({
+      ...prev,
+      [name]: "",
+    }));
   };
 
   const handleSave = () => {
+    if (!validateForm()) return;
+
     setIsSaving(true);
 
     setTimeout(() => {
@@ -101,7 +199,9 @@ function StudentProfile() {
               value={formData.firstName}
               onChange={handleChange}
               placeholder="Enter first name"
+              maxLength={LIMITS.firstName}
             />
+            {errors.firstName && <p className="student-form-error">{errors.firstName}</p>}
           </div>
 
           <div className="student-form-group">
@@ -111,7 +211,9 @@ function StudentProfile() {
               value={formData.lastName}
               onChange={handleChange}
               placeholder="Enter last name"
+              maxLength={LIMITS.lastName}
             />
+            {errors.lastName && <p className="student-form-error">{errors.lastName}</p>}
           </div>
 
           <div className="student-form-group">
@@ -122,7 +224,9 @@ function StudentProfile() {
               value={formData.password}
               onChange={handleChange}
               placeholder="Enter new password"
+              maxLength={LIMITS.passwordMax}
             />
+            {errors.password && <p className="student-form-error">{errors.password}</p>}
           </div>
 
           <div className="student-form-group">
@@ -132,19 +236,18 @@ function StudentProfile() {
               value={formData.mobile}
               onChange={handleChange}
               placeholder="Enter mobile number"
+              maxLength={LIMITS.mobile}
             />
+            {errors.mobile && <p className="student-form-error">{errors.mobile}</p>}
           </div>
 
           <div className="student-form-group">
             <label>Gender</label>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-            >
+            <select name="gender" value={formData.gender} onChange={handleChange}>
               <option>Male</option>
               <option>Female</option>
             </select>
+            {errors.gender && <p className="student-form-error">{errors.gender}</p>}
           </div>
 
           <div className="student-form-group">
@@ -156,6 +259,7 @@ function StudentProfile() {
               <option>Fourth</option>
               <option>Fifth</option>
             </select>
+            {errors.year && <p className="student-form-error">{errors.year}</p>}
           </div>
 
           <div className="student-form-group">
@@ -165,7 +269,9 @@ function StudentProfile() {
               value={formData.university}
               onChange={handleChange}
               placeholder="Enter university name"
+              maxLength={LIMITS.university}
             />
+            {errors.university && <p className="student-form-error">{errors.university}</p>}
           </div>
 
           <div className="student-form-group">
@@ -175,7 +281,9 @@ function StudentProfile() {
               value={formData.major}
               onChange={handleChange}
               placeholder="Enter major"
+              maxLength={LIMITS.major}
             />
+            {errors.major && <p className="student-form-error">{errors.major}</p>}
           </div>
 
           <div className="student-form-group">
@@ -185,7 +293,9 @@ function StudentProfile() {
               value={formData.skills}
               onChange={handleChange}
               placeholder="Enter your skills"
+              maxLength={LIMITS.skills}
             />
+            {errors.skills && <p className="student-form-error">{errors.skills}</p>}
           </div>
 
           <div className="student-form-group">
@@ -195,7 +305,9 @@ function StudentProfile() {
               value={formData.studentId}
               onChange={handleChange}
               placeholder="Enter student ID"
+              maxLength={LIMITS.studentId}
             />
+            {errors.studentId && <p className="student-form-error">{errors.studentId}</p>}
           </div>
         </div>
 
@@ -212,10 +324,6 @@ function StudentProfile() {
               <p>1 month ago</p>
             </div>
           </div>
-
-          <button type="button" className="student-update-btn">
-            Update
-          </button>
         </div>
       </main>
 

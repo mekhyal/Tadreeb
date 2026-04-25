@@ -74,52 +74,58 @@ const getOpportunityById = async (req, res) => {
 
 // update the oppurtunity
 const updateOpportunity = async (req, res) => {
-    try {
-      const opportunity = await Opportunity.findById(req.params.id);
-  
-      if (!opportunity) {
-        return res.status(404).json({ message: 'Program not found' });
-      }
-  
-      if (opportunity.companyID.toString() !== req.user.id) {
-        return res.status(403).json({ message: 'Not allowed to update this program' });
-      }
-  
-      const updatedOpportunity = await Opportunity.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        { new: true }
-      );
-  
-      return res.status(200).json({
-        message: 'Program updated successfully',
-        opportunity: updatedOpportunity,
-      });
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
+  try {
+    const opportunity = await Opportunity.findById(req.params.id);
+
+    if (!opportunity) {
+      return res.status(404).json({ message: 'Program not found' });
     }
-  };
+
+    const isOwnerCompany = opportunity.companyID.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwnerCompany && !isAdmin) {
+      return res.status(403).json({ message: 'Not allowed to update this program' });
+    }
+
+    const updatedOpportunity = await Opportunity.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true }
+    ).populate('companyID', 'companyName email industry location');
+
+    return res.status(200).json({
+      message: 'Program updated successfully',
+      opportunity: updatedOpportunity,
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 
   // delete oppurtunity
   const deleteOpportunity = async (req, res) => {
-    try {
-      const opportunity = await Opportunity.findById(req.params.id);
-  
-      if (!opportunity) {
-        return res.status(404).json({ message: 'Program not found' });
-      }
-  
-      if (opportunity.companyID.toString() !== req.user.id) {
-        return res.status(403).json({ message: 'Not allowed to delete this program' });
-      }
-  
-      await opportunity.deleteOne();
-  
-      return res.status(200).json({ message: 'Program deleted successfully' });
-    } catch (error) {
-      return res.status(500).json({ message: error.message });
+  try {
+    const opportunity = await Opportunity.findById(req.params.id);
+
+    if (!opportunity) {
+      return res.status(404).json({ message: 'Program not found' });
     }
-  };
+
+    const isOwnerCompany = opportunity.companyID.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwnerCompany && !isAdmin) {
+      return res.status(403).json({ message: 'Not allowed to delete this program' });
+    }
+
+    await opportunity.deleteOne();
+
+    return res.status(200).json({ message: 'Program deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
 
   module.exports = {
     createOpportunity,

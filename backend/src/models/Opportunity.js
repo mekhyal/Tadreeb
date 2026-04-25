@@ -50,6 +50,11 @@ const opportunitySchema = new mongoose.Schema(
       ref: 'Company',
       required: true,
     },
+    status: {
+      type: String,
+      enum: ['Active', 'Completed'],
+      default: 'Active',
+    },
   },
   { timestamps: true }
 );

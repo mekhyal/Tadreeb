@@ -1,10 +1,14 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import PortalLayout from "../../components/portal/PortalLayout";
 import PortalTopbar from "../../components/portal/PortalTopbar";
 import CompanyProgramCard from "../../components/company/CompanyProgramCard";
 import CompanyProgramModal from "../../components/company/CompanyProgramModal";
 import CompanyConfirmModal from "../../components/company/CompanyConfirmModal";
-import { adminPrograms as initialPrograms } from "../../data/adminData";
+import {
+  getOpportunities,
+  updateOpportunity,
+  deleteOpportunity,
+} from "../../api/opportunityAPI";
 
 const PROGRAMS_PER_PAGE = 6;
 
@@ -16,40 +20,88 @@ const adminNavItems = [
   { key: "users", label: "Users", path: "/admin/users" },
 ];
 
+const normalizeProgram = (item) => ({
+  id: item._id,
+  title: item.title || "",
+  subtitle: item.subtitle || "",
+  description: item.description || "",
+  rules: item.rules || "",
+  location: item.location || "",
+  seats: item.seats || 0,
+  dateFrom: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
+  dateTo: item.dateTo ? item.dateTo.slice(0, 10) : "",
+  image: item.imageURL || "",
+  companyName: item.companyID?.companyName || "Unknown Company",
+  status: item.status || "Active",
+});
+
 function AdminPrograms() {
-  const [programs, setPrograms] = useState(initialPrograms);
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [programs, setPrograms] = useState([]);
   const [editingProgram, setEditingProgram] = useState(null);
   const [confirmAction, setConfirmAction] = useState(null);
   const [toast, setToast] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const totalPages = Math.max(1, Math.ceil(programs.length / PROGRAMS_PER_PAGE));
+  useEffect(() => {
+    const fetchPrograms = async () => {
+      try {
+        const res = await getOpportunities();
+        setPrograms(res.data.map(normalizeProgram));
+      } catch (err) {
+        setToast("Failed to load programs.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPrograms();
+  }, []);
+
+  const sortedPrograms = useMemo(() => {
+    return [...programs].sort((a, b) => {
+      if (a.status === "Completed" && b.status !== "Completed") return 1;
+      if (a.status !== "Completed" && b.status === "Completed") return -1;
+      return 0;
+    });
+  }, [programs]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(sortedPrograms.length / PROGRAMS_PER_PAGE)
+  );
 
   const paginatedPrograms = useMemo(() => {
     const start = (currentPage - 1) * PROGRAMS_PER_PAGE;
-    return programs.slice(start, start + PROGRAMS_PER_PAGE);
-  }, [programs, currentPage]);
+    return sortedPrograms.slice(start, start + PROGRAMS_PER_PAGE);
+  }, [sortedPrograms, currentPage]);
 
-  const handleSaveProgram = (programData) => {
-    if (programData.id) {
+  const handleSaveProgram = async (programData) => {
+    try {
+      const payload = {
+        title: programData.title,
+        subtitle: programData.subtitle,
+        description: programData.description,
+        rules: programData.rules,
+        location: programData.location,
+        seats: Number(programData.seats),
+        dateFrom: programData.dateFrom,
+        dateTo: programData.dateTo,
+        imageURL: programData.image,
+        status: programData.status,
+      };
+
+      const res = await updateOpportunity(programData.id, payload);
+      const updated = normalizeProgram(res.data.opportunity);
+
       setPrograms((prev) =>
-        prev.map((item) => (item.id === programData.id ? programData : item))
+        prev.map((item) => (item.id === updated.id ? updated : item))
       );
+
       setEditingProgram(null);
       setToast("Program updated successfully.");
-    } else {
-      setPrograms((prev) => [
-        {
-          ...programData,
-          id: Date.now(),
-          companyName: "Admin Added",
-        },
-        ...prev,
-      ]);
-      setShowAddModal(false);
-      setCurrentPage(1);
-      setToast("Program created successfully.");
+    } catch (err) {
+      setToast(err.response?.data?.message || "Program update failed.");
     }
 
     setTimeout(() => setToast(""), 3000);
@@ -71,35 +123,52 @@ function AdminPrograms() {
       type: "remove",
       program,
       title: "Remove program?",
-      message: `Are you sure you want to remove "${program.title}"? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${program.title}"?`,
       confirmText: "Yes, Remove",
       variant: "danger",
     });
   };
 
-  const runConfirmedAction = () => {
+  const runConfirmedAction = async () => {
     if (!confirmAction) return;
 
-    if (confirmAction.type === "complete") {
-      setPrograms((prev) =>
-        prev.map((item) =>
-          item.id === confirmAction.program.id
-            ? { ...item, status: "Completed" }
-            : item
-        )
-      );
-      setToast("Program marked as completed.");
-    }
+    try {
+      if (confirmAction.type === "complete") {
+        const res = await updateOpportunity(confirmAction.program.id, {
+          status: "Completed",
+        });
 
-    if (confirmAction.type === "remove") {
-      const updated = programs.filter((item) => item.id !== confirmAction.program.id);
-      setPrograms(updated);
-      setToast("Program removed successfully.");
+        const updated = normalizeProgram(res.data.opportunity);
 
-      const nextTotalPages = Math.max(1, Math.ceil(updated.length / PROGRAMS_PER_PAGE));
-      if (currentPage > nextTotalPages) {
-        setCurrentPage(nextTotalPages);
+        setPrograms((prev) =>
+          prev.map((item) => (item.id === updated.id ? updated : item))
+        );
+
+        setToast("Program marked as completed.");
       }
+
+      if (confirmAction.type === "remove") {
+        await deleteOpportunity(confirmAction.program.id);
+
+        const updatedPrograms = programs.filter(
+          (item) => item.id !== confirmAction.program.id
+        );
+
+        setPrograms(updatedPrograms);
+
+        const nextTotalPages = Math.max(
+          1,
+          Math.ceil(updatedPrograms.length / PROGRAMS_PER_PAGE)
+        );
+
+        if (currentPage > nextTotalPages) {
+          setCurrentPage(nextTotalPages);
+        }
+
+        setToast("Program deleted successfully.");
+      }
+    } catch (err) {
+      setToast(err.response?.data?.message || "Action failed.");
     }
 
     setConfirmAction(null);
@@ -108,6 +177,7 @@ function AdminPrograms() {
 
   const handlePageChange = (page) => {
     if (page < 1 || page > totalPages || page === currentPage) return;
+
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -133,73 +203,65 @@ function AdminPrograms() {
             <h2>All Programs</h2>
             <p>Manage all companies programs across the system.</p>
           </div>
-
-          <button
-            type="button"
-            className="company-add-btn"
-            onClick={() => setShowAddModal(true)}
-          >
-            Add New
-          </button>
         </div>
 
-        <div className="admin-programs-grid">
-          {paginatedPrograms.map((program, index) => (
-            <div key={program.id} className="admin-program-wrapper">
-              <CompanyProgramCard
-                program={program}
-                colorIndex={index}
-                onEdit={setEditingProgram}
-                onComplete={handleConfirmComplete}
-                onRemove={handleConfirmRemove}
-              />
+        {isLoading ? (
+          <p>Loading programs...</p>
+        ) : (
+          <>
+            <div className="admin-programs-grid">
+              {paginatedPrograms.map((program, index) => (
+                <div key={program.id} className="admin-program-wrapper">
+                  <CompanyProgramCard
+                    program={program}
+                    colorIndex={index}
+                    onEdit={setEditingProgram}
+                    onComplete={handleConfirmComplete}
+                    onRemove={handleConfirmRemove}
+                  />
 
-              <div className="admin-program-company-footer">
-                Program by <strong>{program.companyName}</strong>
-              </div>
+                  <div className="admin-program-company-footer">
+                    Program by <strong>{program.companyName}</strong>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        {totalPages > 1 && (
-          <div className="admin-pagination">
-            <button
-              type="button"
-              onClick={() => handlePageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Prev
-            </button>
+            {totalPages > 1 && (
+              <div className="admin-pagination">
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  Prev
+                </button>
 
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                type="button"
-                className={currentPage === page ? "active" : ""}
-                onClick={() => handlePageChange(page)}
-              >
-                {page}
-              </button>
-            ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      className={currentPage === page ? "active" : ""}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </button>
+                  )
+                )}
 
-            <button
-              type="button"
-              onClick={() => handlePageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </button>
-          </div>
+                <button
+                  type="button"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </section>
-
-      {showAddModal && (
-        <CompanyProgramModal
-          mode="add"
-          onClose={() => setShowAddModal(false)}
-          onSave={handleSaveProgram}
-        />
-      )}
 
       {editingProgram && (
         <CompanyProgramModal

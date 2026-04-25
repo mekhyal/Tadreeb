@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { FaTimes } from "react-icons/fa";
 
-function StudentProgramModal({ program, onClose, onApply }) {
+function StudentProgramModal({ program, onClose, onApply, isApplying }) {
   useEffect(() => {
     if (program) {
       document.body.style.overflow = "hidden";
@@ -47,11 +47,15 @@ function StudentProgramModal({ program, onClose, onApply }) {
 
         <div className="student-modal-section">
           <h4>Rules</h4>
-          <ul>
-            {program.rules.map((rule, index) => (
-              <li key={index}>{rule}</li>
-            ))}
-          </ul>
+          {program.rules.length > 0 ? (
+            <ul>
+              {program.rules.map((rule, index) => (
+                <li key={index}>{rule}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No rules provided.</p>
+          )}
         </div>
 
         <div className="student-modal-section">
@@ -65,9 +69,15 @@ function StudentProgramModal({ program, onClose, onApply }) {
             program.applied || isClosed ? "applied" : ""
           }`}
           onClick={() => onApply(program.id)}
-          disabled={program.applied || isClosed}
+          disabled={program.applied || isClosed || isApplying}
         >
-          {isClosed ? "Program Full" : program.applied ? "Applied" : "Apply Now"}
+          {isApplying
+            ? "Applying..."
+            : isClosed
+            ? "Program Full"
+            : program.applied
+            ? "Applied"
+            : "Apply Now"}
         </button>
 
         {program.actionMessage && (

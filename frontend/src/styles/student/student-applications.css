@@ -67,6 +67,38 @@
   color: #b43c3c;
 }
 
+
+.student-remove-application-btn {
+  border: none;
+  border-radius: 10px;
+  background: rgba(217, 48, 37, 0.1);
+  color: #d93025;
+  font-weight: 700;
+  padding: 0.55rem 0.9rem;
+  transition: 0.25s ease;
+}
+
+.student-remove-application-btn:hover {
+  background: rgba(217, 48, 37, 0.16);
+}
+
+.student-confirm-remove {
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e53935, #c62828);
+  color: #ffffff;
+  font-weight: 700;
+  min-width: 120px;
+  height: 46px;
+}
+
+.student-empty-applications {
+  text-align: center;
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 1.5rem !important;
+}
+
 @media (max-width: 768px) {
   .student-applications-table-wrap {
     overflow-x: auto;

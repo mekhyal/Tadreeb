@@ -160,5 +160,3 @@ npm run build
 * Scalable and reusable structure
 
 
-## Done by : Abdulaziz
-

@@ -51,7 +51,7 @@ const studentSchema = new mongoose.Schema({
     year: {
         type: String,
         required: true,
-        enum: ["First","Second","Third","Fourth","Fiveth"],
+        enum: ["First","Second","Third","Fourth","Fifth"],
     },
     skills: [
         {
