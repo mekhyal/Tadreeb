@@ -49,9 +49,9 @@ const studentSchema = new mongoose.Schema({
         trim: true,
     },
     year: {
-        type: Number,
+        type: String,
         required: true,
-        enum: [1,2,3,4,5],
+        enum: ["First","Second","Third","Fourth","Fiveth"],
     },
     skills: [
         {
