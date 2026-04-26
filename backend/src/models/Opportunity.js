@@ -50,6 +50,7 @@ const opportunitySchema = new mongoose.Schema(
       ref: 'Company',
       required: true,
     },
+    //Abdulaziz: to track if the program is active or completed (for filtering in frontend)
     status: {
       type: String,
       enum: ['Active', 'Completed'],

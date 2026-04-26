@@ -25,6 +25,9 @@ function StudentCard({ program, onOpen }) {
             Date: {program.startDate} To {program.endDate}
           </span>
           <span>Open to: {program.openTo}</span>
+          <span>
+            Seats: {program.availableSeats} / {program.seats} available
+          </span>
           <span>by {program.company}</span>
         </div>
 

@@ -20,20 +20,34 @@ const adminNavItems = [
   { key: "users", label: "Users", path: "/admin/users" },
 ];
 
-const normalizeProgram = (item) => ({
-  id: item._id,
-  title: item.title || "",
-  subtitle: item.subtitle || "",
-  description: item.description || "",
-  rules: item.rules || "",
-  location: item.location || "",
-  seats: item.seats || 0,
-  dateFrom: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
-  dateTo: item.dateTo ? item.dateTo.slice(0, 10) : "",
-  image: item.imageURL || "",
-  companyName: item.companyID?.companyName || "Unknown Company",
-  status: item.status || "Active",
-});
+const normalizeProgram = (item) => {
+  const seats = Number(item.seats) || 0;
+  const usedSeats = Number(item.usedSeats) || 0;
+  const availableSeats =
+    item.availableSeats !== undefined
+      ? Number(item.availableSeats)
+      : Math.max(seats - usedSeats, 0);
+
+  return {
+    id: item._id,
+    title: item.title || "",
+    subtitle: item.subtitle || "",
+    description: item.description || "",
+    rules: item.rules || "",
+    location: item.location || "",
+    seats,
+    usedSeats,
+    availableSeats,
+    dateFrom: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
+    dateTo: item.dateTo ? item.dateTo.slice(0, 10) : "",
+    image: item.imageURL || "",
+    companyName: item.companyID?.companyName || "Unknown Company",
+    status:
+      item.status === "Completed" || availableSeats <= 0
+        ? "Completed"
+        : "Active",
+  };
+};
 
 function AdminPrograms() {
   const [programs, setPrograms] = useState([]);

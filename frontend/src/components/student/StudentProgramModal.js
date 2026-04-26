@@ -14,7 +14,7 @@ function StudentProgramModal({ program, onClose, onApply, isApplying }) {
 
   if (!program) return null;
 
-  const isClosed = program.status === "Complete";
+  const isClosed = program.status === "Complete" || program.availableSeats <= 0;
 
   return (
     <div className="student-modal-overlay" onClick={onClose}>
@@ -43,6 +43,14 @@ function StudentProgramModal({ program, onClose, onApply, isApplying }) {
               <strong>{program.endDate}</strong>
             </div>
           </div>
+        </div>
+
+        <div className="student-modal-section">
+          <h4>Seats</h4>
+          <p>
+            <strong>{program.availableSeats}</strong> seats available from{" "}
+            <strong>{program.seats}</strong> total seats.
+          </p>
         </div>
 
         <div className="student-modal-section">
