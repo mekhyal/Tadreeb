@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FaGlobe,
@@ -16,12 +16,13 @@ function StudentHeader() {
   const menuRef = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
-  const user = useMemo(() => {
-    const stored = localStorage.getItem("tadreebUser");
-    return stored ? JSON.parse(stored) : null;
-  }, []);
+  const displayName =
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ").trim() ||
+    user?.name ||
+    user?.email ||
+    "Student";
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -136,9 +137,7 @@ function StudentHeader() {
                   <FaUserCircle />
                 </div>
 
-                <span className="student-user-name">
-                  {user?.name || "Abdulaziz"}
-                </span>
+                <span className="student-user-name">{displayName}</span>
 
                 <FaChevronDown className="student-user-arrow" />
               </button>

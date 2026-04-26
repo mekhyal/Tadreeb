@@ -30,12 +30,22 @@ export function AuthProvider({ children }) {
     localStorage.removeItem("tadreeb_token");
   };
 
+  const updateUser = (partial) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...partial };
+      localStorage.setItem("tadreeb_user", JSON.stringify(next));
+      return next;
+    });
+  };
+
   const value = useMemo(
     () => ({
       user,
       isAuthenticated: !!user,
       login,
       logout,
+      updateUser,
     }),
     [user]
   );

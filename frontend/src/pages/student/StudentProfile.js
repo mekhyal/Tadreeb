@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaUserCircle, FaEnvelope, FaCheckCircle } from "react-icons/fa";
 import StudentTopbar from "../../components/student/StudentTopbar";
 import StudentFooter from "../../components/student/StudentFooter";
+import { useAuth } from "../../context/AuthContext";
 
 const LIMITS = {
   firstName: 40,
@@ -15,25 +16,45 @@ const LIMITS = {
   studentId: 30,
 };
 
+const formatSkills = (skills) => {
+  if (Array.isArray(skills)) return skills.join(", ");
+  if (typeof skills === "string") return skills;
+  return "";
+};
+
 function StudentProfile() {
-  const storedUser = useMemo(() => {
-    const user = localStorage.getItem("tadreebUser");
-    return user ? JSON.parse(user) : {};
-  }, []);
+  const { user, updateUser } = useAuth();
 
   const [formData, setFormData] = useState({
-    firstName: storedUser?.name?.split(" ")[0] || "Abdulaziz",
-    lastName: storedUser?.name?.split(" ").slice(1).join(" ") || "",
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
     password: "",
-    mobile: "",
-    gender: "Male",
-    year: "Fourth",
-    university: "Kuwait University",
-    major: "Computer Science",
-    skills: "React, UI/UX, Frontend",
-    studentId: "2212173741",
-    email: storedUser?.email || "abdulaziz@gmail.com",
+    mobile: user?.mobileNo || "",
+    gender: user?.gender || "Male",
+    year: user?.year || "First",
+    university: user?.universityName || "",
+    major: user?.major || "",
+    skills: formatSkills(user?.skills),
+    studentId: user?.universityID || "",
+    email: user?.email || "",
   });
+
+  useEffect(() => {
+    if (!user) return;
+    setFormData((prev) => ({
+      ...prev,
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      mobile: user.mobileNo || "",
+      gender: user.gender || "Male",
+      year: user.year || "First",
+      university: user.universityName || "",
+      major: user.major || "",
+      skills: formatSkills(user.skills),
+      studentId: user.universityID || "",
+      email: user.email || "",
+    }));
+  }, [user]);
 
   const [errors, setErrors] = useState({});
   const [showSavePopup, setShowSavePopup] = useState(false);
@@ -136,14 +157,26 @@ function StudentProfile() {
     setIsSaving(true);
 
     setTimeout(() => {
-      localStorage.setItem(
-        "tadreebUser",
-        JSON.stringify({
-          role: "student",
-          name: `${formData.firstName} ${formData.lastName}`.trim(),
-          email: formData.email,
-        })
-      );
+      const skillsList = formData.skills
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      updateUser({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim().toLowerCase(),
+        mobileNo: formData.mobile.trim(),
+        gender: formData.gender,
+        year: formData.year,
+        universityName: formData.university.trim(),
+        major: formData.major.trim(),
+        skills: skillsList,
+        universityID: formData.studentId.trim(),
+        role: "student",
+        id: user?.id,
+        name: `${formData.firstName} ${formData.lastName}`.trim(),
+      });
 
       setShowSavePopup(true);
       setIsSaving(false);

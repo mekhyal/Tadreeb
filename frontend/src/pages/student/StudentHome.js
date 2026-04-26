@@ -5,7 +5,7 @@ import StudentCard from "../../components/student/StudentCard";
 import StudentProgramModal from "../../components/student/StudentProgramModal";
 import StudentApplyConfirmModal from "../../components/student/StudentApplyConfirmModal";
 import { getOpportunities } from "../../api/opportunityAPI";
-import { applyToProgram } from "../../api/applicationAPI";
+import { applyToProgram, getMyApplications } from "../../api/applicationAPI";
 
 const PROGRAMS_PER_PAGE = 6;
 
@@ -92,8 +92,22 @@ function StudentHome() {
       setPageError("");
 
       try {
-        const response = await getOpportunities();
-        const normalizedPrograms = response.data.map(normalizeProgram);
+        const [programsRes, myAppsRes] = await Promise.all([
+          getOpportunities(),
+          getMyApplications().catch(() => ({ data: [] })),
+        ]);
+
+        const appliedProgramIds = new Set(
+          (myAppsRes.data || [])
+            .map((app) => app.programID?._id || app.programID)
+            .filter(Boolean)
+            .map(String)
+        );
+
+        const normalizedPrograms = programsRes.data.map((item) => ({
+          ...normalizeProgram(item),
+          applied: appliedProgramIds.has(String(item._id)),
+        }));
 
         const sortedPrograms = normalizedPrograms.sort((a, b) => {
           if (a.status === "Complete" && b.status !== "Complete") return 1;

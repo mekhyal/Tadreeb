@@ -13,6 +13,9 @@ const {
 // reject any value that is not a plain string (blocks NoSQL injection like { $gt: "" })
 const isPlainString = (v) => typeof v === 'string';
 
+// company accounts must be in one of these states to use the portal
+const COMPANY_LOGIN_ALLOWED = new Set(['Approved', 'Active']);
+
 
 // student register
 const registerStudent = async (req, res) => {
@@ -139,6 +142,15 @@ const loginStudent = async (req,res) => {
             return res.status(400).json({ message: 'Invalid email or password'});
         }
 
+        // block inactive / pending students (only "active" may sign in)
+        const studentState = (student.status || 'active').toString().toLowerCase();
+        if (studentState !== 'active') {
+            return res.status(403).json({
+                message:
+                    'This account is not active. You cannot sign in until an administrator reactivates it.',
+            });
+        }
+
         return res.status(200).json({
             message: 'Student login successful',
             token: generateToken(student._id, student.role),            student: {
@@ -154,6 +166,7 @@ const loginStudent = async (req,res) => {
                 year: student.year,
                 skills: student.skills,
                 role: student.role,
+                status: student.status,
             },
         });
 
@@ -188,6 +201,13 @@ const loginCompany = async (req,res) => {
         const isMatch = await bcrypt.compare(password, company.password);
         if(!isMatch){
             return res.status(400).json({message: 'Invalid email or password'});
+        }
+
+        if (!COMPANY_LOGIN_ALLOWED.has(company.status)) {
+            return res.status(403).json({
+                message:
+                    'This company account cannot sign in yet. It must be Approved or Active by an administrator.',
+            });
         }
 
         return res.status(200).json({
@@ -236,6 +256,14 @@ const loginAdmin = async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password'});
         }
 
+        const adminState = admin.status || 'Active';
+        if (adminState !== 'Active') {
+            return res.status(403).json({
+                message:
+                    'This admin account is not active. You cannot sign in until reactivated by another administrator.',
+            });
+        }
+
         return res.status(200).json({
             message: 'Admin login successful',
             token: generateToken(admin._id, admin.role),
@@ -246,6 +274,7 @@ const loginAdmin = async (req, res) => {
                 email: admin.email,
                 phone: admin.phone,
                 role: admin.role,
+                status: admin.status,
             },
         });
     } catch(error){

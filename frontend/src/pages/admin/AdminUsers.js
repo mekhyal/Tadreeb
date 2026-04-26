@@ -12,6 +12,8 @@ import {
   createCompany,
   createAdmin,
   updateCompanyStatus,
+  updateStudentStatus,
+  updateAdminStatus,
 } from "../../api/adminAPI";
 
 const USERS_PER_PAGE = 6;
@@ -32,13 +34,20 @@ const splitName = (name = "") => {
   };
 };
 
+const studentStatusLabel = (s) => {
+  if (s === "active") return "Active";
+  if (s === "inactive") return "Inactive";
+  if (s === "pending") return "Pending";
+  return s ? String(s).charAt(0).toUpperCase() + String(s).slice(1) : "Active";
+};
+
 const normalizeStudent = (item) => ({
   id: item._id,
   systemId: item.universityID || item._id?.slice(-6).toUpperCase(),
   name: `${item.firstName || ""} ${item.lastName || ""}`.trim(),
   email: item.email || "",
   role: "Student",
-  status: item.status === "active" ? "Active" : item.status || "Active",
+  status: studentStatusLabel(item.status),
   phone: item.mobileNo || "",
   location: item.country || "Kuwait",
   createdAt: item.createdAt ? item.createdAt.slice(0, 10) : "",
@@ -277,38 +286,60 @@ function AdminUsers() {
     const targetUser = users.find((item) => item.id === userId);
     if (!targetUser) return;
 
-    if (targetUser.role !== "Company") {
-      setUsers((prev) =>
-        prev.map((item) =>
-          item.id === userId ? { ...item, status: newStatus } : item
-        )
-      );
-
-      setSelectedUser((prev) =>
-        prev && prev.id === userId ? { ...prev, status: newStatus } : prev
-      );
-
-      setToast(
-        "Status changed on frontend only. Backend endpoint is still needed for Student/Admin status."
-      );
-      setTimeout(() => setToast(""), 3500);
+    if (targetUser.role === "Student") {
+      try {
+        const res = await updateStudentStatus(userId, newStatus);
+        const updated = normalizeStudent(res.data.student);
+        setUsers((prev) =>
+          prev.map((item) => (item.id === userId ? updated : item))
+        );
+        setSelectedUser(updated);
+        setToast("Student status updated successfully.");
+      } catch (err) {
+        setToast(
+          err.response?.data?.message || "Could not update student status."
+        );
+      } finally {
+        setTimeout(() => setToast(""), 3000);
+      }
       return;
     }
 
-    try {
-      const res = await updateCompanyStatus(userId, newStatus);
-      const updatedCompany = normalizeCompany(res.data.company);
+    if (targetUser.role === "Admin") {
+      try {
+        const res = await updateAdminStatus(userId, newStatus);
+        const updated = normalizeAdmin(res.data.admin);
+        setUsers((prev) =>
+          prev.map((item) => (item.id === userId ? updated : item))
+        );
+        setSelectedUser(updated);
+        setToast("Admin status updated successfully.");
+      } catch (err) {
+        setToast(
+          err.response?.data?.message || "Could not update admin status."
+        );
+      } finally {
+        setTimeout(() => setToast(""), 3000);
+      }
+      return;
+    }
 
-      setUsers((prev) =>
-        prev.map((item) => (item.id === userId ? updatedCompany : item))
-      );
+    if (targetUser.role === "Company") {
+      try {
+        const res = await updateCompanyStatus(userId, newStatus);
+        const updatedCompany = normalizeCompany(res.data.company);
 
-      setSelectedUser(updatedCompany);
-      setToast("Company status updated successfully.");
-    } catch (err) {
-      setToast(err.response?.data?.message || "Could not update status.");
-    } finally {
-      setTimeout(() => setToast(""), 3000);
+        setUsers((prev) =>
+          prev.map((item) => (item.id === userId ? updatedCompany : item))
+        );
+
+        setSelectedUser(updatedCompany);
+        setToast("Company status updated successfully.");
+      } catch (err) {
+        setToast(err.response?.data?.message || "Could not update status.");
+      } finally {
+        setTimeout(() => setToast(""), 3000);
+      }
     }
   };
 

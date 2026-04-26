@@ -11,6 +11,16 @@ const {
 // company status values that admins are allowed to set
 const COMPANY_STATUS_VALUES = ['Pending', 'Review', 'Approved', 'Rejected', 'Active'];
 
+// student status (stored lowercase in DB; frontend sends Title Case)
+const STUDENT_STATUS_DISPLAY = ['Active', 'Inactive', 'Pending'];
+const mapStudentStatusToDb = (s) => {
+  const m = { Active: 'active', Inactive: 'inactive', Pending: 'pending' };
+  return m[s] || null;
+};
+
+// admin status (schema enum matches these strings)
+const ADMIN_STATUS_VALUES = ['Active', 'Inactive', 'Pending'];
+
 // create Admin account
 const createAdmin = async (req, res) => {
   try {
@@ -323,6 +333,81 @@ const updateCompanyStatus = async (req,res) => {
     }
 }
 
+// update student account status (active / inactive / pending)
+const updateStudentStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid student ID' });
+    }
+
+    if (!status || !STUDENT_STATUS_DISPLAY.includes(status)) {
+      return res.status(400).json({
+        message: `Invalid status. Allowed values: ${STUDENT_STATUS_DISPLAY.join(', ')}`,
+      });
+    }
+
+    const dbStatus = mapStudentStatusToDb(status);
+    const student = await Student.findByIdAndUpdate(
+      req.params.id,
+      { status: dbStatus },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Student status updated',
+      student,
+    });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// update admin account status
+const updateAdminStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid admin ID' });
+    }
+
+    if (!status || !ADMIN_STATUS_VALUES.includes(status)) {
+      return res.status(400).json({
+        message: `Invalid status. Allowed values: ${ADMIN_STATUS_VALUES.join(', ')}`,
+      });
+    }
+
+    const admin = await Admin.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Admin status updated',
+      admin,
+    });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
     createAdmin,
     createCompany,
@@ -331,4 +416,6 @@ module.exports = {
     getCompanies,
     getAdmins,
     updateCompanyStatus,
+    updateStudentStatus,
+    updateAdminStatus,
 };

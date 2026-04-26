@@ -99,8 +99,16 @@ const applyToProgram = async (req, res) => {
 const getMyApplications = async (req, res) => {
   try {
     const applications = await Application.find({ studentID: req.user.id })
-      .populate('programID')
-      .populate('studentID', 'firstName lastName email major');
+      // nested populate so the student page can show the program's company name
+      .populate({
+        path: 'programID',
+        populate: {
+          path: 'companyID',
+          select: 'companyName email industry location',
+        },
+      })
+      .populate('studentID', 'firstName lastName email major')
+      .sort({ createdAt: -1 });
 
     return res.status(200).json(applications);
   } catch (error) {
@@ -118,7 +126,8 @@ const getCompanyApplications = async (req, res) => {
       programID: { $in: programIds },
     })
       .populate('studentID', 'firstName lastName email major universityName year skills')
-      .populate('programID', 'title location dateFrom dateTo');
+      .populate('programID', 'title location dateFrom dateTo seats')
+      .sort({ createdAt: -1 });
 
     return res.status(200).json(applications);
   } catch (error) {
@@ -141,17 +150,20 @@ const updateApplicationStatus = async (req, res) => {
       return res.status(404).json({ message: 'Application not found' });
     }
 
-    if (application.programID.companyID.toString() !== req.user.id) {
+    const program = application.programID;
+    if (program.companyID.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not allowed to update this application' });
     }
 
+    const previousStatus = application.status;
+
     // when accepting, re-check seat capacity to avoid over-allocating in races
-    if (status === 'Accepted' && application.status !== 'Accepted') {
+    if (status === 'Accepted' && previousStatus !== 'Accepted') {
       const acceptedCount = await Application.countDocuments({
-        programID: application.programID._id,
+        programID: program._id,
         status: 'Accepted',
       });
-      if (acceptedCount >= application.programID.seats) {
+      if (acceptedCount >= program.seats) {
         return res.status(400).json({
           message: 'Cannot accept: no seats available for this program',
         });
@@ -159,9 +171,36 @@ const updateApplicationStatus = async (req, res) => {
     }
 
     application.status = status || application.status;
-    application.decisionNote = decisionNote || application.decisionNote;
+    // allow clearing the note explicitly (don't drop empty-string updates)
+    if (decisionNote !== undefined) {
+      application.decisionNote = decisionNote;
+    }
 
     await application.save();
+
+    // keep the program's status in sync with seat occupancy:
+    // - flip to Completed when the last seat is filled by an Accepted decision
+    // - flip back to Active if a Completed program now has free seats again
+    if (status && status !== previousStatus) {
+      const acceptedAfter = await Application.countDocuments({
+        programID: program._id,
+        status: 'Accepted',
+      });
+
+      let nextProgramStatus = program.status;
+      if (acceptedAfter >= program.seats) {
+        nextProgramStatus = 'Completed';
+      } else if (program.status === 'Completed' && acceptedAfter < program.seats) {
+        nextProgramStatus = 'Active';
+      }
+
+      if (nextProgramStatus !== program.status) {
+        await Opportunity.updateOne(
+          { _id: program._id },
+          { $set: { status: nextProgramStatus } }
+        );
+      }
+    }
 
     return res.status(200).json({
       message: 'Application updated successfully',
