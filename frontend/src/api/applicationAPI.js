@@ -9,3 +9,6 @@ export const getCompanyApplications = () => api.get("/applications/company");
 
 export const updateApplicationStatus = (id, status, decisionNote) =>
   api.patch(`/applications/${id}/status`, { status, decisionNote });
+
+export const cancelApplication = (id) =>
+  api.delete(`/applications/${id}`);
