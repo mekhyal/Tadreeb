@@ -3,6 +3,7 @@ import { FaUserCircle, FaEnvelope, FaCheckCircle } from "react-icons/fa";
 import StudentTopbar from "../../components/student/StudentTopbar";
 import StudentFooter from "../../components/student/StudentFooter";
 import { useAuth } from "../../context/AuthContext";
+import { updateStudentProfile } from "../../api/authAPI";
 
 const LIMITS = {
   firstName: 40,
@@ -14,7 +15,10 @@ const LIMITS = {
   major: 80,
   skills: 150,
   studentId: 30,
+  email: 120,
 };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const formatSkills = (skills) => {
   if (Array.isArray(skills)) return skills.join(", ");
@@ -85,6 +89,14 @@ function StudentProfile() {
       checkLength("lastName", "Last name", LIMITS.lastName, nextErrors);
     }
 
+    if (!formData.email.trim()) {
+      nextErrors.email = "Email is required.";
+    } else if (!EMAIL_RE.test(formData.email.trim())) {
+      nextErrors.email = "Please enter a valid email address.";
+    } else {
+      checkLength("email", "Email", LIMITS.email, nextErrors);
+    }
+
     if (formData.password.trim()) {
       if (formData.password.length < LIMITS.passwordMin) {
         nextErrors.password = `Password must be at least ${LIMITS.passwordMin} characters.`;
@@ -151,21 +163,22 @@ function StudentProfile() {
     }));
   };
 
-  const handleSave = () => {
-    if (!validateForm()) return;
+  const handleSave = async () => {
+    if (!validateForm() || !user) return;
 
     setIsSaving(true);
+    setErrors((prev) => ({ ...prev, general: "" }));
 
-    setTimeout(() => {
+    try {
       const skillsList = formData.skills
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
 
-      updateUser({
+      const payload = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.trim().toLowerCase(),
+        email: formData.email.trim(),
         mobileNo: formData.mobile.trim(),
         gender: formData.gender,
         year: formData.year,
@@ -173,18 +186,31 @@ function StudentProfile() {
         major: formData.major.trim(),
         skills: skillsList,
         universityID: formData.studentId.trim(),
-        role: "student",
-        id: user?.id,
-        name: `${formData.firstName} ${formData.lastName}`.trim(),
+      };
+      if (formData.password.trim()) {
+        payload.password = formData.password;
+      }
+
+      const res = await updateStudentProfile(payload);
+      const s = res.data.student;
+      updateUser({
+        ...user,
+        ...s,
+        name: [s.firstName, s.lastName].filter(Boolean).join(" "),
       });
-
+      setFormData((prev) => ({ ...prev, password: "" }));
       setShowSavePopup(true);
+      setTimeout(() => setShowSavePopup(false), 5000);
+    } catch (err) {
+      setErrors((prev) => ({
+        ...prev,
+        general:
+          err.response?.data?.message ||
+          "Could not save profile. Please try again.",
+      }));
+    } finally {
       setIsSaving(false);
-
-      setTimeout(() => {
-        setShowSavePopup(false);
-      }, 5000);
-    }, 500);
+    }
   };
 
   return (
@@ -213,6 +239,12 @@ function StudentProfile() {
               <p>{formData.email}</p>
             </div>
           </div>
+
+          {errors.general && (
+            <p className="student-form-error" style={{ marginRight: "auto" }}>
+              {errors.general}
+            </p>
+          )}
 
           <button
             type="button"
@@ -247,6 +279,20 @@ function StudentProfile() {
               maxLength={LIMITS.lastName}
             />
             {errors.lastName && <p className="student-form-error">{errors.lastName}</p>}
+          </div>
+
+          <div className="student-form-group">
+            <label>Email</label>
+            <input
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter email"
+              maxLength={LIMITS.email}
+              autoComplete="email"
+            />
+            {errors.email && <p className="student-form-error">{errors.email}</p>}
           </div>
 
           <div className="student-form-group">

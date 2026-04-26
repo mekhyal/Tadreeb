@@ -15,3 +15,9 @@ export const loginCompany = (data) => {
 export const loginAdmin = (data) => {
   return api.post("/auth/admin/login", data);
 };
+
+export const updateStudentProfile = (data) => api.put("/auth/student/profile", data);
+
+export const updateCompanyProfile = (data) => api.put("/auth/company/profile", data);
+
+export const updateAdminProfile = (data) => api.put("/auth/admin/profile", data);

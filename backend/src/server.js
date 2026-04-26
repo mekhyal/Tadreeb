@@ -12,11 +12,19 @@ const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes'); // import the admin/user route handlers (note: adminRoutes.js must export an express.Router)
 const opportunityRoutes = require('./routes/opportunityRoutes');
 const applicationRoutes = require('./routes/applicationRoutes');
+const companyRequestRoutes = require('./routes/companyRequestRoutes');
 
 const app = express(); // create the Express application instance
 
 // middleware
-app.use(cors()); // enable Cross-Origin Resource Sharing for all incoming requests
+// In production, set CORS_ORIGIN to your frontend origin(s), comma-separated, e.g. https://app.example.com
+app.use(
+    cors({
+        origin: process.env.CORS_ORIGIN
+            ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+            : true,
+    })
+);
 app.use(morgan('dev')); // log HTTP requests to the console (method, URL, status, response time)
 app.use(express.json()); // parse incoming JSON request bodies and attach the data to req.body
 
@@ -38,15 +46,15 @@ app.use((req, res, next) => {
 });
 
 // routes
+app.use('/api/company-requests', companyRequestRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/opportunities', opportunityRoutes);
 app.use('/api/applications', applicationRoutes);
 
-// test route
-app.get('/', (req, res) => { // handle GET requests to the root URL "/" (simple health-check endpoint)
-    console.log('accessed the server :)'); // log a message to the terminal whenever the root URL is hit
-    res.send('Tadreeb API is running'); // send a response back to the client so the request actually completes
+// health check
+app.get('/', (req, res) => {
+    res.send('Tadreeb API is running');
 });
 
 // 404 for any unknown /api route — keeps responses uniform JSON instead of an HTML page
@@ -76,6 +84,11 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5001; // use the port defined in .env, otherwise fall back to 5001
+
+if (!process.env.JWT_SECRET) {
+    console.error('JWT_SECRET is not set. Add it to your .env file.');
+    process.exit(1);
+}
 
 connectDB().then(() => { // connect to MongoDB using the helper in config/db.js, then start the server only after it succeeds
     app.listen(PORT, () => { // start the Express server and listen for incoming HTTP requests on PORT

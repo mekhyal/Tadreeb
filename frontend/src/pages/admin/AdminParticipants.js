@@ -1,8 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import PortalLayout from "../../components/portal/PortalLayout";
 import PortalTopbar from "../../components/portal/PortalTopbar";
 import AdminParticipantModal from "../../components/admin/AdminParticipantModal";
-import { adminParticipantApplications as initialParticipants } from "../../data/adminData";
+import {
+  getAdminApplications,
+  updateAdminApplicationReview,
+} from "../../api/adminAPI";
 
 const PARTICIPANTS_PER_PAGE = 7;
 
@@ -14,12 +17,64 @@ const adminNavItems = [
   { key: "users", label: "Users", path: "/admin/users" },
 ];
 
+const mapCompanyDecisionToLabel = (s) => {
+  if (s === "Under Review") return "Review";
+  return s || "—";
+};
+
+const normalizeAdminApplication = (raw) => {
+  const s = raw.studentID || {};
+  const p = raw.programID || {};
+  const c = p.companyID || {};
+  return {
+    id: raw._id,
+    name: [s.firstName, s.lastName].filter(Boolean).join(" ") || "Student",
+    email: s.email || "",
+    studentId: s.universityID || "",
+    year: s.year || "",
+    major: s.major || "",
+    skills: Array.isArray(s.skills) ? s.skills.join(", ") : s.skills || "",
+    program: p.title || "Program",
+    company: c.companyName || "Company",
+    dateApplied: raw.createdAt ? raw.createdAt.slice(0, 10) : "",
+    companyStatus: mapCompanyDecisionToLabel(raw.status),
+    companyNote: raw.decisionNote || "-",
+    adminStatus: raw.adminStatus || "Review",
+    visibleToStudent: !!raw.visibleToStudent,
+  };
+};
+
 function AdminParticipants() {
-  const [participants, setParticipants] = useState(initialParticipants);
+  const [participants, setParticipants] = useState([]);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const [toast, setToast] = useState("");
+  const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const loadParticipants = async () => {
+    setIsLoading(true);
+    setError("");
+    try {
+      const res = await getAdminApplications();
+      const list = (res.data || []).map(normalizeAdminApplication);
+      setParticipants(list);
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Could not load applications. Please try again."
+      );
+      setParticipants([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadParticipants();
+  }, []);
 
   const filteredParticipants = useMemo(() => {
     if (activeFilter === "All") return participants;
@@ -36,16 +91,27 @@ function AdminParticipants() {
     return filteredParticipants.slice(start, start + PARTICIPANTS_PER_PAGE);
   }, [filteredParticipants, currentPage]);
 
-  const handleSaveParticipant = (participantId, updates) => {
-    setParticipants((prev) =>
-      prev.map((item) =>
-        item.id === participantId ? { ...item, ...updates } : item
-      )
-    );
-
-    setSelectedParticipant(null);
-    setToast("Participant application updated successfully.");
-    setTimeout(() => setToast(""), 3000);
+  const handleSaveParticipant = async (participantId, updates) => {
+    setIsSaving(true);
+    try {
+      const res = await updateAdminApplicationReview(participantId, {
+        adminStatus: updates.adminStatus,
+        visibleToStudent: updates.visibleToStudent,
+      });
+      const next = normalizeAdminApplication(res.data.application);
+      setParticipants((prev) =>
+        prev.map((item) => (item.id === participantId ? next : item))
+      );
+      setSelectedParticipant(null);
+      setToast("Participant application updated successfully.");
+    } catch (err) {
+      setToast(
+        err.response?.data?.message || "Could not save application review."
+      );
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setToast(""), 3000);
+    }
   };
 
   const handleFilterChange = (filter) => {
@@ -81,7 +147,8 @@ function AdminParticipants() {
               const count =
                 filter === "All"
                   ? participants.length
-                  : participants.filter((item) => item.adminStatus === filter).length;
+                  : participants.filter((item) => item.adminStatus === filter)
+                      .length;
 
               return (
                 <button
@@ -103,62 +170,76 @@ function AdminParticipants() {
             <p>Review company decisions and control what the student can see.</p>
           </div>
 
-          <div className="company-table-wrap">
-            <table className="company-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Student ID</th>
-                  <th>Program</th>
-                  <th>Company</th>
-                  <th>Final Status</th>
-                  <th>Visible</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {paginatedParticipants.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="clickable-row"
-                    onClick={() => setSelectedParticipant(item)}
-                  >
-                    <td>
-                      <div className="admin-company-cell">
-                        <div className={`admin-company-avatar tone-${item.id % 4}`}>
-                          {item.name.charAt(0)}
-                        </div>
-
-                        <div>
-                          <strong>{item.name}</strong>
-                          <span>{item.email}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td>{item.studentId}</td>
-                    <td>{item.program}</td>
-                    <td>{item.company}</td>
-                    <td>
-                      <span className={`company-status-badge ${item.adminStatus.toLowerCase()}`}>
-                        {item.adminStatus}
-                      </span>
-                    </td>
-                    <td>
-                      <span
-                        className={`admin-visible-badge ${
-                          item.visibleToStudent ? "shown" : "hidden"
-                        }`}
-                      >
-                        {item.visibleToStudent ? "Shown" : "Hidden"}
-                      </span>
-                    </td>
+          {isLoading ? (
+            <p>Loading applications...</p>
+          ) : error ? (
+            <p className="company-form-error">{error}</p>
+          ) : participants.length === 0 ? (
+            <p>No student applications in the system yet.</p>
+          ) : (
+            <div className="company-table-wrap">
+              <table className="company-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Student ID</th>
+                    <th>Program</th>
+                    <th>Company</th>
+                    <th>Final Status</th>
+                    <th>Visible</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
 
-          {totalPages > 1 && (
+                <tbody>
+                  {paginatedParticipants.map((item, index) => (
+                    <tr
+                      key={item.id}
+                      className="clickable-row"
+                      onClick={() => setSelectedParticipant(item)}
+                    >
+                      <td>
+                        <div className="admin-company-cell">
+                          <div
+                            className={`admin-company-avatar tone-${
+                              index % 4
+                            }`}
+                          >
+                            {item.name.charAt(0)}
+                          </div>
+
+                          <div>
+                            <strong>{item.name}</strong>
+                            <span>{item.email}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{item.studentId}</td>
+                      <td>{item.program}</td>
+                      <td>{item.company}</td>
+                      <td>
+                        <span
+                          className={`company-status-badge ${item.adminStatus.toLowerCase()}`}
+                        >
+                          {item.adminStatus}
+                        </span>
+                      </td>
+                      <td>
+                        <span
+                          className={`admin-visible-badge ${
+                            item.visibleToStudent ? "shown" : "hidden"
+                          }`}
+                        >
+                          {item.visibleToStudent ? "Shown" : "Hidden"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {!isLoading && !error && totalPages > 1 && (
             <div className="admin-pagination">
               <button
                 type="button"
@@ -168,16 +249,18 @@ function AdminParticipants() {
                 Prev
               </button>
 
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <button
-                  key={page}
-                  type="button"
-                  className={currentPage === page ? "active" : ""}
-                  onClick={() => handlePageChange(page)}
-                >
-                  {page}
-                </button>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <button
+                    key={page}
+                    type="button"
+                    className={currentPage === page ? "active" : ""}
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
 
               <button
                 type="button"

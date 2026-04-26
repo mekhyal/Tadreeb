@@ -18,7 +18,12 @@ function AdminParticipantModal({ participant, onClose, onSave }) {
 
   const avatarTone = useMemo(() => {
     const tones = ["blue", "green", "orange", "purple"];
-    return tones[participant.id % tones.length];
+    const id = participant.id;
+    const n =
+      typeof id === "string"
+        ? id.split("").reduce((a, c) => a + c.charCodeAt(0), 0)
+        : Number(id) || 0;
+    return tones[Math.abs(n) % tones.length];
   }, [participant]);
 
   if (!participant) return null;

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CompanyRequestNavbar from "../../components/company-request/CompanyRequestNavbar";
 import CompanyRequestFooter from "../../components/company-request/CompanyRequestFooter";
+import { submitCompanyRequest } from "../../api/companyRequestAPI";
 
 const initialFormData = {
   companyName: "",
@@ -27,7 +28,7 @@ function CompanyRequestForm() {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState(initialFormData);
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState({ general: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showRedirectLoader, setShowRedirectLoader] = useState(false);
@@ -43,6 +44,7 @@ function CompanyRequestForm() {
     setErrors((prev) => ({
       ...prev,
       [name]: "",
+      general: "",
     }));
   };
 
@@ -145,33 +147,29 @@ function CompanyRequestForm() {
     const payload = buildPayload();
 
     try {
-      // Future backend integration:
-      // await fetch("/api/company-requests", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(payload),
-      // });
-
-      console.log("Company request payload:", payload);
+      await submitCompanyRequest(payload);
+      setIsSubmitting(false);
+      setShowSuccessToast(true);
+      setFormData(initialFormData);
+      setErrors({ general: "" });
 
       setTimeout(() => {
-        setIsSubmitting(false);
-        setShowSuccessToast(true);
-        setFormData(initialFormData);
+        setShowSuccessToast(false);
+        setShowRedirectLoader(true);
 
         setTimeout(() => {
-          setShowSuccessToast(false);
-          setShowRedirectLoader(true);
-
-          setTimeout(() => {
-            navigate("/");
-            window.scrollTo({ top: 0, behavior: "auto" });
-          }, 1200);
-        }, 700);
-      }, 900);
+          navigate("/");
+          window.scrollTo({ top: 0, behavior: "auto" });
+        }, 1200);
+      }, 700);
     } catch (error) {
-      console.error("Submit request error:", error);
       setIsSubmitting(false);
+      setErrors((prev) => ({
+        ...prev,
+        general:
+          error.response?.data?.message ||
+          "Could not submit your request. Please try again.",
+      }));
     }
   };
 
@@ -212,6 +210,9 @@ function CompanyRequestForm() {
           <div className="company-request-card">
             <form className="company-request-form" onSubmit={handleSubmit} noValidate>
               <h3>Company Information</h3>
+              {errors.general && (
+                <p className="company-request-error">{errors.general}</p>
+              )}
 
               <div className="company-request-grid">
                 <div className="company-request-group">

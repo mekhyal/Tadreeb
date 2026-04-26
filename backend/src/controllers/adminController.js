@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const Application = require('../models/Application');
 const Student = require('../models/Student');
 const Company = require('../models/Company');
 const Admin = require('../models/Admin');
@@ -74,9 +75,11 @@ const createAdmin = async (req, res) => {
       status: status || 'Active',
     });
 
+    const adminSafe = await Admin.findById(admin._id).select('-password').lean();
+
     return res.status(201).json({
       message: 'Admin created successfully',
-      admin,
+      admin: adminSafe,
     });
   } catch (error) {
     if (error.code === 11000) {
@@ -162,10 +165,12 @@ const createAdmin = async (req, res) => {
         joinReason,
         status: status || 'Approved',
       });
+
+      const companySafe = await Company.findById(company._id).select('-password').lean();
   
       return res.status(201).json({
         message: 'Company created successfully',
-        company,
+        company: companySafe,
       });
     } catch (error) {
       if (error.code === 11000) {
@@ -246,10 +251,12 @@ const createAdmin = async (req, res) => {
           role: 'student',
           status: 'active',
         });
+
+        const studentSafe = await Student.findById(student._id).select('-password').lean();
     
         return res.status(201).json({
           message: 'Student created by admin successfully',
-          student,
+          student: studentSafe,
         });
     
       } catch (error) {
@@ -408,6 +415,77 @@ const updateAdminStatus = async (req, res) => {
   }
 };
 
+const ADMIN_APP_STATUSES = ['Review', 'Accepted', 'Rejected'];
+
+// All applications, for the Admin Participants review UI
+const getAdminApplications = async (req, res) => {
+  try {
+    const applications = await Application.find()
+      .populate('studentID', 'firstName lastName email universityName year major skills')
+      .populate({
+        path: 'programID',
+        select: 'title dateFrom dateTo',
+        populate: { path: 'companyID', select: 'companyName email' },
+      })
+      .sort({ createdAt: -1 });
+
+    return res.status(200).json(applications);
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+// Admin second-line review: status visible to students, admin note, etc.
+const reviewAdminApplication = async (req, res) => {
+  try {
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid application ID' });
+    }
+
+    const { adminStatus, visibleToStudent, adminNote } = req.body;
+
+    if (!adminStatus || !ADMIN_APP_STATUSES.includes(adminStatus)) {
+      return res.status(400).json({
+        message: `adminStatus must be one of: ${ADMIN_APP_STATUSES.join(', ')}`,
+      });
+    }
+
+    const update = {
+      adminStatus,
+      visibleToStudent: !!visibleToStudent,
+    };
+    if (adminNote !== undefined) {
+      update.adminNote = String(adminNote);
+    }
+
+    const application = await Application.findByIdAndUpdate(
+      req.params.id,
+      update,
+      { new: true, runValidators: true }
+    )
+      .populate('studentID', 'firstName lastName email universityName year major skills')
+      .populate({
+        path: 'programID',
+        select: 'title',
+        populate: { path: 'companyID', select: 'companyName' },
+      });
+
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Application review saved',
+      application,
+    });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
     createAdmin,
     createCompany,
@@ -418,4 +496,6 @@ module.exports = {
     updateCompanyStatus,
     updateStudentStatus,
     updateAdminStatus,
+    getAdminApplications,
+    reviewAdminApplication,
 };

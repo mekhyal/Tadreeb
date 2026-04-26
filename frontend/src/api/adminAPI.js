@@ -16,3 +16,8 @@ export const updateStudentStatus = (id, status) =>
 
 export const updateAdminStatus = (id, status) =>
   api.put(`/admin/admins/${id}/status`, { status });
+
+export const getAdminApplications = () => api.get("/admin/applications");
+
+export const updateAdminApplicationReview = (id, data) =>
+  api.put(`/admin/applications/${id}/review`, data);

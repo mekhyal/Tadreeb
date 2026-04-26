@@ -14,6 +14,8 @@ const {
   updateCompanyStatus,
   updateStudentStatus,
   updateAdminStatus,
+  getAdminApplications,
+  reviewAdminApplication,
 } = require('../controllers/adminController');
 
 router.post('/create-admin', protect, allowRoles('admin'), createAdmin);
@@ -27,5 +29,8 @@ router.get('/admins', protect, allowRoles('admin'), getAdmins);
 router.put('/companies/:id/status', protect, allowRoles('admin'), updateCompanyStatus);
 router.put('/students/:id/status', protect, allowRoles('admin'), updateStudentStatus);
 router.put('/admins/:id/status', protect, allowRoles('admin'), updateAdminStatus);
+
+router.get('/applications', protect, allowRoles('admin'), getAdminApplications);
+router.put('/applications/:id/review', protect, allowRoles('admin'), reviewAdminApplication);
 
 module.exports = router;

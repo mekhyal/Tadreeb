@@ -27,6 +27,22 @@ const applicationSchema = new mongoose.Schema(
       trim: true,
       maxlength: [1000, 'decisionNote is too long'],
     },
+    // Admin platform review (separate from company decision in `status`)
+    adminStatus: {
+      type: String,
+      enum: ['Review', 'Accepted', 'Rejected'],
+      default: 'Review',
+    },
+    adminNote: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: [1000, 'adminNote is too long'],
+    },
+    visibleToStudent: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

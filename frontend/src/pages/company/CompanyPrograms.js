@@ -4,6 +4,7 @@ import PortalTopbar from "../../components/portal/PortalTopbar";
 import CompanyProgramCard from "../../components/company/CompanyProgramCard";
 import CompanyProgramModal from "../../components/company/CompanyProgramModal";
 import CompanyConfirmModal from "../../components/company/CompanyConfirmModal";
+import { useAuth } from "../../context/AuthContext";
 import {
   getOpportunities,
   createOpportunity,
@@ -42,6 +43,7 @@ const normalizeProgram = (item) => {
 };
 
 function CompanyPrograms() {
+  const { user } = useAuth();
   const [programs, setPrograms] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
@@ -63,7 +65,14 @@ function CompanyPrograms() {
 
     try {
       const res = await getOpportunities();
-      setPrograms(res.data.map(normalizeProgram));
+      const companyId = user?.id && String(user.id);
+      const rows = !companyId
+        ? res.data
+        : res.data.filter((p) => {
+            const owner = p.companyID?._id || p.companyID;
+            return owner && String(owner) === companyId;
+          });
+      setPrograms(rows.map(normalizeProgram));
     } catch (err) {
       setError(err.response?.data?.message || "Could not load programs.");
     } finally {
@@ -72,8 +81,10 @@ function CompanyPrograms() {
   };
 
   useEffect(() => {
+    if (!user) return;
     fetchPrograms();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const sortedPrograms = useMemo(() => {
     return [...programs].sort((a, b) => {
