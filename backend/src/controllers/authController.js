@@ -3,6 +3,15 @@ const Student = require('../models/Student');
 const Company = require('../models/Company');
 const Admin = require('../models/Admin');
 const generateToken = require('../utils/generateToken');
+const {
+    isValidEmail,
+    isStrongPassword,
+    exceedsMaxLength,
+    MAX_SHORT_TEXT,
+} = require('../utils/validators');
+
+// reject any value that is not a plain string (blocks NoSQL injection like { $gt: "" })
+const isPlainString = (v) => typeof v === 'string';
 
 
 // student register
@@ -31,10 +40,49 @@ const registerStudent = async (req, res) => {
         });
     }
 
+    // ensure scalar string inputs to block injection objects
+    if (![universityID, firstName, lastName, email, password, mobileNo, gender, universityName, major]
+        .every(isPlainString)) {
+        return res.status(400).json({ message: 'Invalid input format' });
+    }
+
+    if (!isValidEmail(email)) {
+        return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    if (!isStrongPassword(password)) {
+        return res.status(400).json({
+            message: 'Password must be at least 8 characters and include a letter and a number',
+        });
+    }
+
+    // hard cap user-supplied text fields to defend against absurdly long inputs
+    const overlongField = [
+        ['universityID', universityID],
+        ['firstName', firstName],
+        ['lastName', lastName],
+        ['email', email],
+        ['mobileNo', mobileNo],
+        ['universityName', universityName],
+        ['major', major],
+    ].find(([, value]) => exceedsMaxLength(value, MAX_SHORT_TEXT));
+
+    if (overlongField) {
+        return res.status(400).json({
+            message: `${overlongField[0]} exceeds maximum length of ${MAX_SHORT_TEXT} characters`,
+        });
+    }
+
     const existingStudent = await Student.findOne({ email });
     if(existingStudent){
         return res.status(400).json({message: 'Student already exists'});
     }
+
+    const existingByUniId = await Student.findOne({ universityID });
+    if (existingByUniId) {
+        return res.status(400).json({ message: 'University ID already registered' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const student = await Student.create({
@@ -78,6 +126,9 @@ const registerStudent = async (req, res) => {
 const loginStudent = async (req,res) => {
     try{
         const {email, password } = req.body;
+        if (!isPlainString(email) || !isPlainString(password)) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
         const student = await Student.findOne({ email });
         if (!student){
             return res.status(400).json({ message: 'Invalid email or password'});
@@ -126,6 +177,9 @@ const getStudents = async(req,res) => {
 const loginCompany = async (req,res) => {
     try{
         const {email,password} = req.body;
+        if (!isPlainString(email) || !isPlainString(password)) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
 
         const company = await Company.findOne({email});
         if(!company){
@@ -167,6 +221,9 @@ const getCompany = async (req,res) => {
 const loginAdmin = async (req, res) => {
     try {
         const { email, password } = req.body;
+        if (!isPlainString(email) || !isPlainString(password)) {
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
 
         const admin = await Admin.findOne({ email });
         if(!admin){

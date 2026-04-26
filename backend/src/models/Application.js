@@ -25,9 +25,13 @@ const applicationSchema = new mongoose.Schema(
       type: String,
       default: '-',
       trim: true,
+      maxlength: [1000, 'decisionNote is too long'],
     },
   },
   { timestamps: true }
 );
+
+// hard guarantee at the DB level that a student can't apply twice to the same program
+applicationSchema.index({ studentID: 1, programID: 1 }, { unique: true });
 
 module.exports = mongoose.model('Application', applicationSchema);

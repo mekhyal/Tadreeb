@@ -2,6 +2,14 @@ const bcrypt = require('bcryptjs');
 const Student = require('../models/Student');
 const Company = require('../models/Company');
 const Admin = require('../models/Admin');
+const {
+  isValidEmail,
+  isStrongPassword,
+  isValidObjectId,
+} = require('../utils/validators');
+
+// company status values that admins are allowed to set
+const COMPANY_STATUS_VALUES = ['Pending', 'Review', 'Approved', 'Rejected', 'Active'];
 
 // create Admin account
 const createAdmin = async (req, res) => {
@@ -22,6 +30,16 @@ const createAdmin = async (req, res) => {
 
     if (!firstName || !lastName || !email || !phone || !password) {
       return res.status(400).json({ message: 'Please fill all required fields' });
+    }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({
+        message: 'Password must be at least 8 characters and include a letter and a number',
+      });
     }
 
     const existingAdmin = await Admin.findOne({ email });
@@ -51,6 +69,12 @@ const createAdmin = async (req, res) => {
       admin,
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(400).json({ message: 'Admin already exists' });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
     return res.status(500).json({ message: error.message });
   }
 };
@@ -77,7 +101,35 @@ const createAdmin = async (req, res) => {
       if (!companyName || !email || !password || !industry || !phone || !location) {
         return res.status(400).json({ message: 'Please fill required company fields' });
       }
-  
+
+      if (!isValidEmail(email)) {
+        return res.status(400).json({ message: 'Invalid email format' });
+      }
+
+      if (!isStrongPassword(password)) {
+        return res.status(400).json({
+          message: 'Password must be at least 8 characters and include a letter and a number',
+        });
+      }
+
+      // foundedYear must be a real year and not in the future
+      if (foundedYear !== undefined && foundedYear !== null && foundedYear !== '') {
+        const yearNum = Number(foundedYear);
+        const currentYear = new Date().getFullYear();
+        if (!Number.isInteger(yearNum) || yearNum < 1800 || yearNum > currentYear) {
+          return res.status(400).json({
+            message: `foundedYear must be an integer between 1800 and ${currentYear}`,
+          });
+        }
+      }
+
+      // if admin specifies a status, it must be one of the allowed enum values
+      if (status !== undefined && !COMPANY_STATUS_VALUES.includes(status)) {
+        return res.status(400).json({
+          message: `Invalid status. Allowed values: ${COMPANY_STATUS_VALUES.join(', ')}`,
+        });
+      }
+
       const existingCompany = await Company.findOne({ email });
       if (existingCompany) {
         return res.status(400).json({ message: 'Company already exists' });
@@ -106,6 +158,12 @@ const createAdmin = async (req, res) => {
         company,
       });
     } catch (error) {
+      if (error.code === 11000) {
+        return res.status(400).json({ message: 'Company already exists' });
+      }
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: error.message });
+      }
       return res.status(500).json({ message: error.message });
     }
   };
@@ -138,11 +196,25 @@ const createAdmin = async (req, res) => {
         ) {
           return res.status(400).json({ message: 'Missing required fields' });
         }
+
+        if (!isValidEmail(email)) {
+          return res.status(400).json({ message: 'Invalid email format' });
+        }
+
+        if (!isStrongPassword(password)) {
+          return res.status(400).json({
+            message: 'Password must be at least 8 characters and include a letter and a number',
+          });
+        }
     
         // check if exists
         const existingStudent = await Student.findOne({ email });
         if (existingStudent) {
           return res.status(400).json({ message: 'Student already exists' });
+        }
+        const existingByUniId = await Student.findOne({ universityID });
+        if (existingByUniId) {
+          return res.status(400).json({ message: 'University ID already registered' });
         }
     
         // hash password
@@ -171,6 +243,12 @@ const createAdmin = async (req, res) => {
         });
     
       } catch (error) {
+        if (error.code === 11000) {
+          return res.status(400).json({ message: 'Student already exists' });
+        }
+        if (error.name === 'ValidationError') {
+          return res.status(400).json({ message: error.message });
+        }
         return res.status(500).json({ message: error.message });
       }
   }
@@ -211,10 +289,21 @@ const updateCompanyStatus = async (req,res) => {
     try { 
         const {status} = req.body;
 
+        if (!isValidObjectId(req.params.id)) {
+            return res.status(400).json({ message: 'Invalid company ID' });
+        }
+
+        if (!status || !COMPANY_STATUS_VALUES.includes(status)) {
+            return res.status(400).json({
+                message: `Invalid status. Allowed values: ${COMPANY_STATUS_VALUES.join(', ')}`,
+            });
+        }
+
+        // runValidators ensures the enum on the schema is enforced as well
         const company = await Company.findByIdAndUpdate(
             req.params.id,
             { status },
-            { new: true }
+            { new: true, runValidators: true }
         ).select('-password');
 
         if(!company){
@@ -227,6 +316,9 @@ const updateCompanyStatus = async (req,res) => {
         });
     }
     catch(error){
+        if (error.name === 'ValidationError') {
+            return res.status(400).json({ message: error.message });
+        }
         return res.status(500).json({message: error.message });
     }
 }

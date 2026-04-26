@@ -379,6 +379,26 @@
   box-shadow: 0 0 0 4px rgba(66, 165, 245, 0.12);
 }
 
+.contact-form input[aria-invalid="true"],
+.contact-form textarea[aria-invalid="true"] {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+}
+
+.contact-error {
+  margin: 0.35rem 0 0;
+  color: #dc3545;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.contact-success {
+  margin: 0.5rem 0 0;
+  color: #198754;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 .submit-btn {
   border: none;
   background: linear-gradient(135deg, var(--primary-blue), var(--deep-blue));
