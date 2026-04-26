@@ -5,6 +5,8 @@ function CompanyProgramCard({ program, onEdit, onComplete, onRemove }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
+  const isCompleted = program.status === "Completed";
+
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -37,15 +39,17 @@ function CompanyProgramCard({ program, onEdit, onComplete, onRemove }) {
 
           {showMenu && (
             <div className="company-program-card__dropdown">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowMenu(false);
-                  onComplete(program);
-                }}
-              >
-                Mark as Completed
-              </button>
+              {!isCompleted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMenu(false);
+                    onComplete(program);
+                  }}
+                >
+                  Mark as Completed
+                </button>
+              )}
 
               <button
                 type="button"
@@ -77,13 +81,19 @@ function CompanyProgramCard({ program, onEdit, onComplete, onRemove }) {
       <div className="company-program-card__meta">
         <div>
           <FaUsers />
-          <span>{program.participants} Participants</span>
+          <span>
+            {program.usedSeats} used / {program.seats} total
+          </span>
         </div>
 
         <div>
           <FaCalendarAlt />
           <span>{program.dateTo}</span>
         </div>
+      </div>
+
+      <div className="company-program-card__seats">
+        Available seats: <strong>{program.availableSeats}</strong>
       </div>
 
       <span className={`company-program-status ${program.status.toLowerCase()}`}>

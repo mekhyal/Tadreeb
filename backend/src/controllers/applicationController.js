@@ -7,7 +7,14 @@ const ACCEPTED_STATUSES = ['Accepted'];
 // statuses a student is allowed to cancel from (Accepted/Rejected are final per spec)
 const CANCELLABLE_STATUSES = new Set(['Submitted', 'Under Review']);
 
-// apply to opportunity
+// Apply to opportunity (Abdulaziz)
+// What happens when a student applies to a program:
+// 1. Checks program exists
+// 2. Blocks completed programs
+// 3. Blocks duplicate application
+// 4. Enforces seat capacity (accepted applicants only)
+// 5. Blocks overlapping accepted enrollments
+// 6. Creates application
 const applyToProgram = async (req, res) => {
   try {
     const { programID } = req.body;
@@ -26,6 +33,10 @@ const applyToProgram = async (req, res) => {
       return res.status(404).json({ message: 'Program not found' });
     }
 
+    if (program.status === 'Completed') {
+      return res.status(400).json({ message: 'This program is already full or completed' });
+    }
+
     const existingApplication = await Application.findOne({
       studentID: req.user.id,
       programID,
@@ -41,6 +52,8 @@ const applyToProgram = async (req, res) => {
       status: { $in: ACCEPTED_STATUSES },
     });
     if (acceptedCount >= program.seats) {
+      program.status = 'Completed';
+      await program.save();
       return res.status(400).json({ message: 'No seats available for this program' });
     }
 

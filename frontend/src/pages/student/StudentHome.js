@@ -11,6 +11,12 @@ const PROGRAMS_PER_PAGE = 6;
 
 const normalizeProgram = (item) => {
   const company = item.companyID || {};
+  const seats = Number(item.seats) || 0;
+  const usedSeats = Number(item.usedSeats) || 0;
+  const availableSeats =
+    item.availableSeats !== undefined
+      ? Number(item.availableSeats)
+      : Math.max(seats - usedSeats, 0);
 
   return {
     id: item._id,
@@ -29,10 +35,16 @@ const normalizeProgram = (item) => {
     image:
       item.imageURL ||
       "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
-    status: item.status === "Completed" ? "Complete" : "Register Now",
+    status:
+      item.status === "Completed" || availableSeats <= 0
+        ? "Complete"
+        : "Register Now",
     category: item.category || "Software",
     openTo: item.openTo || "Students",
     company: company.companyName || company.email || "Company",
+    seats,
+    usedSeats,
+    availableSeats,
     applied: false,
     actionMessage: "",
     actionType: "",
@@ -199,11 +211,43 @@ function StudentHome() {
     );
   };
 
+  const updateProgramSeatsAfterApply = (programId) => {
+    setPrograms((prev) =>
+      prev.map((program) => {
+        if (program.id !== programId) return program;
+
+        const nextUsedSeats = program.usedSeats + 1;
+        const nextAvailableSeats = Math.max(program.availableSeats - 1, 0);
+
+        return {
+          ...program,
+          usedSeats: nextUsedSeats,
+          availableSeats: nextAvailableSeats,
+          status: nextAvailableSeats <= 0 ? "Complete" : program.status,
+        };
+      })
+    );
+
+    setSelectedProgram((prev) => {
+      if (!prev || prev.id !== programId) return prev;
+
+      const nextUsedSeats = prev.usedSeats + 1;
+      const nextAvailableSeats = Math.max(prev.availableSeats - 1, 0);
+
+      return {
+        ...prev,
+        usedSeats: nextUsedSeats,
+        availableSeats: nextAvailableSeats,
+        status: nextAvailableSeats <= 0 ? "Complete" : prev.status,
+      };
+    });
+  };
+
   const runApplyLogic = async (programId) => {
     const targetProgram = programs.find((program) => program.id === programId);
     if (!targetProgram) return;
 
-    if (targetProgram.status === "Complete") {
+    if (targetProgram.status === "Complete" || targetProgram.availableSeats <= 0) {
       setProgramMessage(
         programId,
         "This program is already full and no longer accepts applications.",
@@ -238,6 +282,8 @@ function StudentHome() {
     try {
       await applyToProgram(programId);
 
+      updateProgramSeatsAfterApply(programId);
+
       setProgramMessage(
         programId,
         "Your application was submitted successfully.",
@@ -260,7 +306,11 @@ function StudentHome() {
     const targetProgram = programs.find((program) => program.id === programId);
     if (!targetProgram) return;
 
-    if (targetProgram.status === "Complete" || targetProgram.applied) {
+    if (
+      targetProgram.status === "Complete" ||
+      targetProgram.availableSeats <= 0 ||
+      targetProgram.applied
+    ) {
       runApplyLogic(programId);
       return;
     }

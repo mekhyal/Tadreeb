@@ -13,20 +13,33 @@ import {
 
 const PROGRAMS_PER_PAGE = 9;
 
-const normalizeProgram = (item) => ({
-  id: item._id,
-  title: item.title || "",
-  subtitle: item.subtitle || "",
-  description: item.description || "",
-  rules: item.rules || "",
-  seats: item.seats || 0,
-  location: item.location || "",
-  dateFrom: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
-  dateTo: item.dateTo ? item.dateTo.slice(0, 10) : "",
-  image: item.imageURL || "",
-  status: item.status || "Active",
-  participants: item.participants || 0,
-});
+const normalizeProgram = (item) => {
+  const seats = Number(item.seats) || 0;
+  const usedSeats = Number(item.usedSeats) || 0;
+  const availableSeats =
+    item.availableSeats !== undefined
+      ? Number(item.availableSeats)
+      : Math.max(seats - usedSeats, 0);
+
+  return {
+    id: item._id,
+    title: item.title || "",
+    subtitle: item.subtitle || "",
+    description: item.description || "",
+    rules: item.rules || "",
+    seats,
+    usedSeats,
+    availableSeats,
+    location: item.location || "",
+    dateFrom: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
+    dateTo: item.dateTo ? item.dateTo.slice(0, 10) : "",
+    image: item.imageURL || "",
+    status:
+      item.status === "Completed" || availableSeats <= 0
+        ? "Completed"
+        : "Active",
+  };
+};
 
 function CompanyPrograms() {
   const [programs, setPrograms] = useState([]);

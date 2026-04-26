@@ -14,6 +14,8 @@ const {
 
 router.post('/', protect, allowRoles('student'), applyToProgram);
 router.get('/my', protect, allowRoles('student'), getMyApplications);
+
+// student cancel/remove application (Abdulaziz)
 router.delete('/:id', protect, allowRoles('student'), cancelApplication);
 
 router.get('/company', protect, allowRoles('company'), getCompanyApplications);
