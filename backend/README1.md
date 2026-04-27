@@ -1,5 +1,7 @@
 # Tadreeb Backend API
 
+> **Note:** The maintained documentation is **[README.md](./README.md)** in this folder. This file may be out of date.
+
 Backend for the **Tadreeb Training Platform** built with:
 
 - Node.js + Express  

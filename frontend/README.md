@@ -1,162 +1,117 @@
-# Tadreeb Platform — Frontend
+# Tadreeb — Frontend
 
-
-## Overview
-
-Tadreeb supports three user roles:
-
-- **Students** → explore and apply for training programs  
-- **Companies** → publish programs and manage participants  
-- **Admins** → manage users, companies, and the full system  
-
-The platform uses a **role-based architecture**, so each user sees only what is relevant to them.
+React SPA for the Tadreeb platform: students, companies, and admins each use role-specific portals. The app talks to the **Express API** (see `../backend/README.md`); configure the base URL with `REACT_APP_API_URL`.
 
 ---
 
-## Features
+## Roles
 
-### Public Pages
-- Home page with modern UI
-- Smooth section navigation
-- Login / Signup pages
-- Company request form
-
-### Authentication (Frontend)
-- Role-based login (Student / Company / Admin)
-- Route protection using React Context
-- Redirect based on role after login
-- Public routes blocked after login
+| Role | What they do |
+| --- | --- |
+| **Student** | Browse programs, apply, track application status (including after a company accepts/rejects), manage profile |
+| **Company** | Dashboard, create/edit programs (**seats**, **qualifications** text), manage participants and application status, profile |
+| **Admin** | Dashboard, programs, participants, companies, users, profile |
 
 ---
 
-### Student Portal
-- Browse training programs
-- Apply to opportunities
-- Track application status
-- Manage profile
+## Features (high level)
+
+- **Public:** marketing home, login/signup, **request to join as a company** (`/company-request`)
+- **Auth:** JWT stored in `localStorage`, `AuthContext`, `ProtectedRoute` / `PublicOnlyRoute`
+- **Student:** program discovery, apply flow, **My Applications** (refreshes on focus / navigation), profile
+- **Company:** programs with seat limits and optional qualifications; participant list; profile
+- **Admin:** cross-company programs and user management; company account status (**Pending** / **Active** / **Rejected**)
 
 ---
 
-### Company Portal
-- Dashboard with statistics
-- Create / edit programs
-- Manage participants
-- Add notes and update status
-- Profile management
+## UI
+
+- Responsive layout, portal-style navigation, modals, pagination, React Icons  
+- Styles under `src/styles/` (role-specific CSS; not only Bootstrap)
 
 ---
 
-### Admin Portal
-- System-wide dashboard
-- Manage all programs
-- Manage participants (review / approve / reject)
-- Manage companies (approve / reject requests)
-- Manage users (students, companies, admins)
-- Profile management
-
----
-
-## UI & UX
-
-- Responsive design (mobile → desktop)
-- Smooth navigation with loaders
-- Modal-based interactions
-- Pagination for large data
-- Clean and consistent design system
-- Custom icons for statistics
-
----
-
-## Project Structure
+## Project structure
 
 ```
-
-src/
-├── components/
-├── pages/
-│   ├── authentication/
-│   ├── student/
-│   ├── company/
-│   ├── admin/
-├── context/
-├── data/
-├── styles/
-└── assets/
-
+frontend/
+├── public/
+├── src/
+│   ├── api/              # Axios wrappers (apiService, auth, admin, applications, …)
+│   ├── components/       # shared + role-specific (portal, student, company, admin)
+│   ├── context/          # AuthContext
+│   ├── pages/
+│   │   ├── authentication/
+│   │   ├── student/
+│   │   ├── company/
+│   │   └── admin/
+│   ├── utils/            # e.g. passwordRules.js, companyAccountStatus.js
+│   ├── styles/
+│   ├── App.js
+│   └── index.js
+├── .env.example
+└── package.json
 ```
 
 ---
 
 ## Technologies
 
-- React.js
-- React Router
-- Context API
-- Bootstrap
-- Custom CSS
-- React Icons
+- React 18, React Router v6  
+- Axios (JWT attached in `apiService`)  
+- Context API  
 
 ---
 
-## Route Protection
+## Route protection
 
-- `/student/*` → student only  
-- `/company/*` → company only  
-- `/admin/*` → admin only  
-
-Uses:
-- `ProtectedRoute`
-- `PublicOnlyRoute`
+| Path prefix | Role |
+| --- | --- |
+| `/student`, `/student/profile`, `/student/applications` | `student` |
+| `/company/*` | `company` |
+| `/admin/*` | `admin` |
 
 ---
 
-## Test Accounts
+## Environment
 
+Create `.env` in `frontend/` if needed:
+
+```env
+REACT_APP_API_URL=http://localhost:5001/api
 ```
 
-Student
-[student@tadreeb.com]
-Student123!
-
-Company
-[company@tadreeb.com]
-Company123!
-
-Admin
-[admin@tadreeb.com]
-Admin123!
-
-````
+Restart the dev server after changing env vars.
 
 ---
 
-## Run Project
+## Run & build
 
 ```bash
 npm install
-npm start
-````
-
-Open:
-
+npm start          # http://localhost:3000
+npm run build      # production bundle
 ```
-http://localhost:3000
-```
+
+Ensure the backend is running and CORS allows your origin (see `backend/.env` `CORS_ORIGIN` for production).
 
 ---
 
-## Build
+## Password policy (signup & profile updates)
 
-```bash
-npm run build
-```
+Aligned with the API: **8–24 characters**, at least **one letter** and **one digit**. See `src/utils/passwordRules.js`.
+
+Test accounts in a dev database are created via the API or admin UI; use credentials your team has provisioned (not committed here).
 
 ---
 
 ## Notes
 
-* Frontend uses mock authentication (localStorage)
-* Ready for backend integration
-* Scalable and reusable structure
+- **Live API integration** — lists and dashboards load from the backend, not static mock JSON.  
+- Application **status** on the student side comes from `GET /api/applications/my` and is refreshed when revisiting **My Applications** or refocusing the browser tab (student home also refreshes programs + applications on visibility/focus).
 
+---
 
+## Course
+
+CS335 — Web Development, Kuwait University.
