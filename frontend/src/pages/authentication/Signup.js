@@ -3,14 +3,20 @@ import { Link, useNavigate } from "react-router-dom";
 import signupImage from "../../assets/Sign up-image-2.svg";
 import { useAuth } from "../../context/AuthContext";
 import { registerStudent } from "../../api/authAPI";
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_REQUIREMENTS_MESSAGE,
+  isPasswordStrong,
+} from "../../utils/passwordRules";
 
 const LIMITS = {
   firstName: 40,
   lastName: 40,
   email: 120,
   mobile: 20,
-  passwordMin: 8,
-  passwordMax: 24,
+  passwordMin: PASSWORD_MIN_LENGTH,
+  passwordMax: PASSWORD_MAX_LENGTH,
   university: 100,
   studentId: 30,
   major: 80,
@@ -18,8 +24,6 @@ const LIMITS = {
 };
 
 const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-const PWD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+={}[\]|\\:;"'<>,.?/`~]).{8,24}$/;
 
 const ALLOWED_EMAIL_DOMAINS = [
   "gmail.com",
@@ -131,9 +135,8 @@ function Signup() {
 
     if (!formData.password.trim()) {
       newErrors.password = "Password is required.";
-    } else if (!PWD_REGEX.test(formData.password)) {
-      newErrors.password =
-        "Password must be 8-24 characters and include uppercase, lowercase, number, and special character.";
+    } else if (!isPasswordStrong(formData.password)) {
+      newErrors.password = PASSWORD_REQUIREMENTS_MESSAGE;
     }
 
     if (!formData.confirmPassword.trim()) {

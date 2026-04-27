@@ -27,7 +27,7 @@ const normalizeAdminApplication = (raw) => {
   const p = raw.programID || {};
   const c = p.companyID || {};
   return {
-    id: raw._id,
+    id: String(raw._id),
     name: [s.firstName, s.lastName].filter(Boolean).join(" ") || "Student",
     email: s.email || "",
     studentId: s.universityID || "",
@@ -100,7 +100,9 @@ function AdminParticipants() {
       });
       const next = normalizeAdminApplication(res.data.application);
       setParticipants((prev) =>
-        prev.map((item) => (item.id === participantId ? next : item))
+        prev.map((item) =>
+          String(item.id) === String(participantId) ? next : item
+        )
       );
       setSelectedParticipant(null);
       setToast("Participant application updated successfully.");
@@ -131,7 +133,7 @@ function AdminParticipants() {
       navItems={adminNavItems}
       profilePath="/admin/profile"
     >
-      <PortalTopbar title="Participants" companyName="Abdulaziz" />
+      <PortalTopbar title="Participants" />
 
       {toast && (
         <div className="portal-save-toast">

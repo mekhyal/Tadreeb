@@ -10,6 +10,7 @@ const companyRequestSchema = new mongoose.Schema(
       required: true,
       trim: true,
       lowercase: true,
+      maxlength: [100, 'officialEmail is too long'],
       match: [EMAIL_REGEX, 'Invalid email format'],
     },
     phoneNumber: { type: String, required: true, trim: true, maxlength: 20 },
@@ -23,7 +24,7 @@ const companyRequestSchema = new mongoose.Schema(
     confirmInfo: { type: Boolean, default: false },
     status: {
       type: String,
-      enum: ['Pending', 'Review', 'Approved', 'Rejected'],
+      enum: ['Pending', 'Approved', 'Rejected'],
       default: 'Pending',
     },
   },

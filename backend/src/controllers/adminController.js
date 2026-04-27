@@ -7,10 +7,11 @@ const {
   isValidEmail,
   isStrongPassword,
   isValidObjectId,
+  PASSWORD_POLICY_MESSAGE,
 } = require('../utils/validators');
 
-// company status values that admins are allowed to set
-const COMPANY_STATUS_VALUES = ['Pending', 'Review', 'Approved', 'Rejected', 'Active'];
+// company account status (must match `models/Company.js`)
+const COMPANY_STATUS_VALUES = ['Pending', 'Active', 'Rejected'];
 
 // student status (stored lowercase in DB; frontend sends Title Case)
 const STUDENT_STATUS_DISPLAY = ['Active', 'Inactive', 'Pending'];
@@ -49,7 +50,7 @@ const createAdmin = async (req, res) => {
 
     if (!isStrongPassword(password)) {
       return res.status(400).json({
-        message: 'Password must be at least 8 characters and include a letter and a number',
+        message: PASSWORD_POLICY_MESSAGE,
       });
     }
 
@@ -121,7 +122,7 @@ const createAdmin = async (req, res) => {
 
       if (!isStrongPassword(password)) {
         return res.status(400).json({
-          message: 'Password must be at least 8 characters and include a letter and a number',
+          message: PASSWORD_POLICY_MESSAGE,
         });
       }
 
@@ -163,7 +164,7 @@ const createAdmin = async (req, res) => {
         contactPerson,
         description,
         joinReason,
-        status: status || 'Approved',
+        status: status || 'Active',
       });
 
       const companySafe = await Company.findById(company._id).select('-password').lean();
@@ -218,7 +219,7 @@ const createAdmin = async (req, res) => {
 
         if (!isStrongPassword(password)) {
           return res.status(400).json({
-            message: 'Password must be at least 8 characters and include a letter and a number',
+            message: PASSWORD_POLICY_MESSAGE,
           });
         }
     

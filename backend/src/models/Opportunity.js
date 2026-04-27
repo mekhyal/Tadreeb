@@ -26,6 +26,12 @@ const opportunitySchema = new mongoose.Schema(
       trim: true,
       maxlength: [5000, 'rules is too long'],
     },
+    qualifications: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: [2000, 'qualifications is too long'],
+    },
     location: {
       type: String,
       required: true,

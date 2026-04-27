@@ -149,10 +149,8 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
               {user.role === "Company" ? (
                 <>
                   <option value="Pending">Pending</option>
-                  <option value="Review">Review</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Rejected">Rejected</option>
                   <option value="Active">Active</option>
+                  <option value="Rejected">Rejected</option>
                 </>
               ) : (
                 <>

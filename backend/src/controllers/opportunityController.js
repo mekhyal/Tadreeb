@@ -2,9 +2,7 @@ const Opportunity = require('../models/Opportunity');
 const Company = require('../models/Company');
 const Application = require('../models/Application');
 const { isValidObjectId } = require('../utils/validators');
-
-// only companies whose admin status is Approved/Active are allowed to publish programs
-const COMPANY_CAN_POST_STATUSES = new Set(['Approved', 'Active']);
+const { companyMayUsePortal } = require('../utils/companyAccountStatus');
 
 const createOpportunity = async (req, res) => {
     try {
@@ -13,6 +11,7 @@ const createOpportunity = async (req, res) => {
             subtitle,
             description,
             rules,
+            qualifications,
             location,
             seats,
             dateFrom,
@@ -29,7 +28,7 @@ const createOpportunity = async (req, res) => {
           if (!company) {
             return res.status(404).json({ message: 'Company account not found' });
           }
-          if (!COMPANY_CAN_POST_STATUSES.has(company.status)) {
+          if (!companyMayUsePortal(company.status)) {
             return res.status(403).json({
               message: `Company is not allowed to post programs (status: ${company.status})`,
             });
@@ -73,6 +72,7 @@ const createOpportunity = async (req, res) => {
             subtitle,
             description,
             rules,
+            qualifications: typeof qualifications === 'string' ? qualifications.trim() : '',
             location,
             seats,
             dateFrom: start,
@@ -98,7 +98,7 @@ const createOpportunity = async (req, res) => {
 };
 
 // get all oppurtunities
-// added usedSeats and availableSeats calculation (Abdulaziz)
+// Seats shown to students = capacity minus *accepted* interns only (applications do not hold a seat until accepted).
 const getOpportunities = async (req, res) => {
   try {
     const opportunities = await Opportunity.find().populate(
@@ -106,18 +106,33 @@ const getOpportunities = async (req, res) => {
       'companyName email industry location'
     );
 
+    const viewer = req.user;
+
     const result = await Promise.all(
       opportunities.map(async (program) => {
-        const activeApplicationsCount = await Application.countDocuments({
+        const acceptedCount = await Application.countDocuments({
           programID: program._id,
-          status: { $in: ['Submitted', 'Under Review', 'Accepted'] },
+          status: 'Accepted',
         });
 
-        return {
+        const companyIdRaw = program.companyID?._id || program.companyID;
+        const isAdmin = viewer?.role === 'admin';
+        const isOwnerCompany =
+          viewer?.role === 'company' &&
+          companyIdRaw &&
+          String(companyIdRaw) === String(viewer.id);
+
+        const row = {
           ...program.toObject(),
-          usedSeats: activeApplicationsCount,
-          availableSeats: program.seats - activeApplicationsCount,
+          usedSeats: acceptedCount,
+          availableSeats: Math.max(0, program.seats - acceptedCount),
         };
+
+        if (isAdmin || isOwnerCompany) {
+          row.applicantsCount = await Application.countDocuments({ programID: program._id });
+        }
+
+        return row;
       })
     );
 
@@ -145,23 +160,36 @@ const getOpportunityById = async (req, res) => {
       return res.status(404).json({ message: 'Program not found' });
     }
 
-    const activeApplicationsCount = await Application.countDocuments({
+    const acceptedCount = await Application.countDocuments({
       programID: opportunity._id,
-      status: { $in: ['Submitted', 'Under Review', 'Accepted'] },
+      status: 'Accepted',
     });
 
-    return res.status(200).json({
+    const companyIdRaw = opportunity.companyID?._id || opportunity.companyID;
+    const viewer = req.user;
+    const isAdmin = viewer?.role === 'admin';
+    const isOwnerCompany =
+      viewer?.role === 'company' &&
+      companyIdRaw &&
+      String(companyIdRaw) === String(viewer.id);
+
+    const row = {
       ...opportunity.toObject(),
-      usedSeats: activeApplicationsCount,
-      availableSeats: opportunity.seats - activeApplicationsCount,
-    });
+      usedSeats: acceptedCount,
+      availableSeats: Math.max(0, opportunity.seats - acceptedCount),
+    };
+
+    if (isAdmin || isOwnerCompany) {
+      row.applicantsCount = await Application.countDocuments({ programID: opportunity._id });
+    }
+
+    return res.status(200).json(row);
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 };
 
-// update the oppurtunity
-// prevent reducing seats below current active applications (Abdulaziz)
+// update the opportunity — do not allow seats below accepted count
 const updateOpportunity = async (req, res) => {
   try {
     if (!isValidObjectId(req.params.id)) {
@@ -191,17 +219,17 @@ const updateOpportunity = async (req, res) => {
       return res.status(400).json({ message: 'dateTo must be after dateFrom' });
     }
 
-    const activeApplicationsCount = await Application.countDocuments({
+    const acceptedCount = await Application.countDocuments({
       programID: req.params.id,
-      status: { $in: ['Submitted', 'Under Review', 'Accepted'] },
+      status: 'Accepted',
     });
 
     if (
       req.body.seats !== undefined &&
-      Number(req.body.seats) < activeApplicationsCount
+      Number(req.body.seats) < acceptedCount
     ) {
       return res.status(400).json({
-        message: `Seats cannot be less than current applications (${activeApplicationsCount})`,
+        message: `Seats cannot be less than accepted participants (${acceptedCount})`,
       });
     }
 
@@ -209,10 +237,10 @@ const updateOpportunity = async (req, res) => {
       ...req.body,
     };
 
-    // re-activate a Completed program if seats are being increased above current usage
+    // re-activate a Completed program if seats are being increased above current accepted usage
     if (
       updatedData.seats !== undefined &&
-      Number(updatedData.seats) > activeApplicationsCount &&
+      Number(updatedData.seats) > acceptedCount &&
       opportunity.status === 'Completed'
     ) {
       updatedData.status = 'Active';

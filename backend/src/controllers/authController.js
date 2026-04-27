@@ -8,13 +8,65 @@ const {
     isStrongPassword,
     exceedsMaxLength,
     MAX_SHORT_TEXT,
+    MAX_MEDIUM_TEXT,
+    MAX_LONG_TEXT,
+    PASSWORD_POLICY_MESSAGE,
 } = require('../utils/validators');
+const { companyMayUsePortal } = require('../utils/companyAccountStatus');
 
-// reject any value that is not a plain string (blocks NoSQL injection like { $gt: "" })
+// reject any value that is not a plain string (blocks NoSql injection like { $gt: "" })
 const isPlainString = (v) => typeof v === 'string';
 
-// company accounts must be in one of these states to use the portal
-const COMPANY_LOGIN_ALLOWED = new Set(['Approved', 'Active']);
+const STUDENT_YEAR_VALUES = new Set(['First', 'Second', 'Third', 'Fourth', 'Fifth']);
+const ADMIN_GENDER_VALUES = new Set(['Male', 'Female', '']);
+
+const buildStudentResponse = (student) => ({
+    id: student._id,
+    universityID: student.universityID,
+    firstName: student.firstName,
+    lastName: student.lastName,
+    email: student.email,
+    mobileNo: student.mobileNo,
+    gender: student.gender,
+    universityName: student.universityName,
+    major: student.major,
+    year: student.year,
+    skills: student.skills,
+    role: student.role,
+    status: student.status,
+});
+
+const buildCompanyResponse = (company) => ({
+    id: company._id,
+    email: company.email,
+    companyName: company.companyName,
+    industry: company.industry,
+    phone: company.phone,
+    website: company.website,
+    size: company.size,
+    location: company.location,
+    contactPerson: company.contactPerson,
+    description: company.description,
+    foundedYear: company.foundedYear,
+    joinReason: company.joinReason,
+    status: company.status,
+    role: company.role,
+});
+
+const buildAdminResponse = (admin) => ({
+    id: admin._id,
+    firstName: admin.firstName,
+    lastName: admin.lastName,
+    email: admin.email,
+    phone: admin.phone,
+    jobTitle: admin.jobTitle,
+    gender: admin.gender,
+    country: admin.country,
+    language: admin.language,
+    extraInfo: admin.extraInfo,
+    role: admin.role,
+    status: admin.status,
+});
 
 
 // student register
@@ -55,7 +107,7 @@ const registerStudent = async (req, res) => {
 
     if (!isStrongPassword(password)) {
         return res.status(400).json({
-            message: 'Password must be at least 8 characters and include a letter and a number',
+            message: PASSWORD_POLICY_MESSAGE,
         });
     }
 
@@ -105,20 +157,7 @@ const registerStudent = async (req, res) => {
     return res.status(201).json({
         message: 'Student registered successfully',
         token: generateToken(student._id, student.role),
-        student: {
-            id: student._id,
-            universityID: student.universityID,
-            firstName: student.firstName,
-            lastName: student.lastName,
-            email: student.email,
-            mobileNo: student.mobileNo,
-            gender: student.gender,
-            universityName: student.universityName,
-            major: student.major,
-            year: student.year,
-            skills: student.skills,
-            role: student.role,
-        },
+        student: buildStudentResponse(student),
     });
     } catch (error) {
         return res.status(500).json({ message: error.message});
@@ -154,21 +193,7 @@ const loginStudent = async (req,res) => {
         return res.status(200).json({
             message: 'Student login successful',
             token: generateToken(student._id, student.role),
-            student: {
-                id: student._id,
-                universityID: student.universityID,
-                firstName: student.firstName,
-                lastName: student.lastName,
-                email: student.email,
-                mobileNo: student.mobileNo,
-                gender: student.gender,
-                universityName: student.universityName,
-                major: student.major,
-                year: student.year,
-                skills: student.skills,
-                role: student.role,
-                status: student.status,
-            },
+            student: buildStudentResponse(student),
         });
 
     } catch(error){
@@ -193,24 +218,17 @@ const loginCompany = async (req,res) => {
             return res.status(400).json({message: 'Invalid email or password'});
         }
 
-        if (!COMPANY_LOGIN_ALLOWED.has(company.status)) {
+        if (!companyMayUsePortal(company.status)) {
             return res.status(403).json({
                 message:
-                    'This company account cannot sign in yet. It must be Approved or Active by an administrator.',
+                    'This company account cannot sign in until an administrator sets its status to Active.',
             });
         }
 
         return res.status(200).json({
             message: 'Company login successful',
             token: generateToken(company._id,  company.role),
-            company: {
-                id: company._id, 
-                email: company.email,
-                industry: company.industry,
-                location: company.location,
-                status: company.status,
-                role: company.role,
-            },
+            company: buildCompanyResponse(company),
         });
     } 
     catch (error) {
@@ -248,15 +266,7 @@ const loginAdmin = async (req, res) => {
         return res.status(200).json({
             message: 'Admin login successful',
             token: generateToken(admin._id, admin.role),
-            admin: {
-                id: admin._id,
-                firstName: admin.firstName,
-                lastName: admin.lastName,
-                email: admin.email,
-                phone: admin.phone,
-                role: admin.role,
-                status: admin.status,
-            },
+            admin: buildAdminResponse(admin),
         });
     } catch(error){
         return res.status(500).json({ message: error.message });
@@ -265,32 +275,47 @@ const loginAdmin = async (req, res) => {
 
 // --- Authenticated profile updates (own account only) ---
 
-const buildStudentResponse = (student) => ({
-    id: student._id,
-    universityID: student.universityID,
-    firstName: student.firstName,
-    lastName: student.lastName,
-    email: student.email,
-    mobileNo: student.mobileNo,
-    gender: student.gender,
-    universityName: student.universityName,
-    major: student.major,
-    year: student.year,
-    skills: student.skills,
-    role: student.role,
-    status: student.status,
-});
-
 const updateStudentProfile = async (req, res) => {
     try {
         const { firstName, lastName, email, mobileNo, gender, universityName, major, year, skills, universityID, password } = req.body;
         const $set = {};
-        if (firstName !== undefined) $set.firstName = String(firstName).trim();
-        if (lastName !== undefined) $set.lastName = String(lastName).trim();
+
+        if (firstName !== undefined) {
+            if (!isPlainString(firstName)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = firstName.trim();
+            if (t.length < 1) {
+                return res.status(400).json({ message: 'First name cannot be empty' });
+            }
+            if (exceedsMaxLength(t, 100)) {
+                return res.status(400).json({ message: 'firstName exceeds maximum length of 100 characters' });
+            }
+            $set.firstName = t;
+        }
+        if (lastName !== undefined) {
+            if (!isPlainString(lastName)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = lastName.trim();
+            if (t.length < 1) {
+                return res.status(400).json({ message: 'Last name cannot be empty' });
+            }
+            if (exceedsMaxLength(t, 100)) {
+                return res.status(400).json({ message: 'lastName exceeds maximum length of 100 characters' });
+            }
+            $set.lastName = t;
+        }
         if (email !== undefined) {
-            const nextEmail = String(email).trim().toLowerCase();
+            if (!isPlainString(email)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const nextEmail = email.trim().toLowerCase();
             if (!isValidEmail(nextEmail)) {
                 return res.status(400).json({ message: 'Invalid email format' });
+            }
+            if (exceedsMaxLength(nextEmail, 100)) {
+                return res.status(400).json({ message: 'email exceeds maximum length of 100 characters' });
             }
             const taken = await Student.findOne({
                 email: nextEmail,
@@ -301,22 +326,97 @@ const updateStudentProfile = async (req, res) => {
             }
             $set.email = nextEmail;
         }
-        if (mobileNo !== undefined) $set.mobileNo = String(mobileNo).trim();
-        if (gender !== undefined) $set.gender = gender;
-        if (universityName !== undefined) $set.universityName = String(universityName).trim();
-        if (major !== undefined) $set.major = String(major).trim();
-        if (year !== undefined) $set.year = year;
-        if (skills !== undefined) {
-            $set.skills = Array.isArray(skills) ? skills : String(skills).split(',').map((s) => s.trim()).filter(Boolean);
+        if (mobileNo !== undefined) {
+            if (!isPlainString(mobileNo)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = mobileNo.trim();
+            if (exceedsMaxLength(t, 20)) {
+                return res.status(400).json({ message: 'mobileNo exceeds maximum length of 20 characters' });
+            }
+            $set.mobileNo = t;
         }
-        if (universityID !== undefined) $set.universityID = String(universityID).trim();
-        if (password !== undefined && String(password).length >= 8) {
-            if (!isStrongPassword(String(password))) {
+        if (gender !== undefined) {
+            if (!isPlainString(gender) || !['Male', 'Female'].includes(gender)) {
+                return res.status(400).json({ message: 'Invalid gender' });
+            }
+            $set.gender = gender;
+        }
+        if (universityName !== undefined) {
+            if (!isPlainString(universityName)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = universityName.trim();
+            if (exceedsMaxLength(t, 100)) {
+                return res.status(400).json({ message: 'universityName exceeds maximum length of 100 characters' });
+            }
+            $set.universityName = t;
+        }
+        if (major !== undefined) {
+            if (!isPlainString(major)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = major.trim();
+            if (exceedsMaxLength(t, 100)) {
+                return res.status(400).json({ message: 'major exceeds maximum length of 100 characters' });
+            }
+            $set.major = t;
+        }
+        if (year !== undefined) {
+            if (!isPlainString(year) || !STUDENT_YEAR_VALUES.has(year)) {
+                return res.status(400).json({ message: 'Invalid year' });
+            }
+            $set.year = year;
+        }
+        if (skills !== undefined) {
+            let list;
+            if (Array.isArray(skills)) {
+                if (!skills.every((x) => isPlainString(x))) {
+                    return res.status(400).json({ message: 'Invalid skills format' });
+                }
+                list = skills.map((s) => s.trim()).filter(Boolean);
+            } else if (isPlainString(skills)) {
+                list = skills.split(',').map((s) => s.trim()).filter(Boolean);
+            } else {
+                return res.status(400).json({ message: 'Invalid skills format' });
+            }
+            const overlongSkill = list.find((s) => exceedsMaxLength(s, MAX_SHORT_TEXT));
+            if (overlongSkill) {
                 return res.status(400).json({
-                    message: 'Password must be at least 8 characters and include a letter and a number',
+                    message: `Each skill must be ${MAX_SHORT_TEXT} characters or less`,
                 });
             }
-            $set.password = await bcrypt.hash(String(password), 10);
+            $set.skills = list;
+        }
+        if (universityID !== undefined) {
+            if (!isPlainString(universityID)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = universityID.trim();
+            if (exceedsMaxLength(t, 50)) {
+                return res.status(400).json({ message: 'universityID exceeds maximum length of 50 characters' });
+            }
+            const taken = await Student.findOne({
+                universityID: t,
+                _id: { $ne: req.user.id },
+            });
+            if (taken) {
+                return res.status(400).json({ message: 'University ID already registered' });
+            }
+            $set.universityID = t;
+        }
+        if (password !== undefined) {
+            if (!isPlainString(password)) {
+                return res.status(400).json({ message: 'Invalid password format' });
+            }
+            if (password.trim() !== '') {
+                if (!isStrongPassword(password)) {
+                    return res.status(400).json({
+                        message: PASSWORD_POLICY_MESSAGE,
+                    });
+                }
+                $set.password = await bcrypt.hash(password, 10);
+            }
         }
         if (Object.keys($set).length === 0) {
             return res.status(400).json({ message: 'No valid fields to update' });
@@ -344,46 +444,141 @@ const updateStudentProfile = async (req, res) => {
     }
 };
 
-const buildCompanyResponse = (company) => ({
-    id: company._id,
-    email: company.email,
-    companyName: company.companyName,
-    industry: company.industry,
-    phone: company.phone,
-    website: company.website,
-    size: company.size,
-    location: company.location,
-    contactPerson: company.contactPerson,
-    description: company.description,
-    status: company.status,
-    role: company.role,
-});
-
 const updateCompanyProfile = async (req, res) => {
     try {
         const {
             companyName, industry, phone, website, size, location, contactPerson, description, foundedYear, joinReason, password,
         } = req.body;
         const $set = {};
-        if (companyName !== undefined) $set.companyName = String(companyName).trim();
-        if (industry !== undefined) $set.industry = String(industry).trim();
-        if (phone !== undefined) $set.phone = String(phone).trim();
-        if (website !== undefined) $set.website = String(website).trim();
-        if (size !== undefined) $set.size = String(size).trim();
-        if (location !== undefined) $set.location = String(location).trim();
-        if (contactPerson !== undefined) $set.contactPerson = String(contactPerson).trim();
-        if (description !== undefined) $set.description = String(description).trim();
-        if (foundedYear !== undefined && foundedYear !== null && foundedYear !== '') {
-            $set.foundedYear = Number(foundedYear);
+        const currentYear = new Date().getFullYear();
+
+        if (companyName !== undefined) {
+            if (!isPlainString(companyName)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = companyName.trim();
+            if (t.length < 1) {
+                return res.status(400).json({ message: 'Company name cannot be empty' });
+            }
+            if (exceedsMaxLength(t, 200)) {
+                return res.status(400).json({ message: 'companyName exceeds maximum length of 200 characters' });
+            }
+            $set.companyName = t;
         }
-        if (joinReason !== undefined) $set.joinReason = String(joinReason).trim();
-        if (password !== undefined && String(password).length >= 8) {
-            if (!isStrongPassword(String(password))) {
+        if (industry !== undefined) {
+            if (!isPlainString(industry)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = industry.trim();
+            if (t.length < 1) {
+                return res.status(400).json({ message: 'Industry cannot be empty' });
+            }
+            if (exceedsMaxLength(t, 100)) {
+                return res.status(400).json({ message: 'industry exceeds maximum length of 100 characters' });
+            }
+            $set.industry = t;
+        }
+        if (phone !== undefined) {
+            if (!isPlainString(phone)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = phone.trim();
+            if (t.length < 1) {
+                return res.status(400).json({ message: 'Phone cannot be empty' });
+            }
+            if (exceedsMaxLength(t, 20)) {
+                return res.status(400).json({ message: 'phone exceeds maximum length of 20 characters' });
+            }
+            $set.phone = t;
+        }
+        if (website !== undefined) {
+            if (!isPlainString(website)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = website.trim();
+            if (exceedsMaxLength(t, 200)) {
+                return res.status(400).json({ message: 'website exceeds maximum length of 200 characters' });
+            }
+            $set.website = t;
+        }
+        if (size !== undefined) {
+            if (!isPlainString(size)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = size.trim();
+            if (exceedsMaxLength(t, 50)) {
+                return res.status(400).json({ message: 'size exceeds maximum length of 50 characters' });
+            }
+            $set.size = t;
+        }
+        if (location !== undefined) {
+            if (!isPlainString(location)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = location.trim();
+            if (t.length < 1) {
+                return res.status(400).json({ message: 'Location cannot be empty' });
+            }
+            if (exceedsMaxLength(t, 100)) {
+                return res.status(400).json({ message: 'location exceeds maximum length of 100 characters' });
+            }
+            $set.location = t;
+        }
+        if (contactPerson !== undefined) {
+            if (!isPlainString(contactPerson)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = contactPerson.trim();
+            if (exceedsMaxLength(t, 100)) {
+                return res.status(400).json({ message: 'contactPerson exceeds maximum length of 100 characters' });
+            }
+            $set.contactPerson = t;
+        }
+        if (description !== undefined) {
+            if (!isPlainString(description)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = description.trim();
+            if (exceedsMaxLength(t, MAX_LONG_TEXT)) {
                 return res.status(400).json({
-                    message: 'Password must be at least 8 characters and include a letter and a number',
+                    message: `description exceeds maximum length of ${MAX_LONG_TEXT} characters`,
                 });
             }
-            $set.password = await bcrypt.hash(String(password), 10);
+            $set.description = t;
+        }
+        if (joinReason !== undefined) {
+            if (!isPlainString(joinReason)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = joinReason.trim();
+            if (exceedsMaxLength(t, MAX_LONG_TEXT)) {
+                return res.status(400).json({
+                    message: `joinReason exceeds maximum length of ${MAX_LONG_TEXT} characters`,
+                });
+            }
+            $set.joinReason = t;
+        }
+        if (foundedYear !== undefined && foundedYear !== null && foundedYear !== '') {
+            const yearNum = Number(foundedYear);
+            if (!Number.isInteger(yearNum) || yearNum < 1800 || yearNum > currentYear) {
+                return res.status(400).json({
+                    message: `foundedYear must be an integer between 1800 and ${currentYear}`,
+                });
+            }
+            $set.foundedYear = yearNum;
+        }
+        if (password !== undefined) {
+            if (!isPlainString(password)) {
+                return res.status(400).json({ message: 'Invalid password format' });
+            }
+            if (password.trim() !== '') {
+                if (!isStrongPassword(password)) {
+                    return res.status(400).json({
+                        message: PASSWORD_POLICY_MESSAGE,
+                    });
+                }
+                $set.password = await bcrypt.hash(password, 10);
+            }
         }
         if (Object.keys($set).length === 0) {
             return res.status(400).json({ message: 'No valid fields to update' });
@@ -408,40 +603,122 @@ const updateCompanyProfile = async (req, res) => {
     }
 };
 
-const buildAdminResponse = (admin) => ({
-    id: admin._id,
-    firstName: admin.firstName,
-    lastName: admin.lastName,
-    email: admin.email,
-    phone: admin.phone,
-    jobTitle: admin.jobTitle,
-    gender: admin.gender,
-    country: admin.country,
-    language: admin.language,
-    extraInfo: admin.extraInfo,
-    role: admin.role,
-    status: admin.status,
-});
-
 const updateAdminProfile = async (req, res) => {
     try {
         const { firstName, lastName, phone, jobTitle, gender, country, language, extraInfo, password } = req.body;
         const $set = {};
-        if (firstName !== undefined) $set.firstName = String(firstName).trim();
-        if (lastName !== undefined) $set.lastName = String(lastName).trim();
-        if (phone !== undefined) $set.phone = String(phone).trim();
-        if (jobTitle !== undefined) $set.jobTitle = String(jobTitle).trim();
-        if (gender !== undefined) $set.gender = gender;
-        if (country !== undefined) $set.country = String(country).trim();
-        if (language !== undefined) $set.language = String(language).trim();
-        if (extraInfo !== undefined) $set.extraInfo = String(extraInfo).trim();
-        if (password !== undefined && String(password).length >= 8) {
-            if (!isStrongPassword(String(password))) {
+
+        if (firstName !== undefined) {
+            if (!isPlainString(firstName)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = firstName.trim();
+            if (t.length < 1) {
+                return res.status(400).json({ message: 'First name cannot be empty' });
+            }
+            if (exceedsMaxLength(t, MAX_SHORT_TEXT)) {
                 return res.status(400).json({
-                    message: 'Password must be at least 8 characters and include a letter and a number',
+                    message: `firstName exceeds maximum length of ${MAX_SHORT_TEXT} characters`,
                 });
             }
-            $set.password = await bcrypt.hash(String(password), 10);
+            $set.firstName = t;
+        }
+        if (lastName !== undefined) {
+            if (!isPlainString(lastName)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = lastName.trim();
+            if (t.length < 1) {
+                return res.status(400).json({ message: 'Last name cannot be empty' });
+            }
+            if (exceedsMaxLength(t, MAX_SHORT_TEXT)) {
+                return res.status(400).json({
+                    message: `lastName exceeds maximum length of ${MAX_SHORT_TEXT} characters`,
+                });
+            }
+            $set.lastName = t;
+        }
+        if (phone !== undefined) {
+            if (!isPlainString(phone)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = phone.trim();
+            if (t.length < 1) {
+                return res.status(400).json({ message: 'Phone cannot be empty' });
+            }
+            if (exceedsMaxLength(t, MAX_MEDIUM_TEXT)) {
+                return res.status(400).json({
+                    message: `phone exceeds maximum length of ${MAX_MEDIUM_TEXT} characters`,
+                });
+            }
+            $set.phone = t;
+        }
+        if (jobTitle !== undefined) {
+            if (!isPlainString(jobTitle)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = jobTitle.trim();
+            if (exceedsMaxLength(t, MAX_MEDIUM_TEXT)) {
+                return res.status(400).json({
+                    message: `jobTitle exceeds maximum length of ${MAX_MEDIUM_TEXT} characters`,
+                });
+            }
+            $set.jobTitle = t;
+        }
+        if (gender !== undefined) {
+            if (!isPlainString(gender) || !ADMIN_GENDER_VALUES.has(gender)) {
+                return res.status(400).json({ message: 'Invalid gender' });
+            }
+            $set.gender = gender;
+        }
+        if (country !== undefined) {
+            if (!isPlainString(country)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = country.trim();
+            if (exceedsMaxLength(t, MAX_SHORT_TEXT)) {
+                return res.status(400).json({
+                    message: `country exceeds maximum length of ${MAX_SHORT_TEXT} characters`,
+                });
+            }
+            $set.country = t;
+        }
+        if (language !== undefined) {
+            if (!isPlainString(language)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = language.trim();
+            if (exceedsMaxLength(t, MAX_SHORT_TEXT)) {
+                return res.status(400).json({
+                    message: `language exceeds maximum length of ${MAX_SHORT_TEXT} characters`,
+                });
+            }
+            $set.language = t;
+        }
+        if (extraInfo !== undefined) {
+            if (!isPlainString(extraInfo)) {
+                return res.status(400).json({ message: 'Invalid input format' });
+            }
+            const t = extraInfo.trim();
+            if (exceedsMaxLength(t, MAX_LONG_TEXT)) {
+                return res.status(400).json({
+                    message: `extraInfo exceeds maximum length of ${MAX_LONG_TEXT} characters`,
+                });
+            }
+            $set.extraInfo = t;
+        }
+        if (password !== undefined) {
+            if (!isPlainString(password)) {
+                return res.status(400).json({ message: 'Invalid password format' });
+            }
+            if (password.trim() !== '') {
+                if (!isStrongPassword(password)) {
+                    return res.status(400).json({
+                        message: PASSWORD_POLICY_MESSAGE,
+                    });
+                }
+                $set.password = await bcrypt.hash(password, 10);
+            }
         }
         if (Object.keys($set).length === 0) {
             return res.status(400).json({ message: 'No valid fields to update' });
@@ -466,11 +743,50 @@ const updateAdminProfile = async (req, res) => {
     }
 };
 
+const getStudentProfile = async (req, res) => {
+    try {
+        const student = await Student.findById(req.user.id).select('-password');
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
+        return res.status(200).json({ student: buildStudentResponse(student) });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getCompanyProfile = async (req, res) => {
+    try {
+        const company = await Company.findById(req.user.id).select('-password');
+        if (!company) {
+            return res.status(404).json({ message: 'Company not found' });
+        }
+        return res.status(200).json({ company: buildCompanyResponse(company) });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
+const getAdminProfile = async (req, res) => {
+    try {
+        const admin = await Admin.findById(req.user.id).select('-password');
+        if (!admin) {
+            return res.status(404).json({ message: 'Admin not found' });
+        }
+        return res.status(200).json({ admin: buildAdminResponse(admin) });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     registerStudent,
     loginStudent,
     loginCompany,
     loginAdmin,
+    getStudentProfile,
+    getCompanyProfile,
+    getAdminProfile,
     updateStudentProfile,
     updateCompanyProfile,
     updateAdminProfile,

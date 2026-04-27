@@ -102,6 +102,7 @@ const getMyApplications = async (req, res) => {
       // nested populate so the student page can show the program's company name
       .populate({
         path: 'programID',
+        select: 'title subtitle description location dateFrom dateTo qualifications seats companyID',
         populate: {
           path: 'companyID',
           select: 'companyName email industry location',
@@ -126,7 +127,7 @@ const getCompanyApplications = async (req, res) => {
       programID: { $in: programIds },
     })
       .populate('studentID', 'firstName lastName email major universityName year skills')
-      .populate('programID', 'title location dateFrom dateTo seats')
+      .populate('programID', 'title location dateFrom dateTo seats qualifications')
       .sort({ createdAt: -1 });
 
     return res.status(200).json(applications);

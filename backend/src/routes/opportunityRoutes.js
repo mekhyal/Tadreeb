@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 const protect = require('../middleware/authMiddleware');
+const optionalAuth = require('../middleware/optionalAuthMiddleware');
 const allowRoles = require('../middleware/roleMiddleware');
 
 const {
@@ -12,9 +13,9 @@ const {
   deleteOpportunity,
 } = require('../controllers/opportunityController');
 
-// public reads
-router.get('/', getOpportunities);
-router.get('/:id', getOpportunityById);
+// public reads (optional Bearer for company-only metrics)
+router.get('/', optionalAuth, getOpportunities);
+router.get('/:id', optionalAuth, getOpportunityById);
 
 // company creates programs
 router.post('/', protect, allowRoles('company'), createOpportunity);

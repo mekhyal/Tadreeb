@@ -83,7 +83,7 @@ const companySchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Pending', 'Review', 'Approved', 'Rejected', 'Active'],
+      enum: ['Pending', 'Active', 'Rejected'],
       default: 'Pending',
     },
     role: {

@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
 
+import { normalizeCompanyAccountStatus } from "../../utils/companyAccountStatus";
+
 function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
-  const [status, setStatus] = useState(company?.status || "Review");
+  const [status, setStatus] = useState(
+    () => normalizeCompanyAccountStatus(company?.status)
+  );
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -9,6 +13,12 @@ function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
       document.body.style.overflow = "auto";
     };
   }, []);
+
+  useEffect(() => {
+    if (company) {
+      setStatus(normalizeCompanyAccountStatus(company.status));
+    }
+  }, [company?.id]);
 
   if (!company) return null;
 
@@ -113,10 +123,8 @@ function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
             <label>Update Status</label>
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="Pending">Pending</option>
-              <option value="Review">Review</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
               <option value="Active">Active</option>
+              <option value="Rejected">Rejected</option>
             </select>
           </div>
         </div>

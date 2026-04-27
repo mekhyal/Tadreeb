@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import StudentTopbar from "../../components/student/StudentTopbar";
 import StudentFooter from "../../components/student/StudentFooter";
 import {
@@ -11,7 +12,7 @@ const normalizeApplication = (item) => {
   const company = program.companyID || {};
 
   return {
-    id: item._id,
+    id: String(item._id || item.id || ""),
     company: company.companyName || company.email || "Company",
     opportunity: program.title || "Program",
     status: item.status || "Submitted",
@@ -20,6 +21,7 @@ const normalizeApplication = (item) => {
 };
 
 function StudentApplications() {
+  const location = useLocation();
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -33,26 +35,50 @@ function StudentApplications() {
     return "review";
   };
 
-  const fetchApplications = async () => {
-    setIsLoading(true);
-    setError("");
+  const fetchApplications = useCallback(async (showSpinner = true) => {
+    if (showSpinner) {
+      setIsLoading(true);
+      setError("");
+    }
 
     try {
       const res = await getMyApplications();
-      setApplications(res.data.map(normalizeApplication));
+      setApplications((res.data || []).map(normalizeApplication));
     } catch (err) {
-      setError(
-        err.response?.data?.message ||
-          "Could not load your applications. Please try again."
-      );
+      if (showSpinner) {
+        setError(
+          err.response?.data?.message ||
+            "Could not load your applications. Please try again."
+        );
+      }
     } finally {
-      setIsLoading(false);
+      if (showSpinner) {
+        setIsLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchApplications();
-  }, []);
+    fetchApplications(true);
+  }, [location.pathname, fetchApplications]);
+
+  useEffect(() => {
+    const refetchQuiet = () => {
+      if (document.visibilityState === "visible") {
+        fetchApplications(false);
+      }
+    };
+
+    const onFocus = () => fetchApplications(false);
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", refetchQuiet);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", refetchQuiet);
+    };
+  }, [fetchApplications]);
 
   const handleRemoveClick = (item) => {
     setSelectedApplication(item);
@@ -67,7 +93,9 @@ function StudentApplications() {
       await cancelApplication(selectedApplication.id);
 
       setApplications((prev) =>
-        prev.filter((item) => item.id !== selectedApplication.id)
+        prev.filter(
+          (item) => String(item.id) !== String(selectedApplication.id)
+        )
       );
 
       setSelectedApplication(null);

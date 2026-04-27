@@ -15,8 +15,26 @@ import {
   updateStudentStatus,
   updateAdminStatus,
 } from "../../api/adminAPI";
+import { normalizeCompanyAccountStatus } from "../../utils/companyAccountStatus";
 
 const USERS_PER_PAGE = 6;
+
+const formatYmd = (v) => {
+  if (!v) return "";
+  if (typeof v === "string") return v.slice(0, 10);
+  try {
+    return new Date(v).toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
+};
+
+const toneFromId = (id) => {
+  const s = String(id || "");
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h + s.charCodeAt(i)) % 4;
+  return h;
+};
 
 const adminNavItems = [
   { key: "dashboard", label: "Dashboard", path: "/admin/dashboard" },
@@ -42,54 +60,54 @@ const studentStatusLabel = (s) => {
 };
 
 const normalizeStudent = (item) => ({
-  id: item._id,
-  systemId: item.universityID || item._id?.slice(-6).toUpperCase(),
+  id: String(item._id),
+  systemId: item.universityID || String(item._id).slice(-6).toUpperCase(),
   name: `${item.firstName || ""} ${item.lastName || ""}`.trim(),
   email: item.email || "",
   role: "Student",
   status: studentStatusLabel(item.status),
   phone: item.mobileNo || "",
-  location: item.country || "Kuwait",
-  createdAt: item.createdAt ? item.createdAt.slice(0, 10) : "",
+  location: item.country || item.universityName || "—",
+  createdAt: formatYmd(item.createdAt),
   studentId: item.universityID || "",
   universityName: item.universityName || "",
   major: item.major || "",
   year: item.year || "",
   gender: item.gender || "",
-  country: item.country || "Kuwait",
+  country: item.country || item.universityName || "—",
   skills: Array.isArray(item.skills) ? item.skills.join(", ") : item.skills || "",
 });
 
 const normalizeCompany = (item) => ({
-  id: item._id,
-  systemId: item._id?.slice(-6).toUpperCase(),
+  id: String(item._id),
+  systemId: String(item._id).slice(-6).toUpperCase(),
   name: item.companyName || "",
   email: item.email || "",
   role: "Company",
-  status: item.status || "Pending",
+  status: normalizeCompanyAccountStatus(item.status),
   phone: item.phone || "",
   location: item.location || "",
-  createdAt: item.createdAt ? item.createdAt.slice(0, 10) : "",
-  companyId: item._id?.slice(-6).toUpperCase(),
+  createdAt: formatYmd(item.createdAt),
+  companyId: String(item._id).slice(-6).toUpperCase(),
   industry: item.industry || "",
   website: item.website || "",
   companySize: item.size || "",
-  foundedYear: item.foundedYear || "",
+  foundedYear: item.foundedYear ?? "",
   contactPerson: item.contactPerson || "",
   internshipAvailability: item.status || "Pending",
 });
 
 const normalizeAdmin = (item) => ({
-  id: item._id,
-  systemId: item._id?.slice(-6).toUpperCase(),
+  id: String(item._id),
+  systemId: String(item._id).slice(-6).toUpperCase(),
   name: `${item.firstName || ""} ${item.lastName || ""}`.trim(),
   email: item.email || "",
   role: "Admin",
   status: item.status || "Active",
   phone: item.phone || "",
-  location: item.country || "Kuwait",
-  createdAt: item.createdAt ? item.createdAt.slice(0, 10) : "",
-  adminId: item._id?.slice(-6).toUpperCase(),
+  location: item.country || "—",
+  createdAt: formatYmd(item.createdAt),
+  adminId: String(item._id).slice(-6).toUpperCase(),
   jobTitle: item.jobTitle || "",
   gender: item.gender || "",
   country: item.country || "",
@@ -211,7 +229,7 @@ function AdminUsers() {
       location: newUser.location,
       foundedYear: newUser.foundedYear,
       contactPerson: newUser.contactPerson,
-      status: newUser.status === "Inactive" ? "Pending" : newUser.status,
+      status: newUser.status,
     };
   };
 
@@ -283,7 +301,7 @@ function AdminUsers() {
   };
 
   const handleStatusChange = async (userId, newStatus) => {
-    const targetUser = users.find((item) => item.id === userId);
+    const targetUser = users.find((item) => String(item.id) === String(userId));
     if (!targetUser) return;
 
     if (targetUser.role === "Student") {
@@ -291,7 +309,7 @@ function AdminUsers() {
         const res = await updateStudentStatus(userId, newStatus);
         const updated = normalizeStudent(res.data.student);
         setUsers((prev) =>
-          prev.map((item) => (item.id === userId ? updated : item))
+          prev.map((item) => (String(item.id) === String(userId) ? updated : item))
         );
         setSelectedUser(updated);
         setToast("Student status updated successfully.");
@@ -310,7 +328,7 @@ function AdminUsers() {
         const res = await updateAdminStatus(userId, newStatus);
         const updated = normalizeAdmin(res.data.admin);
         setUsers((prev) =>
-          prev.map((item) => (item.id === userId ? updated : item))
+          prev.map((item) => (String(item.id) === String(userId) ? updated : item))
         );
         setSelectedUser(updated);
         setToast("Admin status updated successfully.");
@@ -330,7 +348,9 @@ function AdminUsers() {
         const updatedCompany = normalizeCompany(res.data.company);
 
         setUsers((prev) =>
-          prev.map((item) => (item.id === userId ? updatedCompany : item))
+          prev.map((item) =>
+            String(item.id) === String(userId) ? updatedCompany : item
+          )
         );
 
         setSelectedUser(updatedCompany);
@@ -349,7 +369,7 @@ function AdminUsers() {
       navItems={adminNavItems}
       profilePath="/admin/profile"
     >
-      <PortalTopbar title="Users" companyName="Abdulaziz" />
+      <PortalTopbar title="Users" />
 
       {toast && (
         <div className="portal-save-toast">
@@ -425,13 +445,15 @@ function AdminUsers() {
                         <tr
                           key={item.id}
                           className={`clickable-row ${
-                            selectedUser?.id === item.id ? "selected-row" : ""
+                            selectedUser && String(selectedUser.id) === String(item.id)
+                              ? "selected-row"
+                              : ""
                           }`}
                           onClick={() => setSelectedUser(item)}
                         >
                           <td>
                             <div className="admin-company-cell">
-                              <div className={`admin-company-avatar tone-${item.id.length % 4}`}>
+                              <div className={`admin-company-avatar tone-${toneFromId(item.id)}`}>
                                 {item.name?.charAt(0)}
                               </div>
 

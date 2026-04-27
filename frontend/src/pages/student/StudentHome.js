@@ -31,6 +31,7 @@ const normalizeProgram = (item) => {
           .split("\n")
           .map((rule) => rule.trim())
           .filter(Boolean),
+    qualifications: item.qualifications || "",
     location: item.location || "",
     image:
       item.imageURL ||
@@ -46,10 +47,38 @@ const normalizeProgram = (item) => {
     usedSeats,
     availableSeats,
     applied: false,
+    applicationStatus: null,
     actionMessage: "",
     actionType: "",
   };
 };
+
+function buildStudentProgramList(programsRes, myAppsRes) {
+  const statusByProgramId = new Map();
+  (myAppsRes.data || []).forEach((app) => {
+    const pid = app.programID?._id || app.programID;
+    if (pid) {
+      const key = String(pid);
+      statusByProgramId.set(key, app.status || "Submitted");
+    }
+  });
+
+  const normalizedPrograms = programsRes.data.map((item) => {
+    const pid = String(item._id);
+    return {
+      ...normalizeProgram(item),
+      id: pid,
+      applied: statusByProgramId.has(pid),
+      applicationStatus: statusByProgramId.get(pid) ?? null,
+    };
+  });
+
+  return normalizedPrograms.sort((a, b) => {
+    if (a.status === "Complete" && b.status !== "Complete") return 1;
+    if (a.status !== "Complete" && b.status === "Complete") return -1;
+    return 0;
+  });
+}
 
 function StudentHome() {
   const [searchInput, setSearchInput] = useState("");
@@ -87,9 +116,11 @@ function StudentHome() {
   ];
 
   useEffect(() => {
-    const fetchPrograms = async () => {
-      setIsPageLoading(true);
-      setPageError("");
+    const load = async (showFullLoader) => {
+      if (showFullLoader) {
+        setIsPageLoading(true);
+        setPageError("");
+      }
 
       try {
         const [programsRes, myAppsRes] = await Promise.all([
@@ -97,36 +128,63 @@ function StudentHome() {
           getMyApplications().catch(() => ({ data: [] })),
         ]);
 
-        const appliedProgramIds = new Set(
-          (myAppsRes.data || [])
-            .map((app) => app.programID?._id || app.programID)
-            .filter(Boolean)
-            .map(String)
-        );
-
-        const normalizedPrograms = programsRes.data.map((item) => ({
-          ...normalizeProgram(item),
-          applied: appliedProgramIds.has(String(item._id)),
-        }));
-
-        const sortedPrograms = normalizedPrograms.sort((a, b) => {
-          if (a.status === "Complete" && b.status !== "Complete") return 1;
-          if (a.status !== "Complete" && b.status === "Complete") return -1;
-          return 0;
-        });
+        const sortedPrograms = buildStudentProgramList(programsRes, myAppsRes);
 
         setPrograms(sortedPrograms);
       } catch (error) {
-        setPageError(
-          error.response?.data?.message ||
-            "Could not load programs. Please try again."
-        );
+        if (showFullLoader) {
+          setPageError(
+            error.response?.data?.message ||
+              "Could not load programs. Please try again."
+          );
+        }
       } finally {
-        setIsPageLoading(false);
+        if (showFullLoader) {
+          setIsPageLoading(false);
+        }
       }
     };
 
-    fetchPrograms();
+    load(true);
+  }, []);
+
+  useEffect(() => {
+    const refetchQuiet = () => {
+      if (document.visibilityState !== "visible") return;
+
+      const run = async () => {
+        try {
+          const [programsRes, myAppsRes] = await Promise.all([
+            getOpportunities(),
+            getMyApplications().catch(() => ({ data: [] })),
+          ]);
+
+          const sortedPrograms = buildStudentProgramList(programsRes, myAppsRes);
+
+          setPrograms(sortedPrograms);
+
+          setSelectedProgram((prev) => {
+            if (!prev) return prev;
+            const updated = sortedPrograms.find((p) => p.id === prev.id);
+            return updated || prev;
+          });
+        } catch {
+          /* keep existing list */
+        }
+      };
+
+      run();
+    };
+
+    const onFocus = () => refetchQuiet();
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", refetchQuiet);
+
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", refetchQuiet);
+    };
   }, []);
 
   useEffect(() => {
@@ -190,22 +248,17 @@ function StudentHome() {
     }
   }, [currentPage, totalPages]);
 
-  const datesOverlap = (aStart, aEnd, bStart, bEnd) => {
-    const startA = new Date(aStart);
-    const endA = new Date(aEnd);
-    const startB = new Date(bStart);
-    const endB = new Date(bEnd);
-
-    return startA <= endB && startB <= endA;
-  };
-
   const setProgramMessage = (programId, message, type, applied = false) => {
+    const pid = String(programId);
     setPrograms((prev) =>
       prev.map((program) =>
-        program.id === programId
+        String(program.id) === pid
           ? {
               ...program,
               applied,
+              applicationStatus: applied
+                ? program.applicationStatus || "Submitted"
+                : program.applicationStatus,
               actionMessage: message,
               actionType: type,
             }
@@ -214,10 +267,13 @@ function StudentHome() {
     );
 
     setSelectedProgram((prev) =>
-      prev && prev.id === programId
+      prev && String(prev.id) === pid
         ? {
             ...prev,
             applied,
+            applicationStatus: applied
+              ? prev.applicationStatus || "Submitted"
+              : prev.applicationStatus,
             actionMessage: message,
             actionType: type,
           }
@@ -225,67 +281,33 @@ function StudentHome() {
     );
   };
 
-  const updateProgramSeatsAfterApply = (programId) => {
+  const markAppliedOnProgram = (programId) => {
+    const pid = String(programId);
     setPrograms((prev) =>
-      prev.map((program) => {
-        if (program.id !== programId) return program;
-
-        const nextUsedSeats = program.usedSeats + 1;
-        const nextAvailableSeats = Math.max(program.availableSeats - 1, 0);
-
-        return {
-          ...program,
-          usedSeats: nextUsedSeats,
-          availableSeats: nextAvailableSeats,
-          status: nextAvailableSeats <= 0 ? "Complete" : program.status,
-        };
-      })
+      prev.map((program) =>
+        String(program.id) === pid
+          ? { ...program, applied: true, applicationStatus: "Submitted" }
+          : program
+      )
     );
 
-    setSelectedProgram((prev) => {
-      if (!prev || prev.id !== programId) return prev;
-
-      const nextUsedSeats = prev.usedSeats + 1;
-      const nextAvailableSeats = Math.max(prev.availableSeats - 1, 0);
-
-      return {
-        ...prev,
-        usedSeats: nextUsedSeats,
-        availableSeats: nextAvailableSeats,
-        status: nextAvailableSeats <= 0 ? "Complete" : prev.status,
-      };
-    });
+    setSelectedProgram((prev) =>
+      prev && String(prev.id) === pid
+        ? { ...prev, applied: true, applicationStatus: "Submitted" }
+        : prev
+    );
   };
 
   const runApplyLogic = async (programId) => {
-    const targetProgram = programs.find((program) => program.id === programId);
+    const targetProgram = programs.find(
+      (program) => String(program.id) === String(programId)
+    );
     if (!targetProgram) return;
 
     if (targetProgram.status === "Complete" || targetProgram.availableSeats <= 0) {
       setProgramMessage(
         programId,
-        "This program is already full and no longer accepts applications.",
-        "error"
-      );
-      return;
-    }
-
-    const conflictingProgram = programs.find(
-      (program) =>
-        program.applied &&
-        program.id !== targetProgram.id &&
-        datesOverlap(
-          targetProgram.startDate,
-          targetProgram.endDate,
-          program.startDate,
-          program.endDate
-        )
-    );
-
-    if (conflictingProgram) {
-      setProgramMessage(
-        programId,
-        `You cannot apply because you already joined "${conflictingProgram.title}" during an overlapping period.`,
+        "All positions for this program are already filled. The company accepts only up to the number of seats they set.",
         "error"
       );
       return;
@@ -296,7 +318,7 @@ function StudentHome() {
     try {
       await applyToProgram(programId);
 
-      updateProgramSeatsAfterApply(programId);
+      markAppliedOnProgram(programId);
 
       setProgramMessage(
         programId,
@@ -317,7 +339,9 @@ function StudentHome() {
   };
 
   const handleApplyRequest = (programId) => {
-    const targetProgram = programs.find((program) => program.id === programId);
+    const targetProgram = programs.find(
+      (program) => String(program.id) === String(programId)
+    );
     if (!targetProgram) return;
 
     if (

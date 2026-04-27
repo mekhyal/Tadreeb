@@ -1,7 +1,27 @@
 import React from "react";
 import { FaUserCircle } from "react-icons/fa";
+import { useAuth } from "../../context/AuthContext";
 
-function PortalTopbar({ title, companyName = "Creative Tech" }) {
+function sessionAccountLabel(user) {
+  if (!user) return "Account";
+  if (user.role === "company") {
+    return user.companyName || user.email || "Company";
+  }
+  if (user.role === "admin") {
+    const n =
+      user.name ||
+      `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+      user.email;
+    return n || "Admin";
+  }
+  return user.email || "Account";
+}
+
+/** When `accountLabel` is omitted, the signed-in portal user’s name/email is shown. */
+function PortalTopbar({ title, accountLabel }) {
+  const { user } = useAuth();
+  const label = accountLabel ?? sessionAccountLabel(user);
+
   return (
     <div className="portal-topbar">
       <div className="portal-topbar__left">
@@ -12,7 +32,7 @@ function PortalTopbar({ title, companyName = "Creative Tech" }) {
         <div className="portal-topbar-avatar">
           <FaUserCircle />
         </div>
-        <span>{companyName}</span>
+        <span>{label}</span>
       </div>
     </div>
   );

@@ -1,0 +1,1053 @@
+%% ============================================================
+%%  Milestone 4 — Tadreeb Backend API & MongoDB Schema Report
+%%  CS 335 | Web Development | Fall 2024/2025
+%% ============================================================
+\documentclass[12pt,a4paper]{article}
+
+%% ── Packages ────────────────────────────────────────────────
+\usepackage[a4paper, margin=2.5cm]{geometry}
+\usepackage{fontenc}
+\usepackage{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{parskip}
+\usepackage{titlesec}
+\usepackage{titling}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{caption}
+
+%% ── Colors ──────────────────────────────────────────────────
+\definecolor{codebg}{RGB}{245,245,245}
+\definecolor{keywordcolor}{RGB}{0,0,180}
+\definecolor{stringcolor}{RGB}{163,21,21}
+\definecolor{commentcolor}{RGB}{0,128,0}
+\definecolor{tadreebblue}{RGB}{30,70,150}
+
+%% ── Listings (code blocks) ──────────────────────────────────
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  breakatwhitespace=false,
+  captionpos=b,
+  commentstyle=\color{commentcolor},
+  frame=single,
+  keepspaces=true,
+  keywordstyle=\color{keywordcolor}\bfseries,
+  language=,
+  numbers=none,
+  showspaces=false,
+  showstringspaces=false,
+  stringstyle=\color{stringcolor},
+  tabsize=2,
+  xleftmargin=8pt,
+  xrightmargin=8pt,
+  aboveskip=8pt,
+  belowskip=8pt,
+}
+
+%% ── Section formatting ──────────────────────────────────────
+\titleformat{\section}{\large\bfseries\color{tadreebblue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{}{0em}{}
+
+%% ── Header / Footer ─────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{\small Tadreeb — Milestone 4}
+\lhead{\small CS 335 | Web Development}
+\cfoot{\thepage}
+
+%% ============================================================
+\begin{document}
+
+%% ── Cover Page ──────────────────────────────────────────────
+\begin{titlepage}
+  \centering
+  \vspace*{2cm}
+
+  {\large\textbf{College of Computing and Information Technology}}\\[0.4cm]
+  {\large King Abdulaziz University}\\[1cm]
+
+  \rule{\linewidth}{1.5pt}\\[0.6cm]
+  {\huge\bfseries\color{tadreebblue} Milestone 4}\\[0.4cm]
+  {\Large Backend API \& MongoDB Schema}\\[0.2cm]
+  \rule{\linewidth}{1.5pt}\\[1cm]
+
+  {\large\textbf{Course:} CS 335 — Web Development}\\[0.2cm]
+  {\large\textbf{Semester:} Fall 2024/2025}\\[0.2cm]
+  {\large\textbf{Project Title:} \textit{Tadreeb}}\\[1.5cm]
+
+  {\large\textbf{Team Members:}}\\[0.5cm]
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{Name} & \textbf{University ID} \\
+    \midrule
+    \quad & \quad \\[0.3cm]
+    \quad & \quad \\[0.3cm]
+    \quad & \quad \\[0.3cm]
+    \quad & \quad \\[0.3cm]
+    \quad & \quad \\
+    \bottomrule
+  \end{tabular}\\[2cm]
+
+  {\large\today}
+
+\end{titlepage}
+
+%% ── Table of Contents ───────────────────────────────────────
+\tableofcontents
+\newpage
+
+%% ============================================================
+%%  SECTION 1 — Overview
+%% ============================================================
+\section{Backend API Development Overview}
+
+The \textbf{Tadreeb} backend is a RESTful API built with \textbf{Node.js} and \textbf{Express.js}, backed by \textbf{MongoDB} via the Mongoose ODM. It serves as the data and business-logic layer for the Tadreeb platform, which connects university students with companies offering internship and co-op opportunities.
+
+\subsection*{Technology Stack}
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{Runtime:} Node.js (v18+)
+  \item \textbf{Framework:} Express.js
+  \item \textbf{Database:} MongoDB (Mongoose ODM)
+  \item \textbf{Authentication:} JSON Web Tokens (JWT) — HS256, 7-day expiry
+  \item \textbf{Password hashing:} bcrypt (salt rounds: 10)
+  \item \textbf{CORS:} configurable via \texttt{CORS\_ORIGIN} environment variable
+\end{itemize}
+
+\subsection*{Base URL}
+\begin{lstlisting}
+http://localhost:5001/api
+\end{lstlisting}
+
+\subsection*{Route Groups}
+\begin{itemize}[leftmargin=1.5cm]
+  \item \texttt{/api/auth} — student/company/admin authentication
+  \item \texttt{/api/opportunities} — internship program CRUD
+  \item \texttt{/api/applications} — student applications lifecycle
+  \item \texttt{/api/admin} — admin management operations
+  \item \texttt{/api/company-requests} — public company join requests
+\end{itemize}
+
+\subsection*{Project Structure}
+\begin{lstlisting}
+src/
+  config/         db.js
+  controllers/    authController.js, opportunityController.js,
+                  applicationController.js, adminController.js,
+                  companyRequestController.js
+  middleware/     authMiddleware.js, roleMiddleware.js
+  models/         Student.js, Company.js, Admin.js,
+                  Opportunity.js, Application.js, CompanyRequest.js
+  routes/         authRoutes.js, opportunityRoutes.js,
+                  applicationRoutes.js, adminRoutes.js,
+                  companyRequestRoutes.js
+  utils/          generateToken.js, validators.js
+  server.js
+\end{lstlisting}
+
+\newpage
+
+%% ============================================================
+%%  SECTION 2 — Authentication
+%% ============================================================
+\section{Authentication}
+
+\subsection*{Overview}
+
+The API uses \textbf{JWT (JSON Web Token)} authentication. On a successful login or registration, the server returns a signed token the client must store and include in subsequent protected requests.
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{Algorithm:} HS256
+  \item \textbf{Expiry:} 7 days
+  \item \textbf{Secret:} read from \texttt{process.env.JWT\_SECRET} (server exits on startup if missing)
+\end{itemize}
+
+\subsection*{Sending the Token}
+
+All protected routes require the token in the \texttt{Authorization} header:
+
+\begin{lstlisting}
+Authorization: Bearer <token>
+\end{lstlisting}
+
+\subsection*{Token Generation (\texttt{utils/generateToken.js})}
+
+\begin{lstlisting}[language=JavaScript]
+const jwt = require('jsonwebtoken');
+
+const generateToken = (id, role) =>
+  jwt.sign({ id, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+module.exports = generateToken;
+\end{lstlisting}
+
+\subsection*{Auth Middleware (\texttt{middleware/authMiddleware.js})}
+
+\begin{lstlisting}[language=JavaScript]
+const jwt = require('jsonwebtoken');
+
+const protect = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer '))
+    return res.status(401).json({ message: 'Not authorized, no token' });
+
+  try {
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded; // { id, role }
+    next();
+  } catch {
+    res.status(401).json({ message: 'Not authorized, token failed' });
+  }
+};
+
+module.exports = { protect };
+\end{lstlisting}
+
+\subsection*{Role Middleware (\texttt{middleware/roleMiddleware.js})}
+
+\begin{lstlisting}[language=JavaScript]
+const allowRoles = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role))
+    return res.status(403).json({ message: 'Access denied' });
+  next();
+};
+
+module.exports = { allowRoles };
+\end{lstlisting}
+
+\subsection*{Roles Summary}
+
+\begin{center}
+\begin{tabular}{ll}
+  \toprule
+  \textbf{Role} & \textbf{Capabilities} \\
+  \midrule
+  \texttt{student} & Register, login, view opportunities, apply, cancel application, view own applications \\
+  \texttt{company} & Login, create/update/delete own opportunities, view \& manage applications \\
+  \texttt{admin}   & Create companies/students/admins, view all users, update company status \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\subsection*{Password Hashing}
+
+Passwords are hashed with \textbf{bcrypt} (salt rounds: 10) before being stored. Plain-text passwords are never persisted.
+
+\begin{lstlisting}[language=JavaScript]
+const bcrypt = require('bcryptjs');
+const hashed = await bcrypt.hash(password, 10);
+// verification
+const match = await bcrypt.compare(plaintext, hashed);
+\end{lstlisting}
+
+\subsection*{Input Validation (\texttt{utils/validators.js})}
+
+\begin{lstlisting}[language=JavaScript]
+const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+const isValidEmail    = (email)    => typeof email === 'string' && EMAIL_REGEX.test(email);
+const isStrongPassword = (pwd)     => pwd.length >= 8 &&
+                                      /[A-Za-z]/.test(pwd) && /[0-9]/.test(pwd);
+const isValidObjectId  = (id)      => mongoose.Types.ObjectId.isValid(id) &&
+                                      String(new ObjectId(id)) === id;
+const exceedsMaxLength = (str, n)  => typeof str === 'string' && str.length > n;
+\end{lstlisting}
+
+\subsection*{Server-Level Guards (\texttt{server.js})}
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item \textbf{Content-Type enforcement:} \texttt{POST}/\texttt{PUT}/\texttt{PATCH} requests with a non-JSON body receive \texttt{415 Unsupported Media Type}.
+  \item \textbf{404 catch-all:} any unrecognised \texttt{/api} route returns \texttt{404 Route not found}.
+  \item \textbf{Central error handler:} malformed JSON → 400, Mongoose \texttt{CastError} → 400, \texttt{ValidationError} → 400, duplicate key (code 11000) → 400.
+  \item \textbf{JWT\_SECRET guard:} server calls \texttt{process.exit(1)} on startup if the secret is absent.
+\end{itemize}
+
+\newpage
+
+%% ============================================================
+%%  SECTION 3 — API Endpoints
+%% ============================================================
+\section{API Endpoints}
+
+\noindent\textbf{Legend:} \quad 🔓 Public \quad 🔒 Protected (Bearer token required)
+
+\vspace{0.5cm}
+
+% ── AUTH ─────────────────────────────────────────────────────
+\subsection*{3.1 Auth Routes — \texttt{/api/auth}}
+
+\subsubsection*{POST /api/auth/student/register \quad 🔓 Public}
+
+Registers a new student account.
+
+\textbf{Request Body:}
+\begin{lstlisting}[language={}]
+{
+  "universityID": "u12345",
+  "firstName":    "Ali",
+  "lastName":     "Hassan",
+  "email":        "ali@example.com",
+  "password":     "secret123",
+  "mobileNo":     "0501234567",
+  "gender":       "Male",
+  "universityName": "King Abdulaziz University",
+  "major":        "Computer Science",
+  "year":         "Third",
+  "skills":       ["JavaScript", "React"]
+}
+\end{lstlisting}
+
+\textbf{Required:} \texttt{universityID}, \texttt{firstName}, \texttt{lastName}, \texttt{email}, \texttt{password}, \texttt{mobileNo}, \texttt{gender}, \texttt{universityName}, \texttt{major}, \texttt{year}\\
+\textbf{Optional:} \texttt{skills} (array of strings)\\
+\textbf{gender} must be: \texttt{"Male"} or \texttt{"Female"}\\
+\textbf{year} must be: \texttt{"First"}, \texttt{"Second"}, \texttt{"Third"}, \texttt{"Fourth"}, or \texttt{"Fifth"}
+
+\textbf{Success 201:}
+\begin{lstlisting}[language={}]
+{
+  "message": "Student registered successfully",
+  "token":   "<jwt_token>",
+  "student": { "id": "...", "role": "student", ... }
+}
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{POST /api/auth/student/login \quad 🔓 Public}
+
+\textbf{Request Body:}
+\begin{lstlisting}[language={}]
+{ "email": "ali@example.com", "password": "secret123" }
+\end{lstlisting}
+
+\textbf{Success 200:}
+\begin{lstlisting}[language={}]
+{
+  "message": "Student login successful",
+  "token":   "<jwt_token>",
+  "student": { ... }
+}
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{POST /api/auth/company/login \quad 🔓 Public}
+
+\textbf{Request Body:}
+\begin{lstlisting}[language={}]
+{ "email": "company@example.com", "password": "secret123" }
+\end{lstlisting}
+
+\textbf{Success 200:}
+\begin{lstlisting}[language={}]
+{
+  "message": "Company login successful",
+  "token":   "<jwt_token>",
+  "company": { "id": "...", "role": "company", "status": "Approved", ... }
+}
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{POST /api/auth/admin/login \quad 🔓 Public}
+
+\textbf{Request Body:}
+\begin{lstlisting}[language={}]
+{ "email": "admin@tadreeb.com", "password": "secret123" }
+\end{lstlisting}
+
+\textbf{Success 200:}
+\begin{lstlisting}[language={}]
+{
+  "message": "Admin login successful",
+  "token":   "<jwt_token>",
+  "admin":   { "id": "...", "role": "admin", ... }
+}
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{GET /api/auth/students \quad 🔓 Public}
+Returns an array of all student objects (passwords excluded).
+
+\subsubsection*{GET /api/auth/companies \quad 🔓 Public}
+Returns an array of all company objects (passwords excluded).
+
+\subsubsection*{GET /api/auth/admins \quad 🔓 Public}
+Returns an array of all admin objects (passwords excluded).
+
+\vspace{0.5cm}
+
+% ── OPPORTUNITIES ─────────────────────────────────────────────
+\subsection*{3.2 Opportunity Routes — \texttt{/api/opportunities}}
+
+\subsubsection*{GET /api/opportunities \quad 🔓 Public}
+
+Returns all internship/co-op programs with populated company info.
+
+\textbf{Success 200} — array of opportunity objects:
+\begin{lstlisting}[language={}]
+[
+  {
+    "_id":         "...",
+    "title":       "Summer Internship Program",
+    "subtitle":    "Gain hands-on experience",
+    "description": "...",
+    "rules":       "...",
+    "location":    "Riyadh",
+    "seats":       10,
+    "dateFrom":    "2025-06-01T00:00:00.000Z",
+    "dateTo":      "2025-08-31T00:00:00.000Z",
+    "imageURL":    "https://...",
+    "status":      "Active",
+    "companyID": {
+      "_id":         "...",
+      "companyName": "Acme Corp",
+      "email":       "hr@acme.com",
+      "industry":    "Technology",
+      "location":    "Riyadh"
+    }
+  }
+]
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{GET /api/opportunities/:id \quad 🔓 Public}
+
+Returns a single opportunity by ID (same shape as above).\\
+\textbf{404} if not found: \texttt{\{ "message": "Program not found" \}}
+
+\vspace{0.5cm}
+
+\subsubsection*{POST /api/opportunities \quad 🔒 Company only}
+
+Creates a new opportunity. The \texttt{companyID} is taken from the JWT — companies can only create for themselves.
+
+\textbf{Request Body:}
+\begin{lstlisting}[language={}]
+{
+  "title":       "Summer Internship Program",
+  "subtitle":    "Gain hands-on experience",
+  "description": "A 3-month internship program...",
+  "rules":       "Applicants must be in year 3 or above",
+  "location":    "Riyadh",
+  "seats":       10,
+  "dateFrom":    "2025-06-01",
+  "dateTo":      "2025-08-31",
+  "imageURL":    "https://example.com/image.jpg"
+}
+\end{lstlisting}
+
+\textbf{Required:} \texttt{title}, \texttt{description}, \texttt{location}, \texttt{seats}, \texttt{dateFrom}, \texttt{dateTo}\\
+\textbf{Optional:} \texttt{subtitle}, \texttt{rules}, \texttt{imageURL}\\
+\textbf{Constraint:} \texttt{dateTo} must be strictly after \texttt{dateFrom}; a (companyID, title, dateFrom, dateTo) tuple must be unique.
+
+\textbf{Success 201:}
+\begin{lstlisting}[language={}]
+{ "message": "program created successfully", "opportunity": { ... } }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{PUT /api/opportunities/:id \quad 🔒 Company only (must own)}
+
+Updates any subset of an opportunity's fields. Returns 403 if the token belongs to a different company.
+
+\textbf{Success 200:}
+\begin{lstlisting}[language={}]
+{ "message": "Program updated successfully", "opportunity": { ... } }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{DELETE /api/opportunities/:id \quad 🔒 Company only (must own)}
+
+Deletes an opportunity. Returns 403 if the token belongs to a different company.
+
+\textbf{Success 200:}
+\begin{lstlisting}[language={}]
+{ "message": "Program deleted successfully" }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+% ── APPLICATIONS ──────────────────────────────────────────────
+\subsection*{3.3 Application Routes — \texttt{/api/applications}}
+
+\subsubsection*{POST /api/applications \quad 🔒 Student only}
+
+Submits a new application. Business rules enforced:
+\begin{itemize}[leftmargin=1.5cm]
+  \item Program must exist and have \texttt{status = "Active"}
+  \item Student cannot apply twice to the same program (DB unique index + controller check)
+  \item \textbf{Seat capacity:} if accepted count $\geq$ program seats → 400 ``Program is full''
+  \item \textbf{Overlap guard:} if the student already has an \texttt{Accepted} application whose date range overlaps the new program's range → 400 ``You already have an accepted program during this period''
+\end{itemize}
+
+\textbf{Request Body:}
+\begin{lstlisting}[language={}]
+{ "programID": "<opportunity_id>" }
+\end{lstlisting}
+
+\textbf{Success 201:}
+\begin{lstlisting}[language={}]
+{
+  "message":     "Application submitted successfully",
+  "application": {
+    "_id":          "...",
+    "studentID":    "...",
+    "programID":    "...",
+    "status":       "Submitted",
+    "appliedDate":  "2025-04-25T00:00:00.000Z",
+    "decisionNote": "-"
+  }
+}
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{GET /api/applications/my \quad 🔒 Student only}
+
+Returns all applications for the logged-in student, sorted newest first, with full program and company info populated.
+
+\textbf{Success 200} — array:
+\begin{lstlisting}[language={}]
+[
+  {
+    "_id":       "...",
+    "studentID": { "firstName": "Ali", "lastName": "Hassan", ... },
+    "programID": { "title": "Summer Internship", "companyID": { ... }, ... },
+    "status":    "Submitted",
+    "appliedDate": "..."
+  }
+]
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{DELETE /api/applications/:id \quad 🔒 Student only (must own)}
+
+Cancels (deletes) an application. Only allowed while \texttt{status} is \texttt{"Submitted"} or \texttt{"Under Review"}.
+
+\begin{itemize}[leftmargin=1.5cm]
+  \item Returns 400 if application is already \texttt{Accepted} or \texttt{Rejected}
+  \item Returns 403 if the application belongs to a different student
+\end{itemize}
+
+\textbf{Success 200:}
+\begin{lstlisting}[language={}]
+{ "message": "Application cancelled successfully" }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{GET /api/applications/company \quad 🔒 Company only}
+
+Returns all applications for the logged-in company's programs, sorted newest first, with student and program details populated.
+
+\textbf{Success 200} — array:
+\begin{lstlisting}[language={}]
+[
+  {
+    "_id":       "...",
+    "studentID": {
+      "firstName": "Ali", "lastName": "Hassan",
+      "email": "ali@example.com", "major": "CS",
+      "universityName": "KAU", "year": "Third",
+      "skills": ["JavaScript"]
+    },
+    "programID": {
+      "title": "Summer Internship",
+      "location": "Riyadh",
+      "seats": 10,
+      "dateFrom": "...", "dateTo": "..."
+    },
+    "status":      "Submitted",
+    "appliedDate": "...",
+    "decisionNote": "-"
+  }
+]
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{PATCH /api/applications/:id/status \quad 🔒 Company only (must own program)}
+
+Updates an application's status. Business rules enforced:
+\begin{itemize}[leftmargin=1.5cm]
+  \item Ownership: the program the application references must belong to the company making the request
+  \item \textbf{Seat re-check before accepting:} if seats are full a second \texttt{Accepted} is blocked
+  \item \textbf{Auto program-status sync:} when accepting causes accepted count $=$ seats → \texttt{program.status = "Completed"}; when rejecting causes accepted count $<$ seats → \texttt{program.status = "Active"}
+\end{itemize}
+
+\textbf{Request Body:}
+\begin{lstlisting}[language={}]
+{
+  "status":       "Accepted",
+  "decisionNote": "Congratulations! You have been selected."
+}
+\end{lstlisting}
+
+\textbf{status} must be one of: \texttt{"Submitted"}, \texttt{"Under Review"}, \texttt{"Accepted"}, \texttt{"Rejected"}\\
+\textbf{decisionNote} is optional (saved even as empty string).
+
+\textbf{Success 200:}
+\begin{lstlisting}[language={}]
+{ "message": "Application updated successfully", "application": { ... } }
+\end{lstlisting}
+
+\textbf{Error 403:}
+\begin{lstlisting}[language={}]
+{ "message": "Not allowed to update this application" }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+% ── ADMIN ─────────────────────────────────────────────────────
+\subsection*{3.4 Admin Routes — \texttt{/api/admin}}
+
+\subsubsection*{POST /api/admin/create-admin \quad 🔓 Public (initial setup)}
+
+\textbf{Required fields:} \texttt{firstName}, \texttt{lastName}, \texttt{email}, \texttt{phone}, \texttt{password}
+
+\textbf{Success 201:}
+\begin{lstlisting}[language={}]
+{ "message": "Admin created successfully", "admin": { ... } }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{POST /api/admin/create-company \quad 🔒 Admin only}
+
+Creates a company account directly (bypassing the company-request flow).
+
+\textbf{Required:} \texttt{companyName}, \texttt{email}, \texttt{password}, \texttt{industry}, \texttt{phone}, \texttt{location}\\
+\textbf{Optional:} \texttt{website}, \texttt{size}, \texttt{foundedYear}, \texttt{contactPerson}, \texttt{description}, \texttt{joinReason}, \texttt{status} (defaults to \texttt{"Approved"})
+
+\textbf{Success 201:}
+\begin{lstlisting}[language={}]
+{ "message": "Company created successfully", "company": { ... } }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{POST /api/admin/create-student \quad 🔒 Admin only}
+
+Creates a student account on behalf of the user (same fields as student self-registration).
+
+\textbf{Success 201:}
+\begin{lstlisting}[language={}]
+{ "message": "Student created by admin successfully", "student": { ... } }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+\subsubsection*{GET /api/admin/students \quad 🔒 Admin only}
+Returns all students (passwords excluded).
+
+\subsubsection*{GET /api/admin/companies \quad 🔒 Admin only}
+Returns all companies (passwords excluded).
+
+\subsubsection*{GET /api/admin/admins \quad 🔒 Admin only}
+Returns all admins (passwords excluded).
+
+\vspace{0.5cm}
+
+\subsubsection*{PUT /api/admin/companies/:id/status \quad 🔒 Admin only}
+
+Updates a company's approval status.
+
+\textbf{Request Body:}
+\begin{lstlisting}[language={}]
+{ "status": "Approved" }
+\end{lstlisting}
+
+\textbf{status} must be one of: \texttt{"Pending"}, \texttt{"Review"}, \texttt{"Approved"}, \texttt{"Rejected"}, \texttt{"Active"}
+
+\textbf{Success 200:}
+\begin{lstlisting}[language={}]
+{ "message": "Company status updated", "company": { ... } }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+% ── COMPANY REQUESTS ──────────────────────────────────────────
+\subsection*{3.5 Company Request Routes — \texttt{/api/company-requests}}
+
+\subsubsection*{POST /api/company-requests \quad 🔓 Public}
+
+Allows any visitor to submit a request for their company to join Tadreeb. No authentication is required. The request is stored with \texttt{status: "Pending"} for admin review.
+
+\textbf{Required fields:} \texttt{companyName}, \texttt{industry}, \texttt{officialEmail}, \texttt{phoneNumber}, \texttt{companySize}, \texttt{location}, \texttt{contactPerson}, \texttt{companyDescription}, \texttt{joinReason}, \texttt{confirmInfo} (must be \texttt{true})
+
+\textbf{Optional fields:} \texttt{website}, \texttt{foundedYear}
+
+\textbf{Validation rules:}
+\begin{itemize}[leftmargin=1.5cm]
+  \item All required string fields must be plain strings (not objects/arrays)
+  \item \texttt{officialEmail} validated against RFC 5322-lite regex
+  \item \texttt{confirmInfo} must be exactly \texttt{true}; otherwise → 400
+\end{itemize}
+
+\textbf{Request Body:}
+\begin{lstlisting}[language={}]
+{
+  "companyName":        "Acme Corp",
+  "industry":           "Technology",
+  "officialEmail":      "hr@acme.com",
+  "phoneNumber":        "0501234567",
+  "website":            "https://acme.com",
+  "companySize":        "50-200",
+  "location":           "Riyadh",
+  "foundedYear":        "2010",
+  "contactPerson":      "Mohammed Ali",
+  "companyDescription": "A leading tech company.",
+  "joinReason":         "To find talented interns.",
+  "confirmInfo":        true
+}
+\end{lstlisting}
+
+\textbf{Success 201:}
+\begin{lstlisting}[language={}]
+{
+  "message": "Company request submitted successfully",
+  "request": { "id": "<objectId>", "status": "Pending" }
+}
+\end{lstlisting}
+
+\textbf{Error 400 (confirmInfo not true):}
+\begin{lstlisting}[language={}]
+{ "message": "You must confirm the information is accurate" }
+\end{lstlisting}
+
+\vspace{0.5cm}
+
+% ── COMMON ERRORS ─────────────────────────────────────────────
+\subsection*{Common Error Responses}
+
+\begin{center}
+\begin{tabular}{cl}
+  \toprule
+  \textbf{Status} & \textbf{Meaning} \\
+  \midrule
+  400 & Bad Request — missing/invalid fields, duplicate entry, bad ObjectId, malformed JSON \\
+  401 & Unauthorized — no token, invalid or expired token \\
+  403 & Forbidden — valid token but insufficient role or resource ownership \\
+  404 & Not Found — resource or route does not exist \\
+  415 & Unsupported Media Type — non-JSON body on write request \\
+  500 & Internal Server Error \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+\textbf{Error shape:}
+\begin{lstlisting}[language={}]
+{ "message": "Descriptive error message here" }
+\end{lstlisting}
+
+\newpage
+
+%% ============================================================
+%%  SECTION 4 — Database Schema
+%% ============================================================
+\section{MongoDB Database Schema}
+
+The Tadreeb database contains six Mongoose collections.
+
+\vspace{0.5cm}
+
+\subsection*{4.1 students}
+
+\begin{longtable}{p{3.5cm}p{2.5cm}p{1.8cm}p{5.5cm}}
+  \toprule
+  \textbf{Field} & \textbf{Type} & \textbf{Required} & \textbf{Notes} \\
+  \midrule
+  \texttt{universityID} & String & Yes & unique; maxlength 50 \\
+  \texttt{firstName}    & String & Yes & maxlength 100 \\
+  \texttt{lastName}     & String & Yes & maxlength 100 \\
+  \texttt{email}        & String & Yes & unique; lowercase; maxlength 100; EMAIL\_REGEX \\
+  \texttt{password}     & String & Yes & bcrypt hash \\
+  \texttt{mobileNo}     & String & Yes & maxlength 20 \\
+  \texttt{gender}       & String & Yes & enum: Male / Female \\
+  \texttt{universityName} & String & Yes & maxlength 100 \\
+  \texttt{major}        & String & Yes & maxlength 100 \\
+  \texttt{year}         & String & Yes & enum: First/Second/Third/Fourth/Fifth \\
+  \texttt{skills}       & [String] & No & free-form tags \\
+  \texttt{role}         & String & — & default: \texttt{"student"}; immutable \\
+  \texttt{status}       & String & — & enum: active/inactive/pending; default: active \\
+  \texttt{createdAt}    & Date   & — & auto (timestamps) \\
+  \texttt{updatedAt}    & Date   & — & auto (timestamps) \\
+  \bottomrule
+\end{longtable}
+
+\subsection*{4.2 companies}
+
+\begin{longtable}{p{3.5cm}p{2.5cm}p{1.8cm}p{5.5cm}}
+  \toprule
+  \textbf{Field} & \textbf{Type} & \textbf{Required} & \textbf{Notes} \\
+  \midrule
+  \texttt{companyName}  & String & Yes & maxlength 200 \\
+  \texttt{email}        & String & Yes & unique; lowercase; maxlength 100; EMAIL\_REGEX \\
+  \texttt{password}     & String & Yes & bcrypt hash \\
+  \texttt{industry}     & String & Yes & maxlength 100 \\
+  \texttt{phone}        & String & Yes & maxlength 20 \\
+  \texttt{location}     & String & Yes & maxlength 100 \\
+  \texttt{website}      & String & No  & default: \texttt{""} \\
+  \texttt{size}         & String & No  & default: \texttt{""} \\
+  \texttt{foundedYear}  & Number & No  & min 1800; must not be in the future \\
+  \texttt{contactPerson}& String & No  & default: \texttt{""} \\
+  \texttt{description}  & String & No  & maxlength 2000 \\
+  \texttt{joinReason}   & String & No  & maxlength 2000 \\
+  \texttt{status}       & String & — & enum: Pending/Review/Approved/Rejected/Active; default: Pending \\
+  \texttt{role}         & String & — & default: \texttt{"company"} \\
+  \texttt{createdAt}    & Date   & — & auto \\
+  \texttt{updatedAt}    & Date   & — & auto \\
+  \bottomrule
+\end{longtable}
+
+\subsection*{4.3 admins}
+
+\begin{longtable}{p{3.5cm}p{2.5cm}p{1.8cm}p{5.5cm}}
+  \toprule
+  \textbf{Field} & \textbf{Type} & \textbf{Required} & \textbf{Notes} \\
+  \midrule
+  \texttt{firstName}  & String & Yes & \\
+  \texttt{lastName}   & String & Yes & \\
+  \texttt{email}      & String & Yes & unique; lowercase \\
+  \texttt{phone}      & String & Yes & \\
+  \texttt{password}   & String & Yes & bcrypt hash \\
+  \texttt{jobTitle}   & String & No  & default: \texttt{""} \\
+  \texttt{gender}     & String & No  & enum: Male/Female/""; default: \texttt{""} \\
+  \texttt{country}    & String & No  & default: \texttt{""} \\
+  \texttt{language}   & String & No  & default: \texttt{""} \\
+  \texttt{extraInfo}  & String & No  & default: \texttt{""} \\
+  \texttt{status}     & String & — & enum: Active/Inactive/Pending; default: Active \\
+  \texttt{role}       & String & — & default: \texttt{"admin"}; immutable \\
+  \texttt{createdAt}  & Date   & — & auto \\
+  \texttt{updatedAt}  & Date   & — & auto \\
+  \bottomrule
+\end{longtable}
+
+\subsection*{4.4 opportunities}
+
+\begin{longtable}{p{3.5cm}p{2.5cm}p{1.8cm}p{5.5cm}}
+  \toprule
+  \textbf{Field} & \textbf{Type} & \textbf{Required} & \textbf{Notes} \\
+  \midrule
+  \texttt{title}       & String   & Yes & maxlength 200 \\
+  \texttt{subtitle}    & String   & No  & default: \texttt{""}, maxlength 200 \\
+  \texttt{description} & String   & Yes & maxlength 5000 \\
+  \texttt{rules}       & String   & No  & default: \texttt{""}, maxlength 5000 \\
+  \texttt{location}    & String   & Yes & maxlength 100 \\
+  \texttt{seats}       & Number   & Yes & min: 1 \\
+  \texttt{dateFrom}    & Date     & Yes & \\
+  \texttt{dateTo}      & Date     & Yes & must be after \texttt{dateFrom} \\
+  \texttt{imageURL}    & String   & No  & default: \texttt{""}, maxlength 500 \\
+  \texttt{companyID}   & ObjectId & Yes & ref: Company \\
+  \texttt{status}      & String   & — & enum: Active/Completed; default: Active \\
+  \texttt{createdAt}   & Date     & — & auto \\
+  \texttt{updatedAt}   & Date     & — & auto \\
+  \bottomrule
+\end{longtable}
+
+\noindent\textbf{Unique index:} \texttt{(companyID, title, dateFrom, dateTo)}
+
+\subsection*{4.5 applications}
+
+\begin{longtable}{p{3.5cm}p{2.5cm}p{1.8cm}p{5.5cm}}
+  \toprule
+  \textbf{Field} & \textbf{Type} & \textbf{Required} & \textbf{Notes} \\
+  \midrule
+  \texttt{studentID}      & ObjectId & Yes & ref: Student \\
+  \texttt{programID}      & ObjectId & Yes & ref: Opportunity \\
+  \texttt{status}         & String   & — & enum: Submitted/Under Review/Accepted/Rejected; default: Submitted \\
+  \texttt{appliedDate}    & Date     & — & default: Date.now \\
+  \texttt{decisionNote}   & String   & No & default: \texttt{"-"}, maxlength 1000 \\
+  \texttt{adminStatus}    & String   & — & enum: Review/Accepted/Rejected; default: Review \\
+  \texttt{adminNote}      & String   & No & default: \texttt{""}, maxlength 1000 \\
+  \texttt{visibleToStudent} & Boolean & — & default: false \\
+  \texttt{createdAt}      & Date     & — & auto \\
+  \texttt{updatedAt}      & Date     & — & auto \\
+  \bottomrule
+\end{longtable}
+
+\noindent\textbf{Unique index:} \texttt{(studentID, programID)} — prevents duplicate applications
+
+\subsection*{4.6 companyrequests}
+
+\begin{longtable}{p{3.8cm}p{2.5cm}p{1.8cm}p{5.2cm}}
+  \toprule
+  \textbf{Field} & \textbf{Type} & \textbf{Required} & \textbf{Notes} \\
+  \midrule
+  \texttt{companyName}       & String  & Yes & maxlength 200 \\
+  \texttt{industry}          & String  & Yes & maxlength 100 \\
+  \texttt{officialEmail}     & String  & Yes & lowercase; EMAIL\_REGEX \\
+  \texttt{phoneNumber}       & String  & Yes & maxlength 20 \\
+  \texttt{website}           & String  & No  & default: \texttt{""}, maxlength 200 \\
+  \texttt{companySize}       & String  & Yes & maxlength 50 \\
+  \texttt{location}          & String  & Yes & maxlength 100 \\
+  \texttt{foundedYear}       & String  & No  & default: \texttt{""}, maxlength 4 \\
+  \texttt{contactPerson}     & String  & Yes & maxlength 100 \\
+  \texttt{companyDescription}& String  & Yes & maxlength 2000 \\
+  \texttt{joinReason}        & String  & Yes & maxlength 2000 \\
+  \texttt{confirmInfo}       & Boolean & — & must be true to create; default: false \\
+  \texttt{status}            & String  & — & enum: Pending/Review/Approved/Rejected; default: Pending \\
+  \texttt{createdAt}         & Date    & — & auto \\
+  \texttt{updatedAt}         & Date    & — & auto \\
+  \bottomrule
+\end{longtable}
+
+\newpage
+
+%% ============================================================
+%%  SECTION 5 — Test Cases
+%% ============================================================
+\section{Test Cases}
+
+\setlength{\tabcolsep}{4pt}
+
+\begin{longtable}{p{0.8cm}p{3.4cm}p{3cm}p{2.4cm}p{2.8cm}p{2cm}}
+  \toprule
+  \textbf{TC\#} & \textbf{Description} & \textbf{Input} & \textbf{Expected} & \textbf{Actual} & \textbf{Status} \\
+  \midrule
+
+  TC1 & Student register with valid data &
+    All required fields valid &
+    201 + JWT token &
+    201 + JWT token &
+    Pass \\[4pt]
+
+  TC2 & Student register with duplicate email &
+    Email already in DB &
+    400 Duplicate email &
+    400 Duplicate key &
+    Pass \\[4pt]
+
+  TC3 & Student register with invalid email format &
+    \texttt{email: "notanemail"} &
+    400 Invalid email &
+    400 Invalid email format &
+    Pass \\[4pt]
+
+  TC4 & Student login with correct credentials &
+    Valid email + password &
+    200 + JWT token &
+    200 + JWT token &
+    Pass \\[4pt]
+
+  TC5 & Student login with wrong password &
+    Correct email, wrong password &
+    401 Invalid credentials &
+    401 Invalid credentials &
+    Pass \\[4pt]
+
+  TC6 & Company login with valid credentials &
+    Valid company email + password &
+    200 + JWT token &
+    200 + JWT token &
+    Pass \\[4pt]
+
+  TC7 & Get all opportunities (public) &
+    GET /api/opportunities &
+    200 + array &
+    200 + populated array &
+    Pass \\[4pt]
+
+  TC8 & Company creates opportunity &
+    Valid fields + company token &
+    201 + opportunity object &
+    201 + opportunity object &
+    Pass \\[4pt]
+
+  TC9 & Student tries to create opportunity &
+    Student token &
+    403 Access denied &
+    403 Access denied &
+    Pass \\[4pt]
+
+  TC10 & Student applies to valid program &
+    Valid \texttt{programID} + student token &
+    201 + application &
+    201 + application &
+    Pass \\[4pt]
+
+  TC11 & Student applies to same program twice &
+    Same programID, same student &
+    400 Already applied &
+    400 Already applied &
+    Pass \\[4pt]
+
+  TC12 & Student applies to full program (seats = 0 available) &
+    Program with all seats Accepted &
+    400 Program is full &
+    400 Program is full &
+    Pass \\[4pt]
+
+  TC13 & Student applies to overlapping accepted program &
+    Dates overlap with existing Accepted app &
+    400 Overlap conflict &
+    400 Overlap conflict &
+    Pass \\[4pt]
+
+  TC14 & Company accepts application; program becomes Completed &
+    Accept last available seat &
+    200 + program.status = Completed &
+    200 + Completed &
+    Pass \\[4pt]
+
+  TC15 & Student cancels Submitted application &
+    DELETE /api/applications/:id (student token) &
+    200 Cancelled &
+    200 Cancelled &
+    Pass \\[4pt]
+
+  TC16 & Student tries to cancel Accepted application &
+    Application status = Accepted &
+    400 Cannot cancel &
+    400 Cannot cancel &
+    Pass \\[4pt]
+
+  TC17 & Company submits join request (public) &
+    All required fields + confirmInfo:true &
+    201 + \{id, status:"Pending"\} &
+    201 + Pending &
+    Pass \\[4pt]
+
+  \bottomrule
+\end{longtable}
+
+\newpage
+
+%% ============================================================
+%%  SECTION 6 — Team Contributions
+%% ============================================================
+\section{Team Contributions}
+
+\begin{center}
+\begin{longtable}{p{4cm}p{3cm}p{7cm}}
+  \toprule
+  \textbf{Name} & \textbf{University ID} & \textbf{Contribution} \\
+  \midrule
+  & & \\[0.6cm]
+  & & \\[0.6cm]
+  & & \\[0.6cm]
+  & & \\[0.6cm]
+  & & \\[0.6cm]
+  \bottomrule
+\end{longtable}
+\end{center}
+
+\end{document}

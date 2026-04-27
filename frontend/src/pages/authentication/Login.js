@@ -11,13 +11,11 @@ import loginImage from "../../assets/login-image-2.svg";
 
 const LIMITS = {
   email: 120,
-  passwordMin: 8,
-  passwordMax: 24,
+  /** Login accepts whatever the user stored; cap input for basic abuse prevention. */
+  passwordInputMax: 128,
 };
 
 const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-const PWD_REGEX =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+={}[\]|\\:;"'<>,.?/`~]).{8,24}$/;
 
 const ALLOWED_EMAIL_DOMAINS = [
   "gmail.com",
@@ -86,9 +84,8 @@ function Login() {
 
     if (!formData.password.trim()) {
       newErrors.password = "Password is required.";
-    } else if (!PWD_REGEX.test(formData.password)) {
-      newErrors.password =
-        "Password must be 8-24 characters and include uppercase, lowercase, number, and special character.";
+    } else if (formData.password.length > LIMITS.passwordInputMax) {
+      newErrors.password = "Password is too long.";
     }
 
     return newErrors;
@@ -241,7 +238,7 @@ function Login() {
                       value={formData.password}
                       onChange={handleChange}
                       autoComplete="current-password"
-                      maxLength={LIMITS.passwordMax}
+                      maxLength={LIMITS.passwordInputMax}
                     />
                     <span className="auth-input-icon">
                       <FaLock />

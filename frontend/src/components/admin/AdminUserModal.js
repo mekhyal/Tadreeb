@@ -1,12 +1,18 @@
 import React, { useEffect, useMemo, useState } from "react";
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_REQUIREMENTS_MESSAGE,
+  isPasswordStrong,
+} from "../../utils/passwordRules";
 
 const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
 const LIMITS = {
   name: 80,
   email: 120,
-  passwordMin: 8,
-  passwordMax: 24,
+  passwordMin: PASSWORD_MIN_LENGTH,
+  passwordMax: PASSWORD_MAX_LENGTH,
   phone: 20,
   location: 80,
   universityName: 100,
@@ -78,10 +84,18 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === "role") {
+        if (value === "Company" && prev.status === "Inactive") {
+          next.status = "Pending";
+        }
+        if ((value === "Student" || value === "Admin") && prev.status === "Rejected") {
+          next.status = "Pending";
+        }
+      }
+      return next;
+    });
 
     setErrors((prev) => ({
       ...prev,
@@ -131,10 +145,8 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
 
     if (!formData.password.trim()) {
       nextErrors.password = "Password is required.";
-    } else if (formData.password.length < LIMITS.passwordMin) {
-      nextErrors.password = `Password must be at least ${LIMITS.passwordMin} characters.`;
-    } else if (formData.password.length > LIMITS.passwordMax) {
-      nextErrors.password = `Password must be ${LIMITS.passwordMax} characters or less.`;
+    } else if (!isPasswordStrong(formData.password)) {
+      nextErrors.password = PASSWORD_REQUIREMENTS_MESSAGE;
     }
 
     if (!formData.status.trim()) {
@@ -412,9 +424,19 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
                   <div className="company-form-group">
                     <label>Status</label>
                     <select name="status" value={formData.status} onChange={handleChange}>
-                      <option value="Active">Active</option>
-                      <option value="Inactive">Inactive</option>
-                      <option value="Pending">Pending</option>
+                      {formData.role === "Company" ? (
+                        <>
+                          <option value="Pending">Pending</option>
+                          <option value="Active">Active</option>
+                          <option value="Rejected">Rejected</option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="Active">Active</option>
+                          <option value="Inactive">Inactive</option>
+                          <option value="Pending">Pending</option>
+                        </>
+                      )}
                     </select>
                     {errors.status && (
                       <p className="company-form-error">{errors.status}</p>

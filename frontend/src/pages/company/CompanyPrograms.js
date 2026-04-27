@@ -21,6 +21,8 @@ const normalizeProgram = (item) => {
     item.availableSeats !== undefined
       ? Number(item.availableSeats)
       : Math.max(seats - usedSeats, 0);
+  const applicantsCount =
+    item.applicantsCount != null ? Number(item.applicantsCount) : null;
 
   return {
     id: item._id,
@@ -28,9 +30,11 @@ const normalizeProgram = (item) => {
     subtitle: item.subtitle || "",
     description: item.description || "",
     rules: item.rules || "",
+    qualifications: item.qualifications || "",
     seats,
     usedSeats,
     availableSeats,
+    applicantsCount,
     location: item.location || "",
     dateFrom: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
     dateTo: item.dateTo ? item.dateTo.slice(0, 10) : "",
@@ -111,6 +115,7 @@ function CompanyPrograms() {
         subtitle: programData.subtitle,
         description: programData.description,
         rules: programData.rules,
+        qualifications: programData.qualifications || "",
         location: programData.location,
         seats: Number(programData.seats),
         dateFrom: programData.dateFrom,
@@ -226,7 +231,7 @@ function CompanyPrograms() {
       navItems={companyNavItems}
       profilePath="/company/profile"
     >
-      <PortalTopbar title="Programs" companyName="Creative Tech" />
+      <PortalTopbar title="Programs" />
 
       {toast && (
         <div className="portal-save-toast">

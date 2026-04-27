@@ -87,8 +87,16 @@ function CompanyRequestForm() {
       newErrors.location = "Location must be at least 3 characters.";
     }
 
-    if (formData.foundedYear.trim() && !YEAR_REGEX.test(formData.foundedYear)) {
-      newErrors.foundedYear = "Please enter a valid 4-digit year.";
+    if (formData.foundedYear.trim()) {
+      if (!YEAR_REGEX.test(formData.foundedYear)) {
+        newErrors.foundedYear = "Please enter a valid 4-digit year.";
+      } else {
+        const y = Number(formData.foundedYear);
+        const currentYear = new Date().getFullYear();
+        if (y < 1800 || y > currentYear) {
+          newErrors.foundedYear = `Year must be between 1800 and ${currentYear}.`;
+        }
+      }
     }
 
     if (!formData.contactPerson.trim()) {
@@ -119,18 +127,17 @@ function CompanyRequestForm() {
 
   const buildPayload = () => ({
     companyName: formData.companyName.trim(),
-    industry: formData.industry,
+    industry: formData.industry.trim(),
     officialEmail: formData.officialEmail.trim(),
     phoneNumber: formData.phoneNumber.trim(),
     website: formData.website.trim(),
-    companySize: formData.companySize,
+    companySize: formData.companySize.trim(),
     location: formData.location.trim(),
     foundedYear: formData.foundedYear.trim(),
     contactPerson: formData.contactPerson.trim(),
     companyDescription: formData.companyDescription.trim(),
     joinReason: formData.joinReason.trim(),
     confirmInfo: formData.confirmInfo,
-    submittedAt: new Date().toISOString(),
   });
 
   const handleSubmit = async (e) => {
@@ -222,6 +229,7 @@ function CompanyRequestForm() {
                     type="text"
                     name="companyName"
                     placeholder="Enter company name"
+                    maxLength={200}
                     value={formData.companyName}
                     onChange={handleChange}
                   />
@@ -254,6 +262,7 @@ function CompanyRequestForm() {
                     type="email"
                     name="officialEmail"
                     placeholder="company@email.com"
+                    maxLength={100}
                     value={formData.officialEmail}
                     onChange={handleChange}
                   />
@@ -267,6 +276,7 @@ function CompanyRequestForm() {
                     type="text"
                     name="phoneNumber"
                     placeholder="+965 XX XXX XXXX"
+                    maxLength={20}
                     value={formData.phoneNumber}
                     onChange={handleChange}
                   />
@@ -280,6 +290,7 @@ function CompanyRequestForm() {
                     type="text"
                     name="website"
                     placeholder="https://example.com"
+                    maxLength={200}
                     value={formData.website}
                     onChange={handleChange}
                   />
@@ -311,6 +322,7 @@ function CompanyRequestForm() {
                     type="text"
                     name="location"
                     placeholder="City, Country"
+                    maxLength={100}
                     value={formData.location}
                     onChange={handleChange}
                   />
@@ -324,6 +336,7 @@ function CompanyRequestForm() {
                     type="text"
                     name="foundedYear"
                     placeholder="2020"
+                    maxLength={4}
                     value={formData.foundedYear}
                     onChange={handleChange}
                   />
@@ -338,6 +351,7 @@ function CompanyRequestForm() {
                   type="text"
                   name="contactPerson"
                   placeholder="Enter contact person name"
+                  maxLength={100}
                   value={formData.contactPerson}
                   onChange={handleChange}
                 />
@@ -350,6 +364,7 @@ function CompanyRequestForm() {
                   id="companyDescription"
                   name="companyDescription"
                   rows="5"
+                  maxLength={2000}
                   placeholder="Tell us about your company, services, and what your company does."
                   value={formData.companyDescription}
                   onChange={handleChange}
@@ -365,6 +380,7 @@ function CompanyRequestForm() {
                   id="joinReason"
                   name="joinReason"
                   rows="5"
+                  maxLength={2000}
                   placeholder="Explain why your company wants to join and what type of opportunities you want to provide."
                   value={formData.joinReason}
                   onChange={handleChange}

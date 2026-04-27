@@ -46,12 +46,20 @@ function StudentProgramModal({ program, onClose, onApply, isApplying }) {
         </div>
 
         <div className="student-modal-section">
-          <h4>Seats</h4>
+          <h4>Positions</h4>
           <p>
-            <strong>{program.availableSeats}</strong> seats available from{" "}
-            <strong>{program.seats}</strong> total seats.
+            The company will accept up to <strong>{program.seats}</strong> interns.{" "}
+            <strong>{program.availableSeats}</strong> spots are still open based on
+            who has already been accepted (applying does not hold a seat until then).
           </p>
         </div>
+
+        {program.qualifications && String(program.qualifications).trim() ? (
+          <div className="student-modal-section">
+            <h4>What they are looking for</h4>
+            <p>{program.qualifications}</p>
+          </div>
+        ) : null}
 
         <div className="student-modal-section">
           <h4>Rules</h4>
@@ -100,13 +108,15 @@ function StudentProgramModal({ program, onClose, onApply, isApplying }) {
 
         {program.applied && !program.actionMessage && (
           <p className="student-action-message success">
-            Your application has been submitted. Status: Pending.
+            Your application status:{" "}
+            <strong>{program.applicationStatus || "Submitted"}</strong>
           </p>
         )}
 
         {isClosed && !program.actionMessage && (
           <p className="student-action-message error">
-            This program is full and cannot accept more students.
+            Every position for this program is already filled (accepted). You can
+            browse other openings.
           </p>
         )}
       </div>

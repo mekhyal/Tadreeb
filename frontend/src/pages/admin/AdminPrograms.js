@@ -28,16 +28,21 @@ const normalizeProgram = (item) => {
       ? Number(item.availableSeats)
       : Math.max(seats - usedSeats, 0);
 
+  const applicantsCount =
+    item.applicantsCount != null ? Number(item.applicantsCount) : null;
+
   return {
     id: item._id,
     title: item.title || "",
     subtitle: item.subtitle || "",
     description: item.description || "",
     rules: item.rules || "",
+    qualifications: item.qualifications || "",
     location: item.location || "",
     seats,
     usedSeats,
     availableSeats,
+    applicantsCount,
     dateFrom: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
     dateTo: item.dateTo ? item.dateTo.slice(0, 10) : "",
     image: item.imageURL || "",
@@ -97,6 +102,7 @@ function AdminPrograms() {
         subtitle: programData.subtitle,
         description: programData.description,
         rules: programData.rules,
+        qualifications: programData.qualifications || "",
         location: programData.location,
         seats: Number(programData.seats),
         dateFrom: programData.dateFrom,
@@ -202,7 +208,7 @@ function AdminPrograms() {
       navItems={adminNavItems}
       profilePath="/admin/profile"
     >
-      <PortalTopbar title="Programs" companyName="Abdulaziz" />
+      <PortalTopbar title="Programs" />
 
       {toast && (
         <div className="portal-save-toast">

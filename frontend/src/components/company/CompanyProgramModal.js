@@ -5,6 +5,7 @@ const LIMITS = {
   subtitle: 120,
   description: 500,
   rules: 300,
+  qualifications: 2000,
   location: 80,
   seats: 4,
   image: 200,
@@ -20,6 +21,7 @@ const initialErrors = {
   subtitle: "",
   description: "",
   rules: "",
+  qualifications: "",
   seats: "",
   location: "",
   image: "",
@@ -33,6 +35,7 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
     subtitle: "",
     description: "",
     rules: "",
+    qualifications: "",
     seats: "",
     location: "",
     image: "",
@@ -51,6 +54,7 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
         subtitle: program.subtitle || "",
         description: program.description || "",
         rules: program.rules || "",
+        qualifications: program.qualifications || "",
         seats: program.seats || "",
         location: program.location || "",
         image: program.image || "",
@@ -134,6 +138,10 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
       nextErrors.rules = "Rules must be at least 15 characters.";
     } else {
       checkLength("rules", "Rules", LIMITS.rules, nextErrors);
+    }
+
+    if (formData.qualifications.trim()) {
+      checkLength("qualifications", "Qualifications", LIMITS.qualifications, nextErrors);
     }
 
     // SEATS
@@ -248,6 +256,26 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
                 <label>Description</label>
                 <textarea name="description" rows="4" value={formData.description} onChange={handleChange} maxLength={LIMITS.description}/>
                 {errors.description && <p className="company-form-error">{errors.description}</p>}
+              </div>
+
+              <div className="company-form-group full">
+                <label>
+                  Qualifications (optional)
+                  <span className="company-form-optional-hint">
+                    Describe majors, skills, or experience you prefer. Anyone can apply; you
+                    accept up to your seat limit.
+                  </span>
+                </label>
+                <textarea
+                  name="qualifications"
+                  rows="3"
+                  value={formData.qualifications}
+                  onChange={handleChange}
+                  maxLength={LIMITS.qualifications}
+                />
+                {errors.qualifications && (
+                  <p className="company-form-error">{errors.qualifications}</p>
+                )}
               </div>
 
               <div className="company-form-group full">

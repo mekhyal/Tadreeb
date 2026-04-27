@@ -7,7 +7,7 @@
 
 .admin-companies-stats {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.85rem;
   margin-bottom: 1rem;
 }
@@ -111,6 +111,10 @@
   color: #d93025;
 }
 
+.admin-company-status-text.active {
+  color: #1f9d6b;
+}
+
 .admin-company-view-btn {
   min-width: 72px;
   height: 36px;
@@ -192,6 +196,11 @@
 .admin-company-status-badge.rejected {
   background: rgba(217, 48, 37, 0.14);
   color: #d93025;
+}
+
+.admin-company-status-badge.active {
+  background: rgba(31, 157, 107, 0.14);
+  color: #1f9d6b;
 }
 
 .admin-company-modal__close {

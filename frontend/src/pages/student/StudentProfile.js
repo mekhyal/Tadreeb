@@ -3,13 +3,19 @@ import { FaUserCircle, FaEnvelope, FaCheckCircle } from "react-icons/fa";
 import StudentTopbar from "../../components/student/StudentTopbar";
 import StudentFooter from "../../components/student/StudentFooter";
 import { useAuth } from "../../context/AuthContext";
-import { updateStudentProfile } from "../../api/authAPI";
+import { updateStudentProfile, getStudentProfile } from "../../api/authAPI";
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_REQUIREMENTS_MESSAGE,
+  isPasswordStrong,
+} from "../../utils/passwordRules";
 
 const LIMITS = {
   firstName: 40,
   lastName: 40,
-  passwordMin: 8,
-  passwordMax: 24,
+  passwordMin: PASSWORD_MIN_LENGTH,
+  passwordMax: PASSWORD_MAX_LENGTH,
   mobile: 20,
   university: 100,
   major: 80,
@@ -60,6 +66,28 @@ function StudentProfile() {
     }));
   }, [user]);
 
+  useEffect(() => {
+    if (!user || user.role !== "student") return undefined;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getStudentProfile();
+        const s = res.data.student;
+        if (cancelled) return;
+        updateUser({
+          ...user,
+          ...s,
+          name: [s.firstName, s.lastName].filter(Boolean).join(" "),
+        });
+      } catch (_) {
+        /* keep session snapshot if network fails */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [errors, setErrors] = useState({});
   const [showSavePopup, setShowSavePopup] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -98,10 +126,8 @@ function StudentProfile() {
     }
 
     if (formData.password.trim()) {
-      if (formData.password.length < LIMITS.passwordMin) {
-        nextErrors.password = `Password must be at least ${LIMITS.passwordMin} characters.`;
-      } else if (formData.password.length > LIMITS.passwordMax) {
-        nextErrors.password = `Password must be ${LIMITS.passwordMax} characters or less.`;
+      if (!isPasswordStrong(formData.password)) {
+        nextErrors.password = PASSWORD_REQUIREMENTS_MESSAGE;
       }
     }
 

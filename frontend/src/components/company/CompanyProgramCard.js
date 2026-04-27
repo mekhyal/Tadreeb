@@ -82,7 +82,9 @@ function CompanyProgramCard({ program, onEdit, onComplete, onRemove }) {
         <div>
           <FaUsers />
           <span>
-            {program.usedSeats} used / {program.seats} total
+            {program.applicantsCount != null
+              ? `${program.applicantsCount} applicant(s) · ${program.usedSeats} accepted / ${program.seats} seats`
+              : `${program.usedSeats} accepted / ${program.seats} seats`}
           </span>
         </div>
 
@@ -93,7 +95,7 @@ function CompanyProgramCard({ program, onEdit, onComplete, onRemove }) {
       </div>
 
       <div className="company-program-card__seats">
-        Available seats: <strong>{program.availableSeats}</strong>
+        Open seats (after acceptances): <strong>{program.availableSeats}</strong>
       </div>
 
       <span className={`company-program-status ${program.status.toLowerCase()}`}>

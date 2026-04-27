@@ -4,6 +4,7 @@ import PortalTopbar from "../../components/portal/PortalTopbar";
 import PortalStatCard from "../../components/portal/PortalStatCard";
 import AdminCompanyDetailsModal from "../../components/admin/AdminCompanyDetailsModal";
 import { getCompanies, updateCompanyStatus } from "../../api/adminAPI";
+import { normalizeCompanyAccountStatus } from "../../utils/companyAccountStatus";
 
 const COMPANIES_PER_PAGE = 8;
 
@@ -30,7 +31,7 @@ const normalizeCompany = (item) => ({
   companyDescription: item.description || "",
   joinReason: item.joinReason || "",
   requestDate: item.createdAt ? item.createdAt.slice(0, 10) : "",
-  status: item.status || "Pending",
+  status: normalizeCompanyAccountStatus(item.status),
 });
 
 function AdminCompanies() {
@@ -64,16 +65,14 @@ function AdminCompanies() {
   const stats = useMemo(() => {
     const total = companies.length;
     const pending = companies.filter((item) => item.status === "Pending").length;
-    const review = companies.filter((item) => item.status === "Review").length;
-    const approved = companies.filter((item) => item.status === "Approved").length;
+    const active = companies.filter((item) => item.status === "Active").length;
     const rejected = companies.filter((item) => item.status === "Rejected").length;
 
     return [
-      { id: 1, title: "Total Companies", value: total, subtitle: "All requests" },
-      { id: 2, title: "Pending", value: pending, subtitle: "Waiting action" },
-      { id: 3, title: "In Review", value: review, subtitle: "Under review" },
-      { id: 4, title: "Approved", value: approved, subtitle: "Approved" },
-      { id: 5, title: "Rejected", value: rejected, subtitle: "Declined" },
+      { id: 1, title: "Total Companies", value: total, subtitle: "All accounts" },
+      { id: 2, title: "Pending", value: pending, subtitle: "Not activated" },
+      { id: 3, title: "Active", value: active, subtitle: "Can use the portal" },
+      { id: 4, title: "Rejected", value: rejected, subtitle: "Declined" },
     ];
   }, [companies]);
 
@@ -126,7 +125,7 @@ function AdminCompanies() {
 
   return (
     <PortalLayout activeKey="companies" navItems={adminNavItems} profilePath="/admin/profile">
-      <PortalTopbar title="Companies" companyName="Abdulaziz" />
+      <PortalTopbar title="Companies" />
 
       {toast && (
         <div className="portal-save-toast">
@@ -143,7 +142,7 @@ function AdminCompanies() {
         </div>
 
         <div className="admin-companies-filters">
-          {["All", "Pending", "Review", "Approved", "Rejected", "Active"].map((filter) => {
+          {["All", "Pending", "Active", "Rejected"].map((filter) => {
             const count =
               filter === "All"
                 ? companies.length

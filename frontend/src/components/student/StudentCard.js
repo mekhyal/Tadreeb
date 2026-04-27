@@ -26,7 +26,8 @@ function StudentCard({ program, onOpen }) {
           </span>
           <span>Open to: {program.openTo}</span>
           <span>
-            Seats: {program.availableSeats} / {program.seats} available
+            Openings: up to {program.seats} — {program.availableSeats} still available
+            (filled after the company accepts you)
           </span>
           <span>by {program.company}</span>
         </div>

@@ -130,7 +130,7 @@ function CompanyParticipants() {
       navItems={companyNavItems}
       profilePath="/company/profile"
     >
-      <PortalTopbar title="Participants" companyName="Creative Tech" />
+      <PortalTopbar title="Participants" />
 
       {toast && (
         <div className="portal-save-toast">

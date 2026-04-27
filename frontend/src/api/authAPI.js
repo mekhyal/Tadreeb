@@ -1,5 +1,11 @@
 import api from "./apiService";
 
+export const getStudentProfile = () => api.get("/auth/student/profile");
+
+export const getCompanyProfile = () => api.get("/auth/company/profile");
+
+export const getAdminProfile = () => api.get("/auth/admin/profile");
+
 export const registerStudent = (data) => {
   return api.post("/auth/student/register", data);
 };

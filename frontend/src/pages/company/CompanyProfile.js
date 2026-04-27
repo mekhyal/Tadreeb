@@ -1,12 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FaEnvelope, FaUserCircle } from "react-icons/fa";
 import PortalLayout from "../../components/portal/PortalLayout";
 import PortalTopbar from "../../components/portal/PortalTopbar";
-import { companyProfileData } from "../../data/companyData";
+import { useAuth } from "../../context/AuthContext";
+import { getCompanyProfile, updateCompanyProfile } from "../../api/authAPI";
+import {
+  PASSWORD_MAX_LENGTH,
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_REQUIREMENTS_MESSAGE,
+  isPasswordStrong,
+} from "../../utils/passwordRules";
 
 const LIMITS = {
   companyName: 100,
-  companyId: 30,
   industry: 80,
   phone: 20,
   website: 150,
@@ -14,21 +20,100 @@ const LIMITS = {
   location: 80,
   foundedYear: 4,
   contactPerson: 80,
+  passwordMin: PASSWORD_MIN_LENGTH,
+  passwordMax: PASSWORD_MAX_LENGTH,
 };
 
 const URL_REGEX =
   /^(https?:\/\/)?([A-Za-z0-9-]+\.)+[A-Za-z]{2,}(\/[^\s]*)?$/;
 
+const emptyForm = () => ({
+  companyName: "",
+  companyId: "",
+  industry: "",
+  phone: "",
+  website: "",
+  companySize: "",
+  location: "",
+  foundedYear: "",
+  contactPerson: "",
+  internshipAvailability: "Open",
+  email: "",
+  password: "",
+});
+
+function mapCompanyToForm(c) {
+  const jr = (c.joinReason || "").trim();
+  const internshipAvailability = jr === "Open" || jr === "Closed" ? jr : "Open";
+  return {
+    companyName: c.companyName || "",
+    companyId: c.id != null ? String(c.id) : "",
+    industry: c.industry || "",
+    phone: c.phone || "",
+    website: c.website || "",
+    companySize: c.size || "",
+    location: c.location || "",
+    foundedYear:
+      c.foundedYear != null && c.foundedYear !== ""
+        ? String(c.foundedYear)
+        : "",
+    contactPerson: c.contactPerson || "",
+    internshipAvailability,
+    email: c.email || "",
+    password: "",
+  };
+}
+
 function CompanyProfile() {
+  const { user, updateUser } = useAuth();
+  const joinReasonSnapshot = useRef("");
+
   const [showSaved, setShowSaved] = useState(false);
-  const [formData, setFormData] = useState(companyProfileData);
+  const [formData, setFormData] = useState(emptyForm);
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loadError, setLoadError] = useState("");
 
   const companyNavItems = [
     { key: "dashboard", label: "Dashboard", path: "/company/dashboard" },
     { key: "programs", label: "Programs", path: "/company/programs" },
     { key: "participants", label: "Participants", path: "/company/participants" },
   ];
+
+  useEffect(() => {
+    if (!user || user.role !== "company") return undefined;
+
+    let cancelled = false;
+
+    const load = async () => {
+      setIsLoading(true);
+      setLoadError("");
+      try {
+        const res = await getCompanyProfile();
+        const c = res.data.company;
+        if (cancelled) return;
+        joinReasonSnapshot.current = (c.joinReason || "").trim();
+        setFormData(mapCompanyToForm(c));
+        updateUser({ ...user, ...c });
+      } catch (e) {
+        if (!cancelled) {
+          setLoadError(
+            e.response?.data?.message || "Could not load profile from server."
+          );
+          joinReasonSnapshot.current = (user.joinReason || "").trim();
+          setFormData(mapCompanyToForm(user));
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const checkLength = (field, label, limit, nextErrors) => {
     if (String(formData[field] || "").trim().length > limit) {
@@ -44,12 +129,6 @@ function CompanyProfile() {
       nextErrors.companyName = "Company name is required.";
     } else {
       checkLength("companyName", "Company name", LIMITS.companyName, nextErrors);
-    }
-
-    if (!formData.companyId.trim()) {
-      nextErrors.companyId = "Company ID is required.";
-    } else {
-      checkLength("companyId", "Company ID", LIMITS.companyId, nextErrors);
     }
 
     if (!formData.industry.trim()) {
@@ -111,6 +190,12 @@ function CompanyProfile() {
       nextErrors.internshipAvailability = "Internship availability is required.";
     }
 
+    if (formData.password.trim()) {
+      if (!isPasswordStrong(formData.password)) {
+        nextErrors.password = PASSWORD_REQUIREMENTS_MESSAGE;
+      }
+    }
+
     setErrors(nextErrors);
     return !Object.values(nextErrors).some(Boolean);
   };
@@ -129,11 +214,50 @@ function CompanyProfile() {
     }));
   };
 
-  const handleSave = () => {
-    if (!validateForm()) return;
+  const handleSave = async () => {
+    if (!validateForm() || !user) return;
 
-    setShowSaved(true);
-    setTimeout(() => setShowSaved(false), 3000);
+    setIsSaving(true);
+    setErrors((prev) => ({ ...prev, general: "" }));
+
+    try {
+      const payload = {
+        companyName: formData.companyName.trim(),
+        industry: formData.industry.trim(),
+        phone: formData.phone.trim(),
+        website: formData.website.trim(),
+        size: formData.companySize.trim(),
+        location: formData.location.trim(),
+        contactPerson: formData.contactPerson.trim(),
+        foundedYear: formData.foundedYear.trim(),
+      };
+
+      const snap = (joinReasonSnapshot.current || "").trim();
+      if (snap === "" || snap === "Open" || snap === "Closed") {
+        payload.joinReason = formData.internshipAvailability;
+      }
+
+      if (formData.password.trim()) {
+        payload.password = formData.password;
+      }
+
+      const res = await updateCompanyProfile(payload);
+      const c = res.data.company;
+      joinReasonSnapshot.current = (c.joinReason || "").trim();
+      setFormData((prev) => ({ ...mapCompanyToForm(c), password: "" }));
+      updateUser({ ...user, ...c });
+      setShowSaved(true);
+      setTimeout(() => setShowSaved(false), 3000);
+    } catch (err) {
+      setErrors((prev) => ({
+        ...prev,
+        general:
+          err.response?.data?.message ||
+          "Could not save profile. Please try again.",
+      }));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -142,7 +266,10 @@ function CompanyProfile() {
       navItems={companyNavItems}
       profilePath="/company/profile"
     >
-      <PortalTopbar title="Profile" companyName="Creative Tech" />
+      <PortalTopbar
+        title="Profile"
+        accountLabel={formData.companyName || user?.email || "Company"}
+      />
 
       {showSaved && (
         <div className="portal-save-toast">
@@ -154,6 +281,12 @@ function CompanyProfile() {
       )}
 
       <section className="portal-panel company-profile-section">
+        {loadError && (
+          <p className="company-form-error" style={{ marginBottom: "1rem" }}>
+            {loadError}
+          </p>
+        )}
+
         <div className="company-profile-header">
           <div className="company-profile-user">
             <div className="company-profile-avatar">
@@ -161,16 +294,30 @@ function CompanyProfile() {
             </div>
 
             <div>
-              <h2>{formData.companyName}</h2>
+              <h2>{formData.companyName || "—"}</h2>
               <p>{formData.email}</p>
             </div>
           </div>
 
-          <button type="button" className="company-save-btn" onClick={handleSave}>
-            Save Change
+          {errors.general && (
+            <p className="company-form-error" style={{ marginRight: "auto" }}>
+              {errors.general}
+            </p>
+          )}
+
+          <button
+            type="button"
+            className="company-save-btn"
+            onClick={handleSave}
+            disabled={isLoading || isSaving}
+          >
+            {isSaving ? "Saving..." : "Save Change"}
           </button>
         </div>
 
+        {isLoading ? (
+          <p>Loading profile…</p>
+        ) : (
         <div className="company-profile-grid">
           <div className="company-form-group">
             <label>Company Name</label>
@@ -190,12 +337,9 @@ function CompanyProfile() {
             <input
               name="companyId"
               value={formData.companyId}
-              onChange={handleChange}
-              maxLength={LIMITS.companyId}
+              readOnly
+              aria-readonly="true"
             />
-            {errors.companyId && (
-              <p className="company-form-error">{errors.companyId}</p>
-            )}
           </div>
 
           <div className="company-form-group">
@@ -289,6 +433,22 @@ function CompanyProfile() {
           </div>
 
           <div className="company-form-group">
+            <label>Password</label>
+            <input
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Leave blank to keep current password"
+              maxLength={LIMITS.passwordMax}
+            />
+            {errors.password && (
+              <p className="company-form-error">{errors.password}</p>
+            )}
+          </div>
+
+          <div className="company-form-group">
             <label>Internship Availability</label>
             <select
               name="internshipAvailability"
@@ -305,6 +465,7 @@ function CompanyProfile() {
             )}
           </div>
         </div>
+        )}
 
         <div className="company-email-section">
           <h3>Official Email</h3>
@@ -316,7 +477,7 @@ function CompanyProfile() {
 
             <div>
               <h4>{formData.email}</h4>
-              <p>1 month ago</p>
+              <p>Contact support to change your login email.</p>
             </div>
           </div>
         </div>
