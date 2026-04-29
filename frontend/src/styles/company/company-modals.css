@@ -341,3 +341,47 @@
     width: 100%;
   }
 }
+
+@media (max-width: 480px) {
+  .company-modal-overlay {
+    padding: 0.6rem;
+    align-items: flex-start;
+  }
+
+  .company-modal-card {
+    border-radius: 18px;
+    max-height: calc(100dvh - 1.2rem);
+  }
+
+  .company-modal-card.compact {
+    height: calc(100dvh - 1.2rem);
+  }
+
+  .company-modal-head {
+    padding: 0.85rem;
+    gap: 0.7rem;
+  }
+
+  .company-modal-head h2 {
+    font-size: 1.12rem;
+    overflow-wrap: anywhere;
+  }
+
+  .company-modal-head button {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 1.45rem;
+  }
+
+  .company-form,
+  .company-participant-grid {
+    padding: 0.85rem;
+  }
+
+  .company-modal-footer,
+  .company-confirm-modal__actions,
+  .company-form-actions {
+    padding: 0.85rem;
+  }
+}

@@ -1,13 +1,19 @@
 import React, { useState } from "react";
-import { FaGlobe } from "react-icons/fa";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 function CompanyRequestNavbar() {
-  const navigate = useNavigate();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => {
+    setIsMenuOpen(false);
+  };
 
   const delayedNavigate = (path) => {
+    closeMobileMenu();
+
     if (location.pathname === path) {
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
@@ -22,27 +28,24 @@ function CompanyRequestNavbar() {
   };
 
   const delayedContactNavigate = () => {
+    closeMobileMenu();
     setIsNavigating(true);
 
     setTimeout(() => {
-      window.location.href = "/#contact";
+      navigate("/", { state: { scrollTo: "contact" } });
     }, 450);
   };
 
-  const handleBrandClick = () => {
-    setIsNavigating(true);
-
-    setTimeout(() => {
-      navigate("/");
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }, 450);
+  const handleBrandClick = (e) => {
+    e.preventDefault();
+    delayedNavigate("/");
   };
 
   return (
     <>
       {isNavigating && (
-        <div className="company-request-loader">
-          <div className="company-request-loader-dots">
+        <div className="app-global-loader">
+          <div className="app-loader-dots">
             <span></span>
             <span></span>
             <span></span>
@@ -51,39 +54,66 @@ function CompanyRequestNavbar() {
         </div>
       )}
 
-      <header className="company-request-navbar">
-        <div className="company-request-navbar__inner">
-          <button
-            type="button"
-            className="company-request-brand"
+      <nav className="navbar navbar-expand-lg tadreeb-navbar">
+        <div className="container navbar-custom-container">
+          <Link
+            className="navbar-brand tadreeb-logo"
+            to="/"
             onClick={handleBrandClick}
           >
             <span className="logo-dark">Tad</span>
             <span className="logo-blue">reeb</span>
+          </Link>
+
+          <button
+            className="navbar-toggler custom-toggler"
+            type="button"
+            aria-controls="mainNavbar"
+            aria-expanded={isMenuOpen}
+            aria-label="Toggle navigation"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+          >
+            <span className="navbar-toggler-icon"></span>
           </button>
 
-          <nav className="company-request-navbar__links">
-            <button type="button" onClick={() => delayedNavigate("/")}>
-              Home
-            </button>
+          <div
+            className={`collapse navbar-collapse ${isMenuOpen ? "show" : ""}`}
+            id="mainNavbar"
+          >
+            <ul className="navbar-nav navbar-center-links mb-2 mb-lg-0">
+              <li className="nav-item">
+                <button
+                  className="nav-link nav-link-button"
+                  type="button"
+                  onClick={() => delayedNavigate("/")}
+                >
+                  Home
+                </button>
+              </li>
 
-            <button type="button" onClick={() => delayedNavigate("/login")}>
-              login
-            </button>
+              <li className="nav-item">
+                <button
+                  className="nav-link nav-link-button"
+                  type="button"
+                  onClick={() => delayedNavigate("/login")}
+                >
+                  Login
+                </button>
+              </li>
 
-            <button
-              type="button"
-              onClick={delayedContactNavigate}
-            >
-              Contact us
-            </button>
-          </nav>
-
-          <button type="button" className="company-request-lang-btn">
-            <FaGlobe />
-          </button>
+              <li className="nav-item">
+                <button
+                  className="nav-link nav-link-button"
+                  type="button"
+                  onClick={delayedContactNavigate}
+                >
+                  Contact Us
+                </button>
+              </li>
+            </ul>
+          </div>
         </div>
-      </header>
+      </nav>
     </>
   );
 }

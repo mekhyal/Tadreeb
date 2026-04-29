@@ -367,6 +367,67 @@
   animation-delay: 0.24s;
 }
 
+.company-request-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3200;
+  background: rgba(13, 71, 161, 0.22);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.company-request-confirm-card {
+  width: min(100%, 430px);
+  border-radius: 20px;
+  background: var(--white);
+  box-shadow: 0 24px 60px rgba(13, 71, 161, 0.18);
+  padding: 1.6rem;
+  text-align: center;
+}
+
+.company-request-confirm-card h3 {
+  margin: 0 0 0.65rem;
+  color: var(--text-dark);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.company-request-confirm-card p {
+  margin: 0 0 1.35rem;
+  color: var(--text-soft);
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.company-request-confirm-actions {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.company-request-confirm-secondary,
+.company-request-confirm-primary {
+  flex: 1;
+  min-height: 46px;
+  border-radius: 12px;
+  font-weight: 800;
+}
+
+.company-request-confirm-secondary {
+  border: 1px solid rgba(13, 71, 161, 0.18);
+  background: var(--white);
+  color: var(--deep-blue);
+}
+
+.company-request-confirm-primary {
+  border: none;
+  background: linear-gradient(135deg, var(--primary-blue), var(--deep-blue));
+  color: var(--white);
+  box-shadow: 0 10px 24px rgba(25, 118, 210, 0.16);
+}
+
 @keyframes companyRequestSubmitBounce {
   0%,
   80%,
@@ -448,10 +509,34 @@
     justify-content: stretch;
   }
 
+  .company-request-confirm-actions {
+    flex-direction: column;
+  }
+
   .company-request-toast {
     top: 82px;
     right: 12px;
     left: 12px;
     min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .company-request-main {
+    padding: 2rem 0 3rem;
+  }
+
+  .company-request-hero h1 {
+    font-size: 1.75rem;
+  }
+
+  .company-request-card,
+  .company-request-confirm-card {
+    border-radius: 18px;
+    padding: 1rem;
+  }
+
+  .company-request-confirm-actions {
+    gap: 0.65rem;
   }
 }

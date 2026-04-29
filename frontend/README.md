@@ -16,17 +16,19 @@ React SPA for the Tadreeb platform: students, companies, and admins each use rol
 
 ## Features (high level)
 
-- **Public:** marketing home, login/signup, **request to join as a company** (`/company-request`)
-- **Auth:** JWT stored in `localStorage`, `AuthContext`, `ProtectedRoute` / `PublicOnlyRoute`
-- **Student:** program discovery, apply flow, **My Applications** (refreshes on focus / navigation), profile
-- **Company:** programs with seat limits and optional qualifications; participant list; profile
-- **Admin:** cross-company programs and user management; company account status (**Pending** / **Active** / **Rejected**)
+- **Public:** marketing home, login/signup, **request to join as a company** (`/company-request`) with confirmation before submit
+- **Auth:** JWT stored in `localStorage`, `AuthContext`, `ProtectedRoute` / `PublicOnlyRoute`, password visibility toggles, logout confirmation
+- **Student:** program discovery, search reset, apply flow, **My Applications** with completed-program grouping, profile and email update flow
+- **Company:** dashboard snapshot, programs with seat limits and registration deadlines, participant decisions, profile
+- **Admin:** dashboard, programs, participants, companies, users, profile, account access management
 
 ---
 
 ## UI
 
-- Responsive layout, portal-style navigation, modals, pagination, React Icons  
+- Responsive layout, portal-style navigation, mobile menu, modals, pagination, React Icons
+- Company request form navbar matches the public home navbar style while keeping Home, Login, and Contact Us
+- Shared portal tables and modals support small-screen scrolling/wrapping
 - Styles under `src/styles/` (role-specific CSS; not only Bootstrap)
 
 ---
@@ -57,7 +59,7 @@ frontend/
 
 ## Technologies
 
-- React 18, React Router v6  
+- React, React Router
 - Axios (JWT attached in `apiService`)  
 - Context API  
 
@@ -97,9 +99,9 @@ Ensure the backend is running and CORS allows your origin (see `backend/.env` `C
 
 ---
 
-## Password policy (signup & profile updates)
+## Password policy (signup, add-user & profile updates)
 
-Aligned with the API: **8–24 characters**, at least **one letter** and **one digit**. See `src/utils/passwordRules.js`.
+Aligned with the API: **8-24 characters**, at least **one uppercase letter**, **one lowercase letter**, **one number**, and **one special character**. See `src/utils/passwordRules.js`.
 
 Test accounts in a dev database are created via the API or admin UI; use credentials your team has provisioned (not committed here).
 
@@ -109,6 +111,9 @@ Test accounts in a dev database are created via the API or admin UI; use credent
 
 - **Live API integration** — lists and dashboards load from the backend, not static mock JSON.  
 - Application **status** on the student side comes from `GET /api/applications/my` and is refreshed when revisiting **My Applications** or refocusing the browser tab (student home also refreshes programs + applications on visibility/focus).
+- Programs use `registrationDeadline` to decide when students can apply or remove an application.
+- Student application statuses can be masked by admin visibility settings; hidden company results display as Under Review with an empty note.
+- Admin Companies uses request-review labels (**Under Review**, **Accepted**, **Rejected**). Admin Users controls login access for students and companies (**Active**, **Inactive**).
 
 ---
 

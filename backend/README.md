@@ -4,9 +4,9 @@ REST API for the Tadreeb training platform. Built with **Node.js**, **Express**,
 
 Roles:
 
-- **student** — registers, logs in, applies to opportunities, cancels pending applications, tracks status via `GET /applications/my`.
-- **company** — logs in only when account is **Active** (legacy **`Approved`** in old data still allowed until migrated), posts programs, reviews applications, accepts/rejects up to **seat** capacity.
-- **admin** — creates users, lists entities, updates **company account** status (**Pending** / **Active** / **Rejected**).
+- **student** — registers, logs in, applies while registration is open, removes applications only during registration, tracks status via `GET /applications/my`.
+- **company** — logs in only when account access is **Active** (legacy **`Approved`** in old data still allowed until migrated), posts programs, reviews applications, accepts/rejects up to **seat** capacity before the program starts.
+- **admin** — creates users, lists entities, manages company request review labels, and controls student/company login access.
 
 ---
 
@@ -56,6 +56,7 @@ backend/
     └── utils/
         ├── generateToken.js              # { id, role }, 7d
         ├── companyAccountStatus.js       # portal access helper (Active / legacy Approved)
+        ├── applicationStatus.js          # automatic application status sync
         └── validators.js                 # email, password policy, lengths, ObjectId
 ```
 
@@ -80,7 +81,9 @@ cp .env.example .env
 | `JWT_SECRET` | Secret for signing JWTs |
 | `CORS_ORIGIN` | Optional. Comma-separated allowed frontend origins for production. If unset, CORS reflects any origin (dev only). |
 
-Password policy (register, admin-created users, profile password changes): **8–24** characters, at least **one letter** and **one digit** (see `validators.js`).
+Password policy (register, admin-created users, profile password changes): **8-24** characters, at least **one uppercase letter**, **one lowercase letter**, **one number**, and **one special character** (see `validators.js`).
+
+Passwords are hashed with `bcryptjs` before storage. Password fields are excluded from normal Mongoose queries by default and selected only during login comparisons.
 
 ---
 
@@ -132,8 +135,8 @@ Company login succeeds only when `companyMayUsePortal(status)` is true (**`Activ
 
 ### Admin (`/api/admin`)
 
-Bootstrap and CRUD as implemented in `adminRoutes.js` (create admin/company/student, list users, update company **account** status, student/admin status, etc.).  
-**Company account status** values: **`Pending`**, **`Active`**, **`Rejected`**.
+Bootstrap and CRUD as implemented in `adminRoutes.js` (create admin/company/student, list users, update company/student account access, etc.).  
+**Company account access** values used for login: **`Pending`**, **`Active`**, **`Inactive`**, **`Rejected`**. Admin accounts remain **`Active`**.
 
 ### Opportunities (`/api/opportunities`)
 
@@ -145,27 +148,38 @@ Bootstrap and CRUD as implemented in `adminRoutes.js` (create admin/company/stud
 | PUT | `/:id` | Bearer | company (owner) or admin |
 | DELETE | `/:id` | Bearer | company (owner) or admin |
 
-Programs include **`qualifications`** (optional text) plus title/description/rules/seats/dates, etc. Minimum seats on update cannot go below **accepted** count.
+Programs include **`registrationDeadline`**, **`qualifications`** (optional text), title/description/rules/seats/dates, etc. Minimum seats on update cannot go below **accepted** count. Registration deadline must be before the program start date.
 
 ### Applications (`/api/applications`)
 
 | Method | Path | Auth | Role |
 | --- | --- | --- | --- |
-| POST | `/` | Bearer | student — apply (`programID`) |
+| POST | `/` | Bearer | student - apply while registration is open (`programID`) |
 | GET | `/my` | Bearer | student — list own apps with status |
-| DELETE | `/:id` | Bearer | student — cancel if status still `Submitted` / `Under Review` |
+| DELETE | `/:id` | Bearer | student - remove only while registration is still open |
 | GET | `/company` | Bearer | company |
-| PATCH | `/:id/status` | Bearer | company — set status / note (accept obeys seat cap) |
+| PATCH | `/:id/status` | Bearer | company - set Accepted/Rejected and note before the program is Active/Completed |
 
-**Application `status`:** `Submitted` · `Under Review` · `Accepted` · `Rejected`
+**Application `status`:** `Submitted` · `Under Review` · `Not Reviewed` · `Accepted` · `Rejected`
+
+Automatic status sync:
+
+- `Submitted` while registration is open.
+- `Under Review` after registration closes and before the program starts.
+- `Not Reviewed` if the program starts and the company has not accepted or rejected.
+- `Accepted` / `Rejected` remain final company decisions.
 
 ---
 
 ## 7. Domain rules (summary)
 
 - **Seats:** Capacity is enforced on **acceptance**, not on the mere count of applicants.
-- **Company accounts:** Three states for admins — **Pending**, **Active**, **Rejected**. Only **Active** (or legacy **Approved**) can log in and post programs.
-- **Join requests:** `CompanyRequest` tracks inbound forms (**Pending** / **Approved** / **Rejected** at schema level); separate from live `Company` accounts.
+- **Registration deadline:** Students can apply or remove applications only while registration is open.
+- **Program lifecycle:** Register Now, Selection Phase, Active, and Completed are derived from registration/start/end dates plus manual completion.
+- **Company decisions:** Companies cannot update application status after a program becomes Active or Completed.
+- **Company accounts:** Login access is controlled by **Active** / **Inactive** from Admin Users. Only **Active** (or legacy **Approved**) can log in and post programs.
+- **Company requests:** Admin Companies uses review labels **Under Review**, **Accepted**, and **Rejected** for inbound request review. This is separate from login access.
+- **Student visibility:** Application results are visible by default; admin can hide company status/note from the student.
 
 ---
 
@@ -179,17 +193,17 @@ curl -i $BASE/
 # Bootstrap admin (lock down in production — see §9)
 curl -i -X POST $BASE/api/admin/create-admin \
   -H "Content-Type: application/json" \
-  -d '{"firstName":"Root","lastName":"Admin","email":"admin@tadreeb.com","phone":"0500000000","password":"Admin1234"}'
+  -d '{"firstName":"Root","lastName":"Admin","email":"admin@tadreeb.com","phone":"0500000000","password":"Admin1234!"}'
 
 curl -s -X POST $BASE/api/auth/admin/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@tadreeb.com","password":"Admin1234"}'
+  -d '{"email":"admin@tadreeb.com","password":"Admin1234!"}'
 
 # Create company (replace <ADMIN_TOKEN>) — new companies default to Active if status omitted
 curl -i -X POST $BASE/api/admin/create-company \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer <ADMIN_TOKEN>" \
-  -d '{"companyName":"Example Co","email":"co@example.com","password":"Co123456","industry":"Tech","phone":"0511111111","location":"Kuwait City"}'
+  -d '{"companyName":"Example Co","email":"co@example.com","password":"Co123456!","industry":"Tech","phone":"0511111111","location":"Kuwait City"}'
 ```
 
 ---
@@ -206,7 +220,7 @@ curl -i -X POST $BASE/api/admin/create-company \
 | --- | --- |
 | `MongooseServerSelectionError` | Mongo not reachable — check `MONGO_URI`, Atlas IP allowlist |
 | `jwt malformed` / 401 | Missing `Bearer ` prefix or rotated `JWT_SECRET` — log in again |
-| 403 on company routes | Company **Pending** / **Rejected** — admin must set **Active** |
+| 403 on company routes | Company **Pending** / **Inactive** / **Rejected** - admin must set **Active** |
 | 415 on JSON routes | Send `Content-Type: application/json` |
 | `EADDRINUSE: 5001` | Free the port or change `PORT` |
 

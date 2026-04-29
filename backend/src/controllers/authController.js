@@ -178,7 +178,7 @@ const loginStudent = async (req,res) => {
         if (!isPlainString(email) || !isPlainString(password)) {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
-        const student = await Student.findOne({ email });
+        const student = await Student.findOne({ email }).select('+password');
         if (!student){
             return res.status(400).json({ message: 'Invalid email or password'});
         }
@@ -216,7 +216,7 @@ const loginCompany = async (req,res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        const company = await Company.findOne({email});
+        const company = await Company.findOne({email}).select('+password');
         if(!company){
             return res.status(400).json({message: 'Invalid email or password'});
         }
@@ -251,7 +251,7 @@ const loginAdmin = async (req, res) => {
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
-        const admin = await Admin.findOne({ email });
+        const admin = await Admin.findOne({ email }).select('+password');
         if(!admin){
             return res.status(400).json({ message: 'Invalid email or password'});
         }

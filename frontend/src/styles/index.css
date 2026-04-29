@@ -29,12 +29,16 @@
 
 html {
   scroll-behavior: smooth;
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 body {
   font-family: Arial, Helvetica, sans-serif;
   background-color: var(--bg-main);
   color: var(--text-dark);
+  max-width: 100%;
+  overflow-x: hidden;
 }
 
 a {

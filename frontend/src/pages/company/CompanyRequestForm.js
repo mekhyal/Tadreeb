@@ -43,6 +43,7 @@ function CompanyRequestForm() {
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({ general: "" });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
   const [showRedirectLoader, setShowRedirectLoader] = useState(false);
 
@@ -162,6 +163,11 @@ function CompanyRequestForm() {
       return;
     }
 
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSubmit = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
 
     const payload = buildPayload();
@@ -214,6 +220,39 @@ function CompanyRequestForm() {
             <span></span>
           </div>
           <p>Redirecting to home page...</p>
+        </div>
+      )}
+
+      {showConfirm && (
+        <div className="company-request-confirm-overlay" role="presentation">
+          <div
+            className="company-request-confirm-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="company-request-confirm-title"
+          >
+            <h3 id="company-request-confirm-title">Confirm your company request</h3>
+            <p>
+              Please review your company details before submitting your request
+              to Tadreeb.
+            </p>
+            <div className="company-request-confirm-actions">
+              <button
+                type="button"
+                className="company-request-confirm-secondary"
+                onClick={() => setShowConfirm(false)}
+              >
+                Review again
+              </button>
+              <button
+                type="button"
+                className="company-request-confirm-primary"
+                onClick={handleConfirmSubmit}
+              >
+                Yes, submit request
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

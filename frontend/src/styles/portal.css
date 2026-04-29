@@ -115,6 +115,7 @@
   margin: 0;
   font-size: 1.65rem;
   color: var(--text-dark);
+  overflow-wrap: anywhere;
 }
 
 .portal-topbar-user {
@@ -124,6 +125,7 @@
   font-weight: 600;
   color: var(--text-dark);
   padding-right: 0.2rem;
+  min-width: 0;
 }
 
 .portal-topbar-avatar {
@@ -442,5 +444,28 @@
 
   .portal-confirm-actions {
     flex-direction: column-reverse;
+  }
+}
+
+@media (max-width: 480px) {
+  .portal-main {
+    padding: 0.85rem;
+  }
+
+  .portal-panel {
+    border-radius: 16px;
+    padding: 0.9rem;
+  }
+
+  .portal-topbar h1 {
+    font-size: 1.35rem;
+  }
+
+  .portal-save-toast {
+    top: 78px;
+    left: 12px;
+    right: 12px;
+    min-width: auto;
+    max-width: none;
   }
 }
