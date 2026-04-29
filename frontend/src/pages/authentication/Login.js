@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { FaEnvelope, FaLock, FaHome } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
@@ -40,8 +40,21 @@ function Login() {
   });
 
   const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState(
+    location.state?.signupSuccess || ""
+  );
   const [isNavigatingHome, setIsNavigatingHome] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!successMessage) return;
+
+    const timer = setTimeout(() => {
+      setSuccessMessage("");
+    }, 6000);
+
+    return () => clearTimeout(timer);
+  }, [successMessage]);
 
   const getEmailDomain = (email) => {
     return email.trim().toLowerCase().split("@")[1] || "";
@@ -254,6 +267,10 @@ function Login() {
                     Forgot password?
                   </button>
                 </div>
+
+                {successMessage && (
+                  <p className="auth-success-message">{successMessage}</p>
+                )}
 
                 {errors.general && (
                   <p className="auth-error auth-error-general">

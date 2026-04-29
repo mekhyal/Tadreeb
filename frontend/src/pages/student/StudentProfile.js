@@ -21,10 +21,23 @@ const LIMITS = {
   major: 80,
   skills: 150,
   studentId: 30,
+  studentIdMin: 7,
   email: 120,
 };
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+
+const ALLOWED_EMAIL_DOMAINS = [
+  "gmail.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "yahoo.com",
+  "icloud.com",
+  "proton.me",
+  "protonmail.com",
+  "tadreeb.com",
+];
 
 const formatSkills = (skills) => {
   if (Array.isArray(skills)) return skills.join(", ");
@@ -49,6 +62,8 @@ function StudentProfile() {
     email: user?.email || "",
   });
 
+  const [emailDraft, setEmailDraft] = useState(user?.email || "");
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
   useEffect(() => {
     if (!user) return;
     setFormData((prev) => ({
@@ -64,6 +79,8 @@ function StudentProfile() {
       studentId: user.universityID || "",
       email: user.email || "",
     }));
+    setEmailDraft(user.email || "");
+    setIsEditingEmail(false);
   }, [user]);
 
   useEffect(() => {
@@ -91,6 +108,47 @@ function StudentProfile() {
   const [errors, setErrors] = useState({});
   const [showSavePopup, setShowSavePopup] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+
+  const savedProfile = {
+    firstName: user?.firstName || "",
+    lastName: user?.lastName || "",
+    password: "",
+    mobile: user?.mobileNo || "",
+    gender: user?.gender || "Male",
+    year: user?.year || "First",
+    university: user?.universityName || "",
+    major: user?.major || "",
+    skills: formatSkills(user?.skills),
+    studentId: user?.universityID || "",
+  };
+
+  const hasProfileChanges =
+    Boolean(formData.password.trim()) ||
+    formData.firstName !== savedProfile.firstName ||
+    formData.lastName !== savedProfile.lastName ||
+    formData.mobile !== savedProfile.mobile ||
+    formData.gender !== savedProfile.gender ||
+    formData.year !== savedProfile.year ||
+    formData.university !== savedProfile.university ||
+    formData.major !== savedProfile.major ||
+    formData.skills !== savedProfile.skills ||
+    formData.studentId !== savedProfile.studentId;
+
+  const hasEmailChanges =
+    emailDraft.trim().toLowerCase() !== (user?.email || "").toLowerCase();
+
+  const displayName = [user?.firstName, user?.lastName]
+    .filter(Boolean)
+    .join(" ");
+
+  const getEmailDomain = (email) => {
+    return email.trim().toLowerCase().split("@")[1] || "";
+  };
+
+  const isAllowedEmailDomain = (email) => {
+    return ALLOWED_EMAIL_DOMAINS.includes(getEmailDomain(email));
+  };
 
   const checkLength = (field, label, limit, nextErrors) => {
     if (formData[field].trim().length > limit) {
@@ -115,14 +173,6 @@ function StudentProfile() {
       nextErrors.lastName = "Last name must be at least 2 characters.";
     } else {
       checkLength("lastName", "Last name", LIMITS.lastName, nextErrors);
-    }
-
-    if (!formData.email.trim()) {
-      nextErrors.email = "Email is required.";
-    } else if (!EMAIL_RE.test(formData.email.trim())) {
-      nextErrors.email = "Please enter a valid email address.";
-    } else {
-      checkLength("email", "Email", LIMITS.email, nextErrors);
     }
 
     if (formData.password.trim()) {
@@ -167,6 +217,8 @@ function StudentProfile() {
 
     if (!formData.studentId.trim()) {
       nextErrors.studentId = "Student ID is required.";
+    } else if (formData.studentId.trim().length < LIMITS.studentIdMin) {
+      nextErrors.studentId = "Student ID must be more than 6 characters.";
     } else {
       checkLength("studentId", "Student ID", LIMITS.studentId, nextErrors);
     }
@@ -189,8 +241,29 @@ function StudentProfile() {
     }));
   };
 
+  const validateEmailDraft = () => {
+    const nextErrors = {};
+    const email = emailDraft.trim();
+
+    if (!email) {
+      nextErrors.email = "Email is required.";
+    } else if (email.length > LIMITS.email) {
+      nextErrors.email = `Email must be ${LIMITS.email} characters or less.`;
+    } else if (!EMAIL_REGEX.test(email)) {
+      nextErrors.email = "Please enter a valid email address.";
+    } else if (!isAllowedEmailDomain(email)) {
+      nextErrors.email =
+        "Please use a supported email provider such as Gmail, Outlook, Hotmail, Yahoo, iCloud, or Proton.";
+    } else if (!hasEmailChanges) {
+      nextErrors.email = "Please enter a different email address before updating.";
+    }
+
+    setErrors((prev) => ({ ...prev, email: nextErrors.email || "" }));
+    return !nextErrors.email;
+  };
+
   const handleSave = async () => {
-    if (!validateForm() || !user) return;
+    if (!hasProfileChanges || !validateForm() || !user) return;
 
     setIsSaving(true);
     setErrors((prev) => ({ ...prev, general: "" }));
@@ -204,7 +277,6 @@ function StudentProfile() {
       const payload = {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.trim(),
         mobileNo: formData.mobile.trim(),
         gender: formData.gender,
         year: formData.year,
@@ -226,17 +298,76 @@ function StudentProfile() {
       });
       setFormData((prev) => ({ ...prev, password: "" }));
       setShowSavePopup(true);
-      setTimeout(() => setShowSavePopup(false), 5000);
+      setTimeout(() => setShowSavePopup(false), 8000);
     } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Could not save profile. Please try again.";
+
+      if (/university id|student id/i.test(message)) {
+        setErrors((prev) => ({
+          ...prev,
+          studentId: "Student ID already exists.",
+        }));
+        return;
+      }
+
       setErrors((prev) => ({
         ...prev,
-        general:
-          err.response?.data?.message ||
-          "Could not save profile. Please try again.",
+        general: message,
       }));
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleEmailDraftChange = (e) => {
+    setEmailDraft(e.target.value);
+    setErrors((prev) => ({ ...prev, email: "", general: "" }));
+  };
+
+  const handleEmailUpdate = async () => {
+    if (!user) return;
+
+    if (!isEditingEmail) {
+      setIsEditingEmail(true);
+      return;
+    }
+
+    if (!validateEmailDraft()) return;
+
+    setIsUpdatingEmail(true);
+    setErrors((prev) => ({ ...prev, general: "" }));
+
+    try {
+      const nextEmail = emailDraft.trim().toLowerCase();
+      const res = await updateStudentProfile({ email: nextEmail });
+      const s = res.data.student;
+      updateUser({
+        ...user,
+        ...s,
+        name: [s.firstName, s.lastName].filter(Boolean).join(" "),
+      });
+      setShowSavePopup(true);
+      setTimeout(() => setShowSavePopup(false), 8000);
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        "Could not update email. Please try again.";
+
+      setErrors((prev) => ({
+        ...prev,
+        email: message,
+      }));
+    } finally {
+      setIsUpdatingEmail(false);
+    }
+  };
+
+  const handleCancelEmailEdit = () => {
+    setEmailDraft(user?.email || "");
+    setIsEditingEmail(false);
+    setErrors((prev) => ({ ...prev, email: "" }));
   };
 
   return (
@@ -261,8 +392,8 @@ function StudentProfile() {
             </div>
 
             <div>
-              <h2>{`${formData.firstName} ${formData.lastName}`.trim()}</h2>
-              <p>{formData.email}</p>
+              <h2>{displayName || "Student Profile"}</h2>
+              <p>{user?.email || ""}</p>
             </div>
           </div>
 
@@ -276,7 +407,7 @@ function StudentProfile() {
             type="button"
             className="student-save-btn"
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || !hasProfileChanges}
           >
             {isSaving ? "Saving..." : "Save Changes"}
           </button>
@@ -305,20 +436,6 @@ function StudentProfile() {
               maxLength={LIMITS.lastName}
             />
             {errors.lastName && <p className="student-form-error">{errors.lastName}</p>}
-          </div>
-
-          <div className="student-form-group">
-            <label>Email</label>
-            <input
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter email"
-              maxLength={LIMITS.email}
-              autoComplete="email"
-            />
-            {errors.email && <p className="student-form-error">{errors.email}</p>}
           </div>
 
           <div className="student-form-group">
@@ -424,9 +541,52 @@ function StudentProfile() {
               <FaEnvelope />
             </div>
 
-            <div>
-              <h4>{formData.email}</h4>
-              <p>1 month ago</p>
+            <div className="student-email-content">
+              <h4>{user?.email || ""}</h4>
+              <p>Update the email address used for login and account notices.</p>
+
+              {isEditingEmail && (
+                <div className="student-email-edit">
+                  <input
+                    name="email"
+                    type="email"
+                    value={emailDraft}
+                    onChange={handleEmailDraftChange}
+                    placeholder="Enter new email"
+                    maxLength={LIMITS.email}
+                    autoComplete="email"
+                  />
+                  {errors.email && (
+                    <p className="student-form-error">{errors.email}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="student-email-actions">
+              {isEditingEmail && (
+                <button
+                  type="button"
+                  className="student-cancel-email-btn"
+                  onClick={handleCancelEmailEdit}
+                  disabled={isUpdatingEmail}
+                >
+                  Cancel
+                </button>
+              )}
+
+              <button
+                type="button"
+                className="student-update-btn"
+                onClick={handleEmailUpdate}
+                disabled={isUpdatingEmail || (isEditingEmail && !hasEmailChanges)}
+              >
+                {isUpdatingEmail
+                  ? "Updating..."
+                  : isEditingEmail
+                  ? "Update"
+                  : "Change Email"}
+              </button>
             </div>
           </div>
         </div>

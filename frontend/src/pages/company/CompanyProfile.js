@@ -477,7 +477,7 @@ function CompanyProfile() {
 
             <div>
               <h4>{formData.email}</h4>
-              <p>Contact support to change your login email.</p>
+              <p>Contact support to change your login email</p>
             </div>
           </div>
         </div>

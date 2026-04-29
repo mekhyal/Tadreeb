@@ -379,13 +379,10 @@ function AdminProfile() {
 
             <div>
               <strong>{formData.email}</strong>
-              <p>Contact support to change your login email.</p>
+              <p>Contact support to change your login email</p>
             </div>
           </div>
 
-          <button type="button" className="admin-profile-email-btn" disabled>
-            Update
-          </button>
         </div>
       </section>
     </PortalLayout>

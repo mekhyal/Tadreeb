@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import signupImage from "../../assets/Sign up-image-2.svg";
-import { useAuth } from "../../context/AuthContext";
 import { registerStudent } from "../../api/authAPI";
 import {
   PASSWORD_MAX_LENGTH,
@@ -21,6 +20,7 @@ const LIMITS = {
   studentId: 30,
   major: 80,
   skills: 150,
+  studentIdMin: 7,
 };
 
 const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -39,7 +39,6 @@ const ALLOWED_EMAIL_DOMAINS = [
 
 function Signup() {
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -58,6 +57,8 @@ function Signup() {
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const getEmailDomain = (email) => {
     return email.trim().toLowerCase().split("@")[1] || "";
@@ -72,11 +73,6 @@ function Signup() {
     if (formData[field].trim().length > limit) {
       nextErrors[field] = `${label} must be ${limit} characters or less.`;
     }
-  };
-
-
-  const getUserFromResponse = (data) => {
-    return data.user || data.student;
   };
 
   const handleChange = (e) => {
@@ -153,6 +149,8 @@ function Signup() {
 
     if (!formData.studentId.trim()) {
       newErrors.studentId = "Student ID is required.";
+    } else if (formData.studentId.trim().length < LIMITS.studentIdMin) {
+      newErrors.studentId = "Student ID must be more than 6 characters.";
     } else {
       checkLength("studentId", "Student ID", LIMITS.studentId, newErrors);
     }
@@ -190,7 +188,13 @@ function Signup() {
       return;
     }
 
+    setShowConfirm(true);
+  };
+
+  const handleConfirmSignup = async () => {
+    setShowConfirm(false);
     setIsSubmitting(true);
+    let keepSuccessVisible = false;
 
     try {
       const payload = {
@@ -212,25 +216,34 @@ function Signup() {
 
       const response = await registerStudent(payload);
 
-      const token = response.data.token;
-      const user = getUserFromResponse(response.data);
-
-      if (!token || !user) {
+      if (!response.data?.student && !response.data?.user) {
         setErrors({
-          general: "Signup response is missing user or token.",
+          general: "Signup response is missing account details.",
         });
         return;
       }
 
-      login(user, token);
-      navigate("/student", { replace: true });
+      setSuccessMessage("Your account has been created successfully. Redirecting you to login...");
+      keepSuccessVisible = true;
+
+      setTimeout(() => {
+        navigate("/login", {
+          replace: true,
+          state: {
+            signupSuccess:
+              "Your account has been created successfully. Please login to continue.",
+          },
+        });
+      }, 3000);
     } catch (error) {
       setErrors({
         general:
           error.response?.data?.message || "Signup failed. Please try again.",
       });
     } finally {
-      setIsSubmitting(false);
+      if (!keepSuccessVisible) {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -243,7 +256,40 @@ function Signup() {
             <span></span>
             <span></span>
           </div>
-          <p>Creating account...</p>
+          <p>{successMessage || "Creating account..."}</p>
+        </div>
+      )}
+
+      {showConfirm && (
+        <div className="auth-confirm-overlay" role="presentation">
+          <div
+            className="auth-confirm-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="signup-confirm-title"
+          >
+            <h3 id="signup-confirm-title">Confirm your information</h3>
+            <p>
+              Please make sure your information is correct before creating your
+              Tadreeb account.
+            </p>
+            <div className="auth-confirm-actions">
+              <button
+                type="button"
+                className="auth-secondary-btn auth-confirm-btn"
+                onClick={() => setShowConfirm(false)}
+              >
+                Review again
+              </button>
+              <button
+                type="button"
+                className="auth-main-btn auth-confirm-btn"
+                onClick={handleConfirmSignup}
+              >
+                Yes, create account
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

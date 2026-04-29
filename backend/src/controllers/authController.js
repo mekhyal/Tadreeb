@@ -19,6 +19,7 @@ const isPlainString = (v) => typeof v === 'string';
 
 const STUDENT_YEAR_VALUES = new Set(['First', 'Second', 'Third', 'Fourth', 'Fifth']);
 const ADMIN_GENDER_VALUES = new Set(['Male', 'Female', '']);
+const STUDENT_ID_MIN_LENGTH = 7;
 
 const buildStudentResponse = (student) => ({
     id: student._id,
@@ -111,6 +112,10 @@ const registerStudent = async (req, res) => {
         });
     }
 
+    if (universityID.trim().length < STUDENT_ID_MIN_LENGTH) {
+        return res.status(400).json({ message: 'University ID must be more than 6 characters' });
+    }
+
     // hard cap user-supplied text fields to defend against absurdly long inputs
     const overlongField = [
         ['universityID', universityID],
@@ -135,7 +140,7 @@ const registerStudent = async (req, res) => {
 
     const existingByUniId = await Student.findOne({ universityID });
     if (existingByUniId) {
-        return res.status(400).json({ message: 'University ID already registered' });
+        return res.status(400).json({ message: 'Student ID already exists' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -393,6 +398,9 @@ const updateStudentProfile = async (req, res) => {
                 return res.status(400).json({ message: 'Invalid input format' });
             }
             const t = universityID.trim();
+            if (t.length < STUDENT_ID_MIN_LENGTH) {
+                return res.status(400).json({ message: 'University ID must be more than 6 characters' });
+            }
             if (exceedsMaxLength(t, 50)) {
                 return res.status(400).json({ message: 'universityID exceeds maximum length of 50 characters' });
             }
@@ -401,7 +409,7 @@ const updateStudentProfile = async (req, res) => {
                 _id: { $ne: req.user.id },
             });
             if (taken) {
-                return res.status(400).json({ message: 'University ID already registered' });
+                return res.status(400).json({ message: 'Student ID already exists' });
             }
             $set.universityID = t;
         }

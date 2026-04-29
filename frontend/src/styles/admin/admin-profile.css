@@ -91,7 +91,7 @@
 }
 
 .admin-profile-email-card {
-  max-width: 360px;
+  max-width: 375px;
 }
 
 .admin-profile-email-card h4 {
@@ -129,7 +129,7 @@
   color: var(--text-muted);
 }
 
-.admin-profile-email-btn {
+/* .admin-profile-email-btn {
   min-width: 160px;
   height: 46px;
   border: 1px solid rgba(25, 118, 210, 0.1);
@@ -137,7 +137,7 @@
   background: #f6fbff;
   color: var(--primary-blue);
   font-weight: 700;
-}
+} */
 
 @media (max-width: 1000px) {
   .admin-profile-top {

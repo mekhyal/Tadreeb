@@ -9,19 +9,21 @@ const PASSWORD_MAX_LENGTH = 24;
 const isValidEmail = (email) => typeof email === 'string' && EMAIL_REGEX.test(email);
 
 // Policy: same for student, company, and admin (register, admin-create, profile update).
-// Min/max length + at least one letter and one digit (blocks trivial passwords without matching frontend-only rules).
+// Keep in sync with frontend `passwordRules.js`.
 const isStrongPassword = (password) => {
   if (typeof password !== 'string') return false;
   if (password.length < PASSWORD_MIN_LENGTH || password.length > PASSWORD_MAX_LENGTH) {
     return false;
   }
-  const hasLetter = /[A-Za-z]/.test(password);
+  const hasUppercase = /[A-Z]/.test(password);
+  const hasLowercase = /[a-z]/.test(password);
   const hasDigit = /\d/.test(password);
-  return hasLetter && hasDigit;
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+  return hasUppercase && hasLowercase && hasDigit && hasSpecial;
 };
 
 /** Single message used by API responses; keep in sync with frontend `passwordRules.js`. */
-const PASSWORD_POLICY_MESSAGE = `Password must be ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters and include at least one letter and one number`;
+const PASSWORD_POLICY_MESSAGE = `Password must be ${PASSWORD_MIN_LENGTH}-${PASSWORD_MAX_LENGTH} characters and include at least one uppercase letter, one lowercase letter, one number, and one special character`;
 
 const isValidObjectId = (id) =>
   typeof id === 'string' && mongoose.Types.ObjectId.isValid(id) && String(new mongoose.Types.ObjectId(id)) === id;

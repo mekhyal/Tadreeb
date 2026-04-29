@@ -66,10 +66,13 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
     };
   }, [program]);
 
+  // Helper to check length and set error if needed
   const checkLength = (field, label, limit, nextErrors) => {
-    if (formData[field].trim().length > limit) {
-      nextErrors[field] = `${label} must be ${limit} characters or less.`;
-    }
+  const value = formData[field];
+
+  if (typeof value === "string" && value.trim().length > limit) {
+    nextErrors[field] = `${label} must be ${limit} characters or less.`;
+  }
   };
 
   const handleChange = (e) => {
