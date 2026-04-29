@@ -1,122 +1,364 @@
-# Tadreeb — Frontend
+# Tadreeb Frontend
 
-React SPA for the Tadreeb platform: students, companies, and admins each use role-specific portals. The app talks to the **Express API** (see `../backend/README.md`); configure the base URL with `REACT_APP_API_URL`.
+Tadreeb Frontend is a React single-page application for an internship and training platform. It provides public pages, authentication, and role-specific portals for students, companies, and admins.
+
+The frontend focuses on user experience, validation, routing, API integration, responsive layouts, and role-based screens. Backend implementation details are intentionally kept out of this README except for the API URL needed to run the app.
 
 ---
 
-## Roles
+## Table of Contents
 
-| Role | What they do |
+- [Overview](#overview)
+- [Main Features](#main-features)
+- [User Roles](#user-roles)
+- [Routes](#routes)
+- [Project Structure](#project-structure)
+- [Tech Stack](#tech-stack)
+- [Setup](#setup)
+- [Environment Variables](#environment-variables)
+- [Run The Frontend](#run-the-frontend)
+- [Build](#build)
+- [Frontend Architecture](#frontend-architecture)
+- [Styling](#styling)
+- [Validation Rules](#validation-rules)
+- [Responsive Behavior](#responsive-behavior)
+- [Useful Scripts](#useful-scripts)
+
+---
+
+## Overview
+
+The app supports three main experiences:
+
+- Public visitors can view the home page, contact section, login/signup pages, and company request form.
+- Students can browse programs, apply, remove eligible applications, view application progress, and manage their profile.
+- Companies can manage programs, review participants, update application decisions, and manage their profile.
+- Admins can review platform data, manage programs, participants, company requests, users, and their profile.
+
+---
+
+## Main Features
+
+### Public Pages
+
+- Public home page with hero, about, audience, partners, stats, and contact sections.
+- Login and signup pages.
+- Company request form at `/company-request`.
+- Company request form includes a confirmation dialog before submit.
+- Company request page navbar matches the public home navbar and supports mobile open/close behavior.
+
+### Authentication
+
+- Role-based login for students, companies, and admins.
+- Signup confirmation dialog before creating a student account.
+- Signup success state redirects to login with a green success message.
+- Password visibility toggle on login, signup, profile, and admin add-user password fields.
+- Logout confirmation for portal users.
+- Logout returns users to the public home page.
+
+### Student Portal
+
+- Program discovery page with search and filter controls.
+- Clear search button resets the student search.
+- Program cards show lifecycle status, registration close date, seats, and details.
+- Apply flow includes confirmation before submission.
+- Applications page separates active applications and completed programs.
+- Application removal is available only while registration is open.
+- Student profile supports controlled save behavior, email update flow, field validation, and success/error messages.
+
+### Company Portal
+
+- Dashboard with application snapshot and summary data.
+- Program management with add, edit, delete, seats, registration deadline, image fallback, and validation.
+- Participants page with student details, program, status, and notes.
+- Participant decision styles for Under Review, Accepted, and Rejected.
+- Company profile supports delayed save behavior, field validation, password update, and polished error placement.
+
+### Admin Portal
+
+- Dashboard with recent users, recent applications, and active internship program count.
+- Program management across companies.
+- Participants management with company status visibility controls.
+- Companies page for request review labels: Under Review, Accepted, Rejected.
+- Users page for student/company/admin records and account access management.
+- Admin profile with controlled save behavior and validation.
+
+---
+
+## User Roles
+
+| Role | Frontend Access |
 | --- | --- |
-| **Student** | Browse programs, apply, track application status (including after a company accepts/rejects), manage profile |
-| **Company** | Dashboard, create/edit programs (**seats**, **qualifications** text), manage participants and application status, profile |
-| **Admin** | Dashboard, programs, participants, companies, users, profile |
+| Student | Student home, applications, profile |
+| Company | Dashboard, programs, participants, profile |
+| Admin | Dashboard, programs, participants, companies, users, profile |
 
 ---
 
-## Features (high level)
+## Routes
 
-- **Public:** marketing home, login/signup, **request to join as a company** (`/company-request`) with confirmation before submit
-- **Auth:** JWT stored in `localStorage`, `AuthContext`, `ProtectedRoute` / `PublicOnlyRoute`, password visibility toggles, logout confirmation
-- **Student:** program discovery, search reset, apply flow, **My Applications** with completed-program grouping, profile and email update flow
-- **Company:** dashboard snapshot, programs with seat limits and registration deadlines, participant decisions, profile
-- **Admin:** dashboard, programs, participants, companies, users, profile, account access management
+### Public Routes
+
+| Route | Page |
+| --- | --- |
+| `/` | Public home |
+| `/login` | Login |
+| `/signup` | Student signup |
+| `/company-request` | Company request form |
+
+### Student Routes
+
+| Route | Page |
+| --- | --- |
+| `/student` | Student program discovery |
+| `/student/applications` | Student applications |
+| `/student/profile` | Student profile |
+
+### Company Routes
+
+| Route | Page |
+| --- | --- |
+| `/company/dashboard` | Company dashboard |
+| `/company/programs` | Company programs |
+| `/company/participants` | Company participants |
+| `/company/profile` | Company profile |
+
+### Admin Routes
+
+| Route | Page |
+| --- | --- |
+| `/admin/dashboard` | Admin dashboard |
+| `/admin/programs` | Admin programs |
+| `/admin/participants` | Admin participants |
+| `/admin/companies` | Admin companies |
+| `/admin/users` | Admin users |
+| `/admin/profile` | Admin profile |
+
+Routes are protected with `ProtectedRoute` and public-only auth pages use `PublicOnlyRoute`.
 
 ---
 
-## UI
+## Project Structure
 
-- Responsive layout, portal-style navigation, mobile menu, modals, pagination, React Icons
-- Company request form navbar matches the public home navbar style while keeping Home, Login, and Contact Us
-- Shared portal tables and modals support small-screen scrolling/wrapping
-- Styles under `src/styles/` (role-specific CSS; not only Bootstrap)
-
----
-
-## Project structure
-
-```
+```text
 frontend/
-├── public/
-├── src/
-│   ├── api/              # Axios wrappers (apiService, auth, admin, applications, …)
-│   ├── components/       # shared + role-specific (portal, student, company, admin)
-│   ├── context/          # AuthContext
-│   ├── pages/
-│   │   ├── authentication/
-│   │   ├── student/
-│   │   ├── company/
-│   │   └── admin/
-│   ├── utils/            # e.g. passwordRules.js, companyAccountStatus.js
-│   ├── styles/
-│   ├── App.js
-│   └── index.js
-├── .env.example
-└── package.json
+|-- public/
+|-- src/
+|   |-- api/                    # Axios API wrappers
+|   |-- assets/                 # Images and static assets
+|   |-- components/
+|   |   |-- admin/              # Admin-specific components
+|   |   |-- auth/               # Route protection components
+|   |   |-- common/             # Public navbar/footer
+|   |   |-- company/            # Company cards, modals, confirms
+|   |   |-- company-request/    # Request page navbar/footer
+|   |   |-- home/               # Public home sections
+|   |   |-- portal/             # Shared portal layout/sidebar/topbar
+|   |   `-- student/            # Student cards, filters, modals
+|   |-- context/                # AuthContext
+|   |-- pages/
+|   |   |-- admin/
+|   |   |-- authentication/
+|   |   |-- company/
+|   |   `-- student/
+|   |-- styles/                 # Global and role-specific CSS
+|   |-- utils/                  # Frontend helpers and rules
+|   |-- App.js                  # Route definitions
+|   `-- index.js                # App entry
+|-- .env.example
+|-- package.json
+`-- README.md
 ```
 
 ---
 
-## Technologies
+## Tech Stack
 
-- React, React Router
-- Axios (JWT attached in `apiService`)  
-- Context API  
-
----
-
-## Route protection
-
-| Path prefix | Role |
-| --- | --- |
-| `/student`, `/student/profile`, `/student/applications` | `student` |
-| `/company/*` | `company` |
-| `/admin/*` | `admin` |
+- React
+- React Router
+- Axios
+- Context API
+- React Icons
+- Bootstrap / React Bootstrap
+- Plain CSS organized by feature and role
 
 ---
 
-## Environment
+## Setup
 
-Create `.env` in `frontend/` if needed:
+Install dependencies from the frontend folder:
+
+```bash
+cd frontend
+npm install
+```
+
+---
+
+## Environment Variables
+
+Create a `.env` file inside `frontend/`.
 
 ```env
 REACT_APP_API_URL=http://localhost:5001/api
 ```
 
-Restart the dev server after changing env vars.
+If this variable is changed, restart the frontend dev server.
 
 ---
 
-## Run & build
+## Run The Frontend
+
+Start the development server:
 
 ```bash
-npm install
-npm start          # http://localhost:3000
-npm run build      # production bundle
+cd frontend
+npm start
 ```
 
-Ensure the backend is running and CORS allows your origin (see `backend/.env` `CORS_ORIGIN` for production).
+The app runs at:
+
+```text
+http://localhost:3000
+```
+
+Make sure the API URL in `.env` points to a running API server.
 
 ---
 
-## Password policy (signup, add-user & profile updates)
+## Build
 
-Aligned with the API: **8-24 characters**, at least **one uppercase letter**, **one lowercase letter**, **one number**, and **one special character**. See `src/utils/passwordRules.js`.
+Create a production build:
 
-Test accounts in a dev database are created via the API or admin UI; use credentials your team has provisioned (not committed here).
+```bash
+cd frontend
+npm run build
+```
+
+The optimized output is generated in:
+
+```text
+frontend/build/
+```
 
 ---
 
-## Notes
+## Frontend Architecture
 
-- **Live API integration** — lists and dashboards load from the backend, not static mock JSON.  
-- Application **status** on the student side comes from `GET /api/applications/my` and is refreshed when revisiting **My Applications** or refocusing the browser tab (student home also refreshes programs + applications on visibility/focus).
-- Programs use `registrationDeadline` to decide when students can apply or remove an application.
-- Student application statuses can be masked by admin visibility settings; hidden company results display as Under Review with an empty note.
-- Admin Companies uses request-review labels (**Under Review**, **Accepted**, **Rejected**). Admin Users controls login access for students and companies (**Active**, **Inactive**).
+### API Layer
+
+API calls are grouped in `src/api/`:
+
+- `apiService.js` configures the Axios instance and attaches the JWT token.
+- `authAPI.js` handles login, signup, and profile endpoints.
+- `opportunityAPI.js` handles program data.
+- `applicationAPI.js` handles applications.
+- `adminAPI.js` handles admin screens.
+- `companyRequestAPI.js` handles the public company request form.
+
+### Auth Context
+
+`src/context/AuthContext.js` stores the logged-in user and token, exposes login/logout helpers, and keeps role data available to protected pages.
+
+### Route Guards
+
+- `ProtectedRoute` blocks unauthorized portal routes.
+- `PublicOnlyRoute` keeps logged-in users away from login/signup/company-request pages.
+
+### Shared Portal Components
+
+The portal layout is shared between student, company, and admin areas through:
+
+- `PortalLayout`
+- `PortalSidebar`
+- `PortalTopbar`
+- `PortalLoader`
+- `PortalStatCard`
 
 ---
 
-## Course
+## Styling
 
-CS335 — Web Development, Kuwait University.
+Styles are located in `src/styles/`.
+
+```text
+styles/
+|-- variables.css
+|-- home.css
+|-- portal.css
+|-- authentication/
+|-- company/
+|-- admin/
+|-- student/
+`-- layout/
+```
+
+The project uses role-specific CSS files to keep screens easy to maintain:
+
+- Student styles are under `styles/student/`
+- Company styles are under `styles/company/`
+- Admin styles are under `styles/admin/`
+- Public layout styles are under `styles/layout/`
+
+---
+
+## Validation Rules
+
+Frontend validation is used before submit on auth, profile, company request, program, and admin user forms.
+
+Password rules are centralized in:
+
+```text
+src/utils/passwordRules.js
+```
+
+Current password policy:
+
+- 8-24 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+- At least one special character
+
+Program lifecycle helpers are in:
+
+```text
+src/utils/programStatus.js
+```
+
+Other frontend helpers include:
+
+- `companyAccountStatus.js`
+- `formatLinks.js`
+
+---
+
+## Responsive Behavior
+
+The frontend supports smaller screens through:
+
+- Mobile navbar menu on public and company request pages.
+- Collapsing portal layouts.
+- Scrollable tables on small screens.
+- Responsive modals with safe height and scroll behavior.
+- Wrapped long text and website links.
+- Mobile-friendly form grids.
+
+Recommended manual screen checks:
+
+- 375px mobile width
+- 390px mobile width
+- 768px tablet width
+- Desktop width
+
+---
+
+## Useful Scripts
+
+| Command | Purpose |
+| --- | --- |
+| `npm start` | Run the frontend development server |
+| `npm run build` | Create production build |
+| `npm test` | Run React test runner |
+
+
