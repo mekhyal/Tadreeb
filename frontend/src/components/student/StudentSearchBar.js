@@ -1,12 +1,15 @@
 import React from "react";
-import { FaSearch } from "react-icons/fa";
+import { FaSearch, FaTimes } from "react-icons/fa";
 
 function StudentSearchBar({
   searchInput,
   onSearchInputChange,
   onSearchSubmit,
+  onClearSearch,
   isSearching,
 }) {
+  const hasSearchValue = Boolean(searchInput.trim());
+
   return (
     <form className="student-search-box" onSubmit={onSearchSubmit}>
       <FaSearch />
@@ -16,6 +19,17 @@ function StudentSearchBar({
         value={searchInput}
         onChange={onSearchInputChange}
       />
+
+      {hasSearchValue && (
+        <button
+          type="button"
+          className="student-search-clear"
+          onClick={onClearSearch}
+          aria-label="Clear search"
+        >
+          <FaTimes />
+        </button>
+      )}
 
       <button
         type="submit"

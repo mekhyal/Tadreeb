@@ -6,6 +6,12 @@ import StudentProgramModal from "../../components/student/StudentProgramModal";
 import StudentApplyConfirmModal from "../../components/student/StudentApplyConfirmModal";
 import { getOpportunities } from "../../api/opportunityAPI";
 import { applyToProgram, getMyApplications } from "../../api/applicationAPI";
+import {
+  PROGRAM_STATUS,
+  getProgramDisplayStatus,
+  getRegistrationDeadlineValue,
+  programStatusRank,
+} from "../../utils/programStatus";
 
 const PROGRAMS_PER_PAGE = 6;
 
@@ -17,6 +23,7 @@ const normalizeProgram = (item) => {
     item.availableSeats !== undefined
       ? Number(item.availableSeats)
       : Math.max(seats - usedSeats, 0);
+  const status = getProgramDisplayStatus(item);
 
   return {
     id: item._id,
@@ -25,6 +32,7 @@ const normalizeProgram = (item) => {
     fullDescription: item.description || "",
     startDate: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
     endDate: item.dateTo ? item.dateTo.slice(0, 10) : "",
+    registrationDeadline: getRegistrationDeadlineValue(item),
     rules: Array.isArray(item.rules)
       ? item.rules
       : String(item.rules || "")
@@ -36,10 +44,7 @@ const normalizeProgram = (item) => {
     image:
       item.imageURL ||
       "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
-    status:
-      item.status === "Completed" || availableSeats <= 0
-        ? "Complete"
-        : "Register Now",
+    status,
     category: item.category || "Software",
     openTo: item.openTo || "Students",
     company: company.companyName || company.email || "Company",
@@ -74,9 +79,9 @@ function buildStudentProgramList(programsRes, myAppsRes) {
   });
 
   return normalizedPrograms.sort((a, b) => {
-    if (a.status === "Complete" && b.status !== "Complete") return 1;
-    if (a.status !== "Complete" && b.status === "Complete") return -1;
-    return 0;
+    const statusOrder = programStatusRank(a.status) - programStatusRank(b.status);
+    if (statusOrder !== 0) return statusOrder;
+    return new Date(a.startDate || 0) - new Date(b.startDate || 0);
   });
 }
 
@@ -304,10 +309,21 @@ function StudentHome() {
     );
     if (!targetProgram) return;
 
-    if (targetProgram.status === "Complete" || targetProgram.availableSeats <= 0) {
+    if (targetProgram.status !== PROGRAM_STATUS.register) {
       setProgramMessage(
         programId,
-        "All positions for this program are already filled. The company accepts only up to the number of seats they set.",
+        targetProgram.status === PROGRAM_STATUS.active
+          ? "Application is active now."
+          : "Registration is closed for this program.",
+        "error"
+      );
+      return;
+    }
+
+    if (targetProgram.availableSeats <= 0) {
+      setProgramMessage(
+        programId,
+        "No seats are currently available for this program.",
         "error"
       );
       return;
@@ -345,7 +361,7 @@ function StudentHome() {
     if (!targetProgram) return;
 
     if (
-      targetProgram.status === "Complete" ||
+      targetProgram.status !== PROGRAM_STATUS.register ||
       targetProgram.availableSeats <= 0 ||
       targetProgram.applied
     ) {
@@ -476,6 +492,7 @@ function StudentHome() {
         searchInput={searchInput}
         onSearchInputChange={(e) => setSearchInput(e.target.value)}
         onSearchSubmit={handleSearchSubmit}
+        onClearSearch={handleResetSearch}
         onFilterClick={handleFilterClick}
         isSearching={isSearching}
       />

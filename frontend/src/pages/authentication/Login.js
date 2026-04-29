@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { FaEnvelope, FaLock, FaHome } from "react-icons/fa";
+import { FaEnvelope, FaEye, FaEyeSlash, FaHome } from "react-icons/fa";
 import { useAuth } from "../../context/AuthContext";
 import {
   loginStudent,
@@ -45,6 +45,7 @@ function Login() {
   );
   const [isNavigatingHome, setIsNavigatingHome] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (!successMessage) return;
@@ -245,7 +246,7 @@ function Login() {
                   <div className="auth-input-wrap">
                     <input
                       id="password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       name="password"
                       placeholder="Enter your password"
                       value={formData.password}
@@ -253,9 +254,14 @@ function Login() {
                       autoComplete="current-password"
                       maxLength={LIMITS.passwordInputMax}
                     />
-                    <span className="auth-input-icon">
-                      <FaLock />
-                    </span>
+                    <button
+                      type="button"
+                      className="auth-input-icon auth-password-toggle"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
                   </div>
                   {errors.password && (
                     <p className="auth-error">{errors.password}</p>

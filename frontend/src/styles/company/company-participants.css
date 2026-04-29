@@ -8,25 +8,35 @@
 }
 
 .company-status-badge {
-  padding: 0.35rem 0.8rem;
-  border-radius: 999px;
+  display: inline-block;
+  min-width: 96px;
+  text-align: center;
+  padding: 0.45rem 0.8rem;
+  border-radius: 10px;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
-.company-status-badge.review {
-  background: rgba(144, 202, 249, 0.18);
-  color: #1565c0;
+.company-status-badge.review,
+.company-status-badge.submitted,
+.company-status-badge.under-review {
+  background: #fff4cc;
+  color: #9a6700;
+}
+
+.company-status-badge.not-reviewed {
+  background: #e8edf2;
+  color: #5f6f84;
 }
 
 .company-status-badge.accepted {
-  background: rgba(66, 165, 245, 0.18);
-  color: #1976d2;
+  background: #dff3e7;
+  color: #167b53;
 }
 
 .company-status-badge.rejected {
-  background: rgba(96, 125, 139, 0.16);
-  color: #455a64;
+  background: #f8d7da;
+  color: #b4232c;
 }
 
 .company-note-cell {

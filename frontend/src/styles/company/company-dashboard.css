@@ -50,6 +50,13 @@
   width: 42px;
   height: 42px;
   border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
 
 .company-person-avatar.tone-0 {
@@ -125,6 +132,7 @@
 }
 
 .company-overview-item .dot.review { background: #90caf9; }
+.company-overview-item .dot.not-reviewed { background: #607d8b; }
 .company-overview-item .dot.accepted { background: #42a5f5; }
 .company-overview-item .dot.rejected { background: #607d8b; }
 

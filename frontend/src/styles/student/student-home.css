@@ -161,7 +161,27 @@
   color: var(--deep-blue);
 }
 
+.student-program-badge.register-now {
+  background: rgba(25, 118, 210, 0.1);
+  color: var(--deep-blue);
+}
+
+.student-program-badge.active {
+  background: rgba(22, 123, 83, 0.12);
+  color: #167b53;
+}
+
+.student-program-badge.selection-phase {
+  background: #f8ecb8;
+  color: #9a6700;
+}
+
 .student-program-badge.complete {
+  background: rgba(108, 117, 125, 0.18);
+  color: var(--text-soft);
+}
+
+.student-program-badge.completed {
   background: rgba(108, 117, 125, 0.18);
   color: var(--text-soft);
 }
@@ -182,10 +202,30 @@
 .student-program-meta {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.42rem;
   color: var(--text-soft);
   margin-bottom: 1rem;
   font-size: 0.96rem;
+}
+
+.student-program-meta__highlight {
+  color: #111827;
+  font-weight: 800;
+}
+
+.student-program-meta__highlight strong {
+  font-weight: 900;
+  color: #111827;
+}
+
+.student-program-meta__openings {
+  color: #111827;
+  font-weight: 700;
+}
+
+.student-program-meta__openings strong {
+  color: #111827;
+  font-weight: 900;
 }
 
 .student-learn-more-btn {
@@ -197,6 +237,7 @@
   color: var(--white);
   font-weight: 700;
   box-shadow: 0 8px 18px rgba(25, 118, 210, 0.14);
+  margin-top: 0.25rem;
 }
 
 .student-pagination {
@@ -299,6 +340,8 @@
 .student-modal-card {
   width: 100%;
   max-width: 760px;
+  max-height: min(88vh, 820px);
+  overflow-y: auto;
   background: var(--white);
   border-radius: 28px;
   padding: 2rem;
@@ -340,6 +383,17 @@
 .student-modal-section li {
   color: var(--text-soft);
   line-height: 1.7;
+}
+
+.student-modal-application-close {
+  margin-top: 0.5rem;
+  color: #111827 !important;
+  font-weight: 800;
+}
+
+.student-modal-application-close strong {
+  color: #111827;
+  font-weight: 900;
 }
 
 .student-modal-dates {

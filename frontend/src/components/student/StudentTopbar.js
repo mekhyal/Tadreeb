@@ -8,6 +8,7 @@ function StudentTopbar({
   searchInput = "",
   onSearchInputChange,
   onSearchSubmit,
+  onClearSearch,
   onFilterClick,
   isSearching = false,
 }) {
@@ -21,6 +22,7 @@ function StudentTopbar({
             searchInput={searchInput}
             onSearchInputChange={onSearchInputChange}
             onSearchSubmit={onSearchSubmit}
+            onClearSearch={onClearSearch}
             isSearching={isSearching}
           />
 

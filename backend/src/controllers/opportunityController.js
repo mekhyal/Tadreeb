@@ -16,10 +16,11 @@ const createOpportunity = async (req, res) => {
             seats,
             dateFrom,
             dateTo,
+            registrationDeadline,
             imageURL,
           } = req.body;
 
-          if(!title || !description || !location || !seats || !dateFrom || !dateTo) {
+          if(!title || !description || !location || !seats || !dateFrom || !dateTo || !registrationDeadline) {
             return res.status(400).json({ message: 'Please fill required program fields' });
           }
 
@@ -37,9 +38,14 @@ const createOpportunity = async (req, res) => {
           // parse and validate dates: reject malformed values, past start dates, and reversed ranges
           const start = new Date(dateFrom);
           const end = new Date(dateTo);
+          const registrationClose = new Date(registrationDeadline);
 
-          if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-            return res.status(400).json({ message: 'Invalid dateFrom or dateTo format' });
+          if (
+            Number.isNaN(start.getTime()) ||
+            Number.isNaN(end.getTime()) ||
+            Number.isNaN(registrationClose.getTime())
+          ) {
+            return res.status(400).json({ message: 'Invalid dateFrom, dateTo, or registrationDeadline format' });
           }
 
           // compare against the start of today so a program starting today is still allowed
@@ -52,6 +58,14 @@ const createOpportunity = async (req, res) => {
 
           if (end <= start) {
             return res.status(400).json({ message: 'dateTo must be after dateFrom' });
+          }
+
+          if (registrationClose < today) {
+            return res.status(400).json({ message: 'registrationDeadline cannot be in the past' });
+          }
+
+          if (registrationClose >= start) {
+            return res.status(400).json({ message: 'registrationDeadline must be before dateFrom' });
           }
 
           // duplicate-listing guard: same company, same title, same date range = duplicate
@@ -77,6 +91,7 @@ const createOpportunity = async (req, res) => {
             seats,
             dateFrom: start,
             dateTo: end,
+            registrationDeadline: registrationClose,
             imageURL,
             companyID: req.user.id,
           });
@@ -212,11 +227,25 @@ const updateOpportunity = async (req, res) => {
     // if the update touches dates, re-validate the resulting range
     const nextStart = req.body.dateFrom ? new Date(req.body.dateFrom) : opportunity.dateFrom;
     const nextEnd = req.body.dateTo ? new Date(req.body.dateTo) : opportunity.dateTo;
-    if (Number.isNaN(nextStart.getTime()) || Number.isNaN(nextEnd.getTime())) {
-      return res.status(400).json({ message: 'Invalid dateFrom or dateTo format' });
+    const hasRegistrationDeadline =
+      req.body.registrationDeadline !== undefined || opportunity.registrationDeadline;
+    const nextRegistrationDeadline = hasRegistrationDeadline
+      ? req.body.registrationDeadline !== undefined
+        ? new Date(req.body.registrationDeadline)
+        : new Date(opportunity.registrationDeadline)
+      : null;
+    if (
+      Number.isNaN(nextStart.getTime()) ||
+      Number.isNaN(nextEnd.getTime()) ||
+      (nextRegistrationDeadline && Number.isNaN(nextRegistrationDeadline.getTime()))
+    ) {
+      return res.status(400).json({ message: 'Invalid dateFrom, dateTo, or registrationDeadline format' });
     }
     if (nextEnd <= nextStart) {
       return res.status(400).json({ message: 'dateTo must be after dateFrom' });
+    }
+    if (nextRegistrationDeadline && nextRegistrationDeadline >= nextStart) {
+      return res.status(400).json({ message: 'registrationDeadline must be before dateFrom' });
     }
 
     const acceptedCount = await Application.countDocuments({
@@ -236,15 +265,6 @@ const updateOpportunity = async (req, res) => {
     const updatedData = {
       ...req.body,
     };
-
-    // re-activate a Completed program if seats are being increased above current accepted usage
-    if (
-      updatedData.seats !== undefined &&
-      Number(updatedData.seats) > acceptedCount &&
-      opportunity.status === 'Completed'
-    ) {
-      updatedData.status = 'Active';
-    }
 
     const updatedOpportunity = await Opportunity.findByIdAndUpdate(
       req.params.id,

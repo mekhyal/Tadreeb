@@ -14,7 +14,7 @@ const applicationSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['Submitted', 'Under Review', 'Accepted', 'Rejected'],
+      enum: ['Submitted', 'Under Review', 'Not Reviewed', 'Accepted', 'Rejected'],
       default: 'Submitted',
     },
     appliedDate: {
@@ -41,7 +41,7 @@ const applicationSchema = new mongoose.Schema(
     },
     visibleToStudent: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   { timestamps: true }

@@ -149,7 +149,7 @@
   position: absolute;
   left: 0;
   bottom: -2px;
-  width: 76%;
+  width: 100%;
   height: 3px;
   background-color: var(--section-dark);
 }

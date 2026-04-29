@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import signupImage from "../../assets/Sign up-image-2.svg";
 import { registerStudent } from "../../api/authAPI";
 import {
@@ -59,6 +60,8 @@ function Signup() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const getEmailDomain = (email) => {
     return email.trim().toLowerCase().split("@")[1] || "";
@@ -370,16 +373,26 @@ function Signup() {
 
                 <div className="auth-field-group">
                   <label htmlFor="password">Password :</label>
-                  <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    placeholder="Enter a strong password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    autoComplete="new-password"
-                    maxLength={LIMITS.passwordMax}
-                  />
+                  <div className="auth-input-wrap">
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      name="password"
+                      placeholder="Enter a strong password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      autoComplete="new-password"
+                      maxLength={LIMITS.passwordMax}
+                    />
+                    <button
+                      type="button"
+                      className="auth-input-icon auth-password-toggle"
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
                   {errors.password && (
                     <p className="auth-error">{errors.password}</p>
                   )}
@@ -387,16 +400,28 @@ function Signup() {
 
                 <div className="auth-field-group">
                   <label htmlFor="confirmPassword">Confirm Password :</label>
-                  <input
-                    id="confirmPassword"
-                    type="password"
-                    name="confirmPassword"
-                    placeholder="Repeat your password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    autoComplete="new-password"
-                    maxLength={LIMITS.passwordMax}
-                  />
+                  <div className="auth-input-wrap">
+                    <input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      name="confirmPassword"
+                      placeholder="Repeat your password"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      autoComplete="new-password"
+                      maxLength={LIMITS.passwordMax}
+                    />
+                    <button
+                      type="button"
+                      className="auth-input-icon auth-password-toggle"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      aria-label={
+                        showConfirmPassword ? "Hide password" : "Show password"
+                      }
+                    >
+                      {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
                   {errors.confirmPassword && (
                     <p className="auth-error">{errors.confirmPassword}</p>
                   )}

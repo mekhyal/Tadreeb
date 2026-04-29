@@ -23,6 +23,19 @@ const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const PHONE_REGEX = /^[+0-9\s\-()]{7,20}$/;
 const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/.*)?$/i;
 const YEAR_REGEX = /^(19|20)\d{2}$/;
+const INDUSTRY_OPTIONS = [
+  "Technology",
+  "Finance",
+  "Healthcare",
+  "Education",
+  "Marketing",
+  "Other",
+];
+const COMPANY_SIZE_OPTIONS = ["1-10", "11-50", "51-200", "201-500", "500+"];
+const FOUNDED_YEAR_OPTIONS = Array.from(
+  { length: new Date().getFullYear() - 1799 },
+  (_, index) => String(new Date().getFullYear() - index)
+);
 
 function CompanyRequestForm() {
   const navigate = useNavigate();
@@ -245,12 +258,11 @@ function CompanyRequestForm() {
                     onChange={handleChange}
                   >
                     <option value="">Select industry</option>
-                    <option value="Technology">Technology</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Healthcare">Healthcare</option>
-                    <option value="Education">Education</option>
-                    <option value="Marketing">Marketing</option>
-                    <option value="Other">Other</option>
+                    {INDUSTRY_OPTIONS.map((industry) => (
+                      <option key={industry} value={industry}>
+                        {industry}
+                      </option>
+                    ))}
                   </select>
                   {errors.industry && <p className="company-request-error">{errors.industry}</p>}
                 </div>
@@ -306,11 +318,11 @@ function CompanyRequestForm() {
                     onChange={handleChange}
                   >
                     <option value="">Select company size</option>
-                    <option value="1-10">1 - 10</option>
-                    <option value="11-50">11 - 50</option>
-                    <option value="51-200">51 - 200</option>
-                    <option value="201-500">201 - 500</option>
-                    <option value="500+">500+</option>
+                    {COMPANY_SIZE_OPTIONS.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
                   </select>
                   {errors.companySize && <p className="company-request-error">{errors.companySize}</p>}
                 </div>
@@ -331,15 +343,19 @@ function CompanyRequestForm() {
 
                 <div className="company-request-group">
                   <label htmlFor="foundedYear">Founded Year</label>
-                  <input
+                  <select
                     id="foundedYear"
-                    type="text"
                     name="foundedYear"
-                    placeholder="2020"
-                    maxLength={4}
                     value={formData.foundedYear}
                     onChange={handleChange}
-                  />
+                  >
+                    <option value="">Select founded year</option>
+                    {FOUNDED_YEAR_OPTIONS.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
                   {errors.foundedYear && <p className="company-request-error">{errors.foundedYear}</p>}
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 
 const LIMITS = {
-  title: 80,
+  title: 30,
   subtitle: 120,
   description: 500,
   rules: 300,
@@ -18,6 +18,7 @@ const initialErrors = {
   title: "",
   dateFrom: "",
   dateTo: "",
+  registrationDeadline: "",
   subtitle: "",
   description: "",
   rules: "",
@@ -32,6 +33,7 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
     title: "",
     dateFrom: "",
     dateTo: "",
+    registrationDeadline: "",
     subtitle: "",
     description: "",
     rules: "",
@@ -51,6 +53,7 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
         title: program.title || "",
         dateFrom: program.dateFrom || "",
         dateTo: program.dateTo || "",
+        registrationDeadline: program.registrationDeadline || "",
         subtitle: program.subtitle || "",
         description: program.description || "",
         rules: program.rules || "",
@@ -95,8 +98,8 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
     // TITLE
     if (!formData.title.trim()) {
       nextErrors.title = "Title is required.";
-    } else if (formData.title.trim().length < 4) {
-      nextErrors.title = "Title must be at least 4 characters.";
+    } else if (formData.title.trim().length < 6) {
+      nextErrors.title = "Title must be at least 6 characters.";
     } else {
       checkLength("title", "Title", LIMITS.title, nextErrors);
     }
@@ -110,9 +113,20 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
       nextErrors.dateTo = "End date is required.";
     }
 
+    if (!formData.registrationDeadline) {
+      nextErrors.registrationDeadline = "Registration deadline is required.";
+    }
+
     if (formData.dateFrom && formData.dateTo) {
-      if (new Date(formData.dateTo) < new Date(formData.dateFrom)) {
+      if (new Date(formData.dateTo) <= new Date(formData.dateFrom)) {
         nextErrors.dateTo = "End date must be after start date.";
+      }
+    }
+
+    if (formData.dateFrom && formData.registrationDeadline) {
+      if (new Date(formData.registrationDeadline) >= new Date(formData.dateFrom)) {
+        nextErrors.registrationDeadline =
+          "Registration deadline must be before the program start date.";
       }
     }
 
@@ -152,9 +166,10 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
       nextErrors.seats = "Seats are required.";
     } else if (
       Number(formData.seats) <= 0 ||
+      Number(formData.seats) > 20 ||
       Number.isNaN(Number(formData.seats))
     ) {
-      nextErrors.seats = "Seats must be a valid number greater than 0.";
+      nextErrors.seats = "Seats must be between 1 and 20.";
     } else {
       checkLength("seats", "Seats", LIMITS.seats, nextErrors);
     }
@@ -217,6 +232,7 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
                   value={formData.title}
                   onChange={handleChange}
                   maxLength={LIMITS.title}
+                  placeholder="Frontend Developer Internship"
                 />
                 {errors.title && <p className="company-form-error">{errors.title}</p>}
               </div>
@@ -235,29 +251,57 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
                 </div>
               </div>
 
+              <div className="company-form-group full">
+                <label>
+                  Registration Deadline
+                  <span className="company-form-optional-hint">
+                    Last date students can apply or remove their application. It must
+                    be before the program start date.
+                  </span>
+                </label>
+                <input
+                  type="date"
+                  name="registrationDeadline"
+                  value={formData.registrationDeadline}
+                  onChange={handleChange}
+                />
+                {errors.registrationDeadline && (
+                  <p className="company-form-error">{errors.registrationDeadline}</p>
+                )}
+              </div>
+
               <div className="company-form-grid">
                 <div className="company-form-group">
                   <label>Seats</label>
-                  <input name="seats" value={formData.seats} onChange={handleChange} maxLength={LIMITS.seats}/>
+                  <select name="seats" value={formData.seats} onChange={handleChange}>
+                    <option value="">Select seats</option>
+                    {Array.from({ length: 20 }, (_, index) => index + 1).map(
+                      (seat) => (
+                        <option key={seat} value={seat}>
+                          {seat}
+                        </option>
+                      )
+                    )}
+                  </select>
                   {errors.seats && <p className="company-form-error">{errors.seats}</p>}
                 </div>
 
                 <div className="company-form-group">
                   <label>Location</label>
-                  <input name="location" value={formData.location} onChange={handleChange} maxLength={LIMITS.location}/>
+                  <input name="location" value={formData.location} onChange={handleChange} maxLength={LIMITS.location} placeholder="Kuwait City / Remote"/>
                   {errors.location && <p className="company-form-error">{errors.location}</p>}
                 </div>
               </div>
 
               <div className="company-form-group full">
                 <label>Subtitle</label>
-                <input name="subtitle" value={formData.subtitle} onChange={handleChange} maxLength={LIMITS.subtitle}/>
+                <input name="subtitle" value={formData.subtitle} onChange={handleChange} maxLength={LIMITS.subtitle} placeholder="Practical training for junior frontend students"/>
                 {errors.subtitle && <p className="company-form-error">{errors.subtitle}</p>}
               </div>
 
               <div className="company-form-group full">
                 <label>Description</label>
-                <textarea name="description" rows="4" value={formData.description} onChange={handleChange} maxLength={LIMITS.description}/>
+                <textarea name="description" rows="4" value={formData.description} onChange={handleChange} maxLength={LIMITS.description} placeholder="Describe the training goals, tasks, schedule, and what the student will learn."/>
                 {errors.description && <p className="company-form-error">{errors.description}</p>}
               </div>
 
@@ -275,6 +319,7 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
                   value={formData.qualifications}
                   onChange={handleChange}
                   maxLength={LIMITS.qualifications}
+                  placeholder="Example: Computer Science major, basic React knowledge, teamwork skills"
                 />
                 {errors.qualifications && (
                   <p className="company-form-error">{errors.qualifications}</p>
@@ -283,13 +328,13 @@ function CompanyProgramModal({ mode = "add", program, onClose, onSave }) {
 
               <div className="company-form-group full">
                 <label>Rules</label>
-                <textarea name="rules" rows="4" value={formData.rules} onChange={handleChange} maxLength={LIMITS.rules}/>
+                <textarea name="rules" rows="4" value={formData.rules} onChange={handleChange} maxLength={LIMITS.rules} placeholder="Example: Attend on time, submit weekly progress, follow company policies."/>
                 {errors.rules && <p className="company-form-error">{errors.rules}</p>}
               </div>
 
               <div className="company-form-group full">
                 <label>Image URL (optional)</label>
-                <input name="image" value={formData.image} onChange={handleChange} maxLength={LIMITS.image}/>
+                <input name="image" value={formData.image} onChange={handleChange} maxLength={LIMITS.image} placeholder="https://example.com/program-image.jpg"/>
                 {errors.image && <p className="company-form-error">{errors.image}</p>}
               </div>
 

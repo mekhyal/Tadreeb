@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
@@ -7,6 +8,19 @@ import {
 } from "../../utils/passwordRules";
 
 const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+const PHONE_REGEX = /^[+0-9\s\-()]{7,20}$/;
+const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/.*)?$/i;
+const ALLOWED_EMAIL_DOMAINS = [
+  "gmail.com",
+  "outlook.com",
+  "hotmail.com",
+  "live.com",
+  "yahoo.com",
+  "icloud.com",
+  "proton.me",
+  "protonmail.com",
+  "tadreeb.com",
+];
 
 const LIMITS = {
   name: 80,
@@ -19,13 +33,12 @@ const LIMITS = {
   major: 80,
   country: 80,
   skills: 150,
-  industry: 80,
-  website: 150,
-  companySize: 30,
+  industry: 100,
+  website: 200,
+  companySize: 50,
   foundedYear: 4,
-  contactPerson: 80,
-  jobTitle: 80,
-  extraInfo: 250,
+  contactPerson: 100,
+  jobTitle: 100,
 };
 
 const baseInitialErrors = {
@@ -60,14 +73,12 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
     companySize: "",
     foundedYear: "",
     contactPerson: "",
-    internshipAvailability: "Open",
-
     language: "",
     jobTitle: "",
-    extraInfo: "",
   });
 
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -87,12 +98,7 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
     setFormData((prev) => {
       const next = { ...prev, [name]: value };
       if (name === "role") {
-        if (value === "Company" && prev.status === "Inactive") {
-          next.status = "Pending";
-        }
-        if ((value === "Student" || value === "Admin") && prev.status === "Rejected") {
-          next.status = "Pending";
-        }
+        next.status = "Active";
       }
       return next;
     });
@@ -135,10 +141,14 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       checkMax("name", "Name", LIMITS.name, nextErrors);
     }
 
+    const emailDomain = formData.email.trim().toLowerCase().split("@")[1] || "";
     if (!formData.email.trim()) {
       nextErrors.email = "Email is required.";
     } else if (!EMAIL_REGEX.test(formData.email)) {
       nextErrors.email = "Please enter a valid email.";
+    } else if (!ALLOWED_EMAIL_DOMAINS.includes(emailDomain)) {
+      nextErrors.email =
+        "Please use a supported email provider such as Gmail, Outlook, Hotmail, Yahoo, iCloud, or Proton.";
     } else {
       checkMax("email", "Email", LIMITS.email, nextErrors);
     }
@@ -149,14 +159,14 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       nextErrors.password = PASSWORD_REQUIREMENTS_MESSAGE;
     }
 
-    if (!formData.status.trim()) {
+    if (formData.role !== "Admin" && !formData.status.trim()) {
       nextErrors.status = "Status is required.";
     }
 
     if (!formData.phone.trim()) {
       nextErrors.phone = "Phone is required.";
-    } else if (formData.phone.trim().length < 7) {
-      nextErrors.phone = "Phone must be at least 7 characters.";
+    } else if (!PHONE_REGEX.test(formData.phone.trim())) {
+      nextErrors.phone = "Please enter a valid phone number.";
     } else {
       checkMax("phone", "Phone", LIMITS.phone, nextErrors);
     }
@@ -211,8 +221,8 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       checkMax("industry", "Industry", LIMITS.industry, nextErrors);
     }
 
-    if (!formData.website.trim()) {
-      nextErrors.website = "Website is required.";
+    if (formData.website.trim() && !URL_REGEX.test(formData.website.trim())) {
+      nextErrors.website = "Please enter a valid website URL.";
     } else {
       checkMax("website", "Website", LIMITS.website, nextErrors);
     }
@@ -221,14 +231,12 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       nextErrors.companySize = "Company size is required.";
     }
 
-    if (!formData.foundedYear) {
-      nextErrors.foundedYear = "Founded year is required.";
-    } else if (
+    if (formData.foundedYear && (
       Number.isNaN(Number(formData.foundedYear)) ||
-      Number(formData.foundedYear) < 1900 ||
+      Number(formData.foundedYear) < 1800 ||
       Number(formData.foundedYear) > new Date().getFullYear()
-    ) {
-      nextErrors.foundedYear = "Enter a valid founded year.";
+    )) {
+      nextErrors.foundedYear = "Year must be between 1800 and the current year.";
     }
 
     if (!formData.contactPerson.trim()) {
@@ -237,9 +245,6 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       checkMax("contactPerson", "Contact person", LIMITS.contactPerson, nextErrors);
     }
 
-    if (!formData.internshipAvailability) {
-      nextErrors.internshipAvailability = "Internship availability is required.";
-    }
   };
 
   const validateAdminFields = (nextErrors) => {
@@ -263,11 +268,6 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       checkMax("country", "Country", LIMITS.country, nextErrors);
     }
 
-    if (!formData.extraInfo.trim()) {
-      nextErrors.extraInfo = "Additional info is required for admin.";
-    } else {
-      checkMax("extraInfo", "Additional info", LIMITS.extraInfo, nextErrors);
-    }
   };
 
   const validateForm = () => {
@@ -295,7 +295,7 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       email: formData.email.trim().toLowerCase(),
       password: formData.password,
       role: formData.role,
-      status: formData.status,
+      status: formData.role === "Admin" ? "Active" : formData.status,
       phone: formData.phone.trim(),
       location: formData.location.trim(),
       createdAt: new Date().toISOString().slice(0, 10),
@@ -312,7 +312,7 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
         gender: formData.gender,
         country: formData.country.trim(),
         skills: formData.skills.trim(),
-        extraInfo: "",
+        status: formData.status,
       };
     }
 
@@ -324,8 +324,6 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
         companySize: formData.companySize,
         foundedYear: formData.foundedYear,
         contactPerson: formData.contactPerson.trim(),
-        internshipAvailability: formData.internshipAvailability,
-        extraInfo: "",
       };
     }
 
@@ -336,7 +334,6 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
         language: formData.language,
         gender: formData.gender,
         country: formData.country.trim(),
-        extraInfo: formData.extraInfo.trim(),
       };
     }
 
@@ -408,14 +405,24 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
                 <div className="company-form-grid">
                   <div className="company-form-group">
                     <label>Password</label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="8-24 characters"
-                      maxLength={LIMITS.passwordMax}
-                    />
+                    <div className="admin-password-wrap">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        value={formData.password}
+                        onChange={handleChange}
+                        placeholder="8-24 characters"
+                        maxLength={LIMITS.passwordMax}
+                      />
+                      <button
+                        type="button"
+                        className="profile-password-toggle"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                      >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
                     {errors.password && (
                       <p className="company-form-error">{errors.password}</p>
                     )}
@@ -423,21 +430,14 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
 
                   <div className="company-form-group">
                     <label>Status</label>
-                    <select name="status" value={formData.status} onChange={handleChange}>
-                      {formData.role === "Company" ? (
-                        <>
-                          <option value="Pending">Pending</option>
-                          <option value="Active">Active</option>
-                          <option value="Rejected">Rejected</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value="Active">Active</option>
-                          <option value="Inactive">Inactive</option>
-                          <option value="Pending">Pending</option>
-                        </>
-                      )}
-                    </select>
+                    {formData.role === "Admin" ? (
+                      <span className="admin-user-fixed-status active">Active</span>
+                    ) : (
+                      <select name="status" value={formData.status} onChange={handleChange}>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    )}
                     {errors.status && (
                       <p className="company-form-error">{errors.status}</p>
                     )}
@@ -576,13 +576,19 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
                     <div className="company-form-grid">
                       <div className="company-form-group">
                         <label>Industry</label>
-                        <input
+                        <select
                           name="industry"
                           value={formData.industry}
                           onChange={handleChange}
-                          placeholder="Example: Technology"
-                          maxLength={LIMITS.industry}
-                        />
+                        >
+                          <option value="">Select industry</option>
+                          <option value="Technology">Technology</option>
+                          <option value="Finance">Finance</option>
+                          <option value="Healthcare">Healthcare</option>
+                          <option value="Education">Education</option>
+                          <option value="Marketing">Marketing</option>
+                          <option value="Other">Other</option>
+                        </select>
                         {errors.industry && (
                           <p className="company-form-error">{errors.industry}</p>
                         )}
@@ -625,13 +631,21 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
 
                       <div className="company-form-group">
                         <label>Founded Year</label>
-                        <input
+                        <select
                           name="foundedYear"
                           value={formData.foundedYear}
                           onChange={handleChange}
-                          placeholder="Example: 2015"
-                          maxLength={LIMITS.foundedYear}
-                        />
+                        >
+                          <option value="">Select founded year</option>
+                          {Array.from(
+                            { length: new Date().getFullYear() - 1799 },
+                            (_, index) => String(new Date().getFullYear() - index)
+                          ).map((year) => (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </select>
                         {errors.foundedYear && (
                           <p className="company-form-error">{errors.foundedYear}</p>
                         )}
@@ -650,23 +664,6 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
                         />
                         {errors.contactPerson && (
                           <p className="company-form-error">{errors.contactPerson}</p>
-                        )}
-                      </div>
-
-                      <div className="company-form-group">
-                        <label>Internship Availability</label>
-                        <select
-                          name="internshipAvailability"
-                          value={formData.internshipAvailability}
-                          onChange={handleChange}
-                        >
-                          <option value="Open">Open</option>
-                          <option value="Closed">Closed</option>
-                        </select>
-                        {errors.internshipAvailability && (
-                          <p className="company-form-error">
-                            {errors.internshipAvailability}
-                          </p>
                         )}
                       </div>
                     </div>
@@ -735,20 +732,6 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
                       </div>
                     </div>
 
-                    <div className="company-form-group full">
-                      <label>Additional Info</label>
-                      <textarea
-                        rows="4"
-                        name="extraInfo"
-                        value={formData.extraInfo}
-                        onChange={handleChange}
-                        placeholder="Example: Main system administrator."
-                        maxLength={LIMITS.extraInfo}
-                      ></textarea>
-                      {errors.extraInfo && (
-                        <p className="company-form-error">{errors.extraInfo}</p>
-                      )}
-                    </div>
                   </>
                 )}
               </div>

@@ -5,6 +5,7 @@ import PortalStatCard from "../../components/portal/PortalStatCard";
 import { useAuth } from "../../context/AuthContext";
 import { getOpportunities } from "../../api/opportunityAPI";
 import { getCompanyApplications } from "../../api/applicationAPI";
+import { getProgramDisplayStatus } from "../../utils/programStatus";
 
 const toneFromId = (id) => {
   const s = String(id || "");
@@ -42,21 +43,10 @@ function CompanyDashboard() {
           return owner && String(owner) === companyId;
         });
 
-        const mappedPrograms = mine.map((item) => {
-          const seats = Number(item.seats) || 0;
-          const usedSeats = Number(item.usedSeats) || 0;
-          const availableSeats =
-            item.availableSeats !== undefined
-              ? Number(item.availableSeats)
-              : Math.max(seats - usedSeats, 0);
-          return {
-            id: String(item._id),
-            status:
-              item.status === "Completed" || availableSeats <= 0
-                ? "Completed"
-                : "Active",
-          };
-        });
+        const mappedPrograms = mine.map((item) => ({
+          id: String(item._id),
+          status: getProgramDisplayStatus(item),
+        }));
 
         setPrograms(mappedPrograms);
         setApplications(Array.isArray(appsRes.data) ? appsRes.data : []);
@@ -128,21 +118,20 @@ function CompanyDashboard() {
 
   const snapshotRows = useMemo(() => {
     return applications.slice(0, 4).map((raw) => {
-      const s = raw.studentID || {};
-      const p = raw.programID || {};
-      const skills = Array.isArray(s.skills)
-        ? s.skills.join(", ")
-        : s.skills || "—";
+      const student = raw.studentID || {};
+      const program = raw.programID || {};
+      const name =
+        [student.firstName, student.lastName].filter(Boolean).join(" ").trim() ||
+        "Student";
+
       return {
         id: String(raw._id),
-        name:
-          [s.firstName, s.lastName].filter(Boolean).join(" ").trim() ||
-          "Student",
-        email: s.email || "",
-        studentId: s.universityID || "",
-        skills,
-        program: p.title || "—",
-        status: raw.status || "—",
+        name,
+        initial: name.charAt(0).toUpperCase(),
+        email: student.email || "",
+        university: student.universityName || "-",
+        program: program.title || "-",
+        status: raw.status || "-",
       };
     });
   }, [applications]);
@@ -154,8 +143,7 @@ function CompanyDashboard() {
       label: "Review",
       value: pct(
         applications.filter(
-          (a) =>
-            a.status === "Submitted" || a.status === "Under Review"
+          (a) => a.status === "Submitted" || a.status === "Under Review"
         ).length
       ),
       type: "review",
@@ -206,21 +194,20 @@ function CompanyDashboard() {
         <section className="portal-panel">
           <div className="portal-panel__head">
             <h2>Application Snapshot</h2>
-            <p>Latest participants and assigned programs.</p>
+            <p>Latest students who applied to your company programs.</p>
           </div>
 
           <div className="company-table-wrap">
             {loading ? (
-              <p>Loading…</p>
+              <p>Loading...</p>
             ) : snapshotRows.length === 0 ? (
               <p>No applications yet.</p>
             ) : (
               <table className="company-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>ID</th>
-                    <th>Skills</th>
+                    <th>Student Name</th>
+                    <th>University Name</th>
                     <th>Program</th>
                     <th>Status</th>
                   </tr>
@@ -235,15 +222,16 @@ function CompanyDashboard() {
                             className={`company-person-avatar tone-${toneFromId(
                               item.id
                             )}`}
-                          ></div>
+                          >
+                            {item.initial}
+                          </div>
                           <div>
                             <strong>{item.name}</strong>
                             <span>{item.email}</span>
                           </div>
                         </div>
                       </td>
-                      <td>{item.studentId}</td>
-                      <td>{item.skills}</td>
+                      <td>{item.university}</td>
                       <td>{item.program}</td>
                       <td>
                         <span

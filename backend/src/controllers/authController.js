@@ -20,6 +20,8 @@ const isPlainString = (v) => typeof v === 'string';
 const STUDENT_YEAR_VALUES = new Set(['First', 'Second', 'Third', 'Fourth', 'Fifth']);
 const ADMIN_GENDER_VALUES = new Set(['Male', 'Female', '']);
 const STUDENT_ID_MIN_LENGTH = 7;
+const PHONE_REGEX = /^[+0-9\s\-()]{7,20}$/;
+const URL_REGEX = /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/.*)?$/i;
 
 const buildStudentResponse = (student) => ({
     id: student._id,
@@ -465,8 +467,8 @@ const updateCompanyProfile = async (req, res) => {
                 return res.status(400).json({ message: 'Invalid input format' });
             }
             const t = companyName.trim();
-            if (t.length < 1) {
-                return res.status(400).json({ message: 'Company name cannot be empty' });
+            if (t.length < 3) {
+                return res.status(400).json({ message: 'Company name must be at least 3 characters' });
             }
             if (exceedsMaxLength(t, 200)) {
                 return res.status(400).json({ message: 'companyName exceeds maximum length of 200 characters' });
@@ -491,8 +493,8 @@ const updateCompanyProfile = async (req, res) => {
                 return res.status(400).json({ message: 'Invalid input format' });
             }
             const t = phone.trim();
-            if (t.length < 1) {
-                return res.status(400).json({ message: 'Phone cannot be empty' });
+            if (!PHONE_REGEX.test(t)) {
+                return res.status(400).json({ message: 'Please enter a valid phone number' });
             }
             if (exceedsMaxLength(t, 20)) {
                 return res.status(400).json({ message: 'phone exceeds maximum length of 20 characters' });
@@ -504,6 +506,9 @@ const updateCompanyProfile = async (req, res) => {
                 return res.status(400).json({ message: 'Invalid input format' });
             }
             const t = website.trim();
+            if (t && !URL_REGEX.test(t)) {
+                return res.status(400).json({ message: 'Please enter a valid website URL' });
+            }
             if (exceedsMaxLength(t, 200)) {
                 return res.status(400).json({ message: 'website exceeds maximum length of 200 characters' });
             }
@@ -524,8 +529,8 @@ const updateCompanyProfile = async (req, res) => {
                 return res.status(400).json({ message: 'Invalid input format' });
             }
             const t = location.trim();
-            if (t.length < 1) {
-                return res.status(400).json({ message: 'Location cannot be empty' });
+            if (t.length < 3) {
+                return res.status(400).json({ message: 'Location must be at least 3 characters' });
             }
             if (exceedsMaxLength(t, 100)) {
                 return res.status(400).json({ message: 'location exceeds maximum length of 100 characters' });
@@ -537,6 +542,9 @@ const updateCompanyProfile = async (req, res) => {
                 return res.status(400).json({ message: 'Invalid input format' });
             }
             const t = contactPerson.trim();
+            if (t.length < 3) {
+                return res.status(400).json({ message: 'Contact person name must be at least 3 characters' });
+            }
             if (exceedsMaxLength(t, 100)) {
                 return res.status(400).json({ message: 'contactPerson exceeds maximum length of 100 characters' });
             }

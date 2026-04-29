@@ -11,6 +11,12 @@ import {
   updateOpportunity,
   deleteOpportunity,
 } from "../../api/opportunityAPI";
+import {
+  getProgramDisplayStatus,
+  getRegistrationDeadlineValue,
+  programStatusRank,
+} from "../../utils/programStatus";
+import defaultProgramImage from "../../assets/default-program-image.jpg";
 
 const PROGRAMS_PER_PAGE = 9;
 
@@ -38,11 +44,10 @@ const normalizeProgram = (item) => {
     location: item.location || "",
     dateFrom: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
     dateTo: item.dateTo ? item.dateTo.slice(0, 10) : "",
+    registrationDeadline: getRegistrationDeadlineValue(item),
     image: item.imageURL || "",
-    status:
-      item.status === "Completed" || availableSeats <= 0
-        ? "Completed"
-        : "Active",
+    displayImage: item.imageURL || defaultProgramImage,
+    status: getProgramDisplayStatus(item),
   };
 };
 
@@ -92,9 +97,9 @@ function CompanyPrograms() {
 
   const sortedPrograms = useMemo(() => {
     return [...programs].sort((a, b) => {
-      if (a.status === "Completed" && b.status !== "Completed") return 1;
-      if (a.status !== "Completed" && b.status === "Completed") return -1;
-      return 0;
+      const statusOrder = programStatusRank(a.status) - programStatusRank(b.status);
+      if (statusOrder !== 0) return statusOrder;
+      return new Date(a.dateFrom || 0) - new Date(b.dateFrom || 0);
     });
   }, [programs]);
 
@@ -120,7 +125,8 @@ function CompanyPrograms() {
         seats: Number(programData.seats),
         dateFrom: programData.dateFrom,
         dateTo: programData.dateTo,
-        imageURL: programData.image,
+        registrationDeadline: programData.registrationDeadline,
+        imageURL: programData.image.trim(),
       };
 
       if (programData.id) {

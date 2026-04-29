@@ -42,6 +42,7 @@ const opportunitySchema = new mongoose.Schema(
       type: Number,
       required: true,
       min: 1,
+      max: 20,
     },
     dateFrom: {
       type: Date,
@@ -50,6 +51,10 @@ const opportunitySchema = new mongoose.Schema(
     dateTo: {
       type: Date,
       required: true,
+    },
+    registrationDeadline: {
+      type: Date,
+      default: null,
     },
     imageURL: {
       type: String,
@@ -72,10 +77,17 @@ const opportunitySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// dateTo must be strictly after dateFrom (cross-field validator)
+// dateTo must be strictly after dateFrom, and registration must close before the program starts.
 opportunitySchema.pre('validate', function (next) {
   if (this.dateFrom && this.dateTo && this.dateTo <= this.dateFrom) {
     return next(new Error('dateTo must be after dateFrom'));
+  }
+  if (
+    this.registrationDeadline &&
+    this.dateFrom &&
+    this.registrationDeadline >= this.dateFrom
+  ) {
+    return next(new Error('registrationDeadline must be before dateFrom'));
   }
   next();
 });

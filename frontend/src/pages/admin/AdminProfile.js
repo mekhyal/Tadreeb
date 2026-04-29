@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { FaEnvelope, FaUserCircle } from "react-icons/fa";
+import React, { useEffect, useMemo, useState } from "react";
+import { FaEnvelope, FaEye, FaEyeSlash, FaUserCircle } from "react-icons/fa";
 import PortalLayout from "../../components/portal/PortalLayout";
 import PortalTopbar from "../../components/portal/PortalTopbar";
 import { useAuth } from "../../context/AuthContext";
@@ -14,12 +14,14 @@ import {
 const LIMITS = {
   firstName: 50,
   lastName: 50,
-  phone: 30,
+  phone: 20,
   jobTitle: 100,
   country: 80,
   passwordMin: PASSWORD_MIN_LENGTH,
   passwordMax: PASSWORD_MAX_LENGTH,
 };
+
+const PHONE_REGEX = /^[+0-9\s\-()]{7,20}$/;
 
 const adminNavItems = [
   { key: "dashboard", label: "Dashboard", path: "/admin/dashboard" },
@@ -36,7 +38,6 @@ const emptyForm = () => ({
   phone: "",
   password: "",
   language: "English",
-  adminId: "",
   jobTitle: "",
   country: "",
   email: "",
@@ -50,7 +51,6 @@ function mapAdminToForm(a) {
     phone: a.phone || "",
     password: "",
     language: a.language && a.language !== "" ? a.language : "English",
-    adminId: a.id != null ? String(a.id) : "",
     jobTitle: a.jobTitle || "",
     country: a.country || "",
     email: a.email || "",
@@ -60,13 +60,19 @@ function mapAdminToForm(a) {
 function AdminProfile() {
   const { user, updateUser } = useAuth();
 
+  const [savedAdmin, setSavedAdmin] = useState(user || {});
   const [formData, setFormData] = useState(emptyForm);
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
 
-  const displayName = `${formData.firstName} ${formData.lastName}`.trim() || "Admin";
+  const displayName =
+    `${savedAdmin.firstName || ""} ${savedAdmin.lastName || ""}`.trim() ||
+    user?.email ||
+    "Admin";
 
   useEffect(() => {
     if (!user || user.role !== "admin") return undefined;
@@ -80,6 +86,7 @@ function AdminProfile() {
         const res = await getAdminProfile();
         const a = res.data.admin;
         if (cancelled) return;
+        setSavedAdmin(a);
         setFormData(mapAdminToForm(a));
         updateUser({
           ...user,
@@ -91,6 +98,7 @@ function AdminProfile() {
           setError(
             e.response?.data?.message || "Could not load profile from server."
           );
+          setSavedAdmin(user);
           setFormData(mapAdminToForm(user));
         }
       } finally {
@@ -104,6 +112,18 @@ function AdminProfile() {
     };
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const savedForm = useMemo(() => mapAdminToForm(savedAdmin), [savedAdmin]);
+
+  const hasChanges =
+    Boolean(formData.password.trim()) ||
+    formData.firstName !== savedForm.firstName ||
+    formData.lastName !== savedForm.lastName ||
+    formData.gender !== savedForm.gender ||
+    formData.phone !== savedForm.phone ||
+    formData.language !== savedForm.language ||
+    formData.jobTitle !== savedForm.jobTitle ||
+    formData.country !== savedForm.country;
+
   const checkLength = (field, label, limit, nextErrors) => {
     if (String(formData[field] || "").trim().length > limit) {
       nextErrors[field] = `${label} must be ${limit} characters or less.`;
@@ -114,27 +134,40 @@ function AdminProfile() {
     const next = {};
     if (!formData.firstName.trim()) {
       next.firstName = "First name is required.";
+    } else if (formData.firstName.trim().length < 2) {
+      next.firstName = "First name must be at least 2 characters.";
     } else {
       checkLength("firstName", "First name", LIMITS.firstName, next);
     }
     if (!formData.lastName.trim()) {
       next.lastName = "Last name is required.";
+    } else if (formData.lastName.trim().length < 2) {
+      next.lastName = "Last name must be at least 2 characters.";
     } else {
       checkLength("lastName", "Last name", LIMITS.lastName, next);
     }
     if (!formData.phone.trim()) {
       next.phone = "Phone is required.";
+    } else if (!PHONE_REGEX.test(formData.phone.trim())) {
+      next.phone = "Please enter a valid phone number.";
     } else {
       checkLength("phone", "Phone", LIMITS.phone, next);
     }
-    if (formData.jobTitle.trim()) {
+    if (!formData.jobTitle.trim()) {
+      next.jobTitle = "Job title is required.";
+    } else {
       checkLength("jobTitle", "Job title", LIMITS.jobTitle, next);
     }
-    if (formData.country.trim()) {
+    if (!formData.country.trim()) {
+      next.country = "Country is required.";
+    } else {
       checkLength("country", "Country", LIMITS.country, next);
     }
     if (!formData.gender) {
       next.gender = "Gender is required.";
+    }
+    if (!formData.language) {
+      next.language = "Language is required.";
     }
     if (formData.password.trim()) {
       if (!isPasswordStrong(formData.password)) {
@@ -143,8 +176,6 @@ function AdminProfile() {
     }
     return next;
   };
-
-  const [fieldErrors, setFieldErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -157,6 +188,8 @@ function AdminProfile() {
   };
 
   const handleSave = async () => {
+    if (!hasChanges) return;
+
     const nextErrors = validate();
     setFieldErrors(nextErrors);
     if (Object.values(nextErrors).some(Boolean) || !user) return;
@@ -181,10 +214,11 @@ function AdminProfile() {
       const res = await updateAdminProfile(payload);
       const a = res.data.admin;
       const name = `${a.firstName || ""} ${a.lastName || ""}`.trim();
+      setSavedAdmin(a);
       setFormData((prev) => ({ ...mapAdminToForm(a), password: "" }));
       updateUser({ ...user, ...a, name });
       setToast("Profile changes saved successfully.");
-      setTimeout(() => setToast(""), 3000);
+      setTimeout(() => setToast(""), 5000);
     } catch (err) {
       setError(
         err.response?.data?.message ||
@@ -237,9 +271,9 @@ function AdminProfile() {
             type="button"
             className="admin-profile-save-btn"
             onClick={handleSave}
-            disabled={isLoading || isSaving}
+            disabled={isLoading || isSaving || !hasChanges}
           >
-            {isSaving ? "Saving..." : "Save Change"}
+            {isSaving ? "Saving..." : "Save Changes"}
           </button>
         </div>
 
@@ -302,15 +336,25 @@ function AdminProfile() {
 
           <div className="admin-profile-field">
             <label>Password</label>
-            <input
-              type="password"
-              name="password"
-              autoComplete="new-password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Leave blank to keep current"
-              maxLength={LIMITS.passwordMax}
-            />
+            <div className="admin-password-wrap">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                autoComplete="new-password"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Leave blank to keep current"
+                maxLength={LIMITS.passwordMax}
+              />
+              <button
+                type="button"
+                className="profile-password-toggle"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
             {fieldErrors.password && (
               <p className="company-form-error">{fieldErrors.password}</p>
             )}
@@ -326,17 +370,9 @@ function AdminProfile() {
               <option value="English">English</option>
               <option value="Arabic">Arabic</option>
             </select>
-          </div>
-
-          <div className="admin-profile-field">
-            <label>Admin ID</label>
-            <input
-              type="text"
-              name="adminId"
-              value={formData.adminId}
-              readOnly
-              aria-readonly="true"
-            />
+            {fieldErrors.language && (
+              <p className="company-form-error">{fieldErrors.language}</p>
+            )}
           </div>
 
           <div className="admin-profile-field">

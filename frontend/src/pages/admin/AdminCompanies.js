@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import PortalLayout from "../../components/portal/PortalLayout";
 import PortalTopbar from "../../components/portal/PortalTopbar";
-import PortalStatCard from "../../components/portal/PortalStatCard";
 import AdminCompanyDetailsModal from "../../components/admin/AdminCompanyDetailsModal";
 import { getCompanies, updateCompanyStatus } from "../../api/adminAPI";
 import { normalizeCompanyAccountStatus } from "../../utils/companyAccountStatus";
@@ -15,6 +14,19 @@ const adminNavItems = [
   { key: "companies", label: "Companies", path: "/admin/companies" },
   { key: "users", label: "Users", path: "/admin/users" },
 ];
+
+const companyAccountToRequestStatus = (status) => {
+  const normalized = normalizeCompanyAccountStatus(status);
+  if (normalized === "Active") return "Accepted";
+  if (normalized === "Rejected") return "Rejected";
+  return "Under Review";
+};
+
+const requestStatusToCompanyAccount = (status) => {
+  if (status === "Accepted") return "Active";
+  if (status === "Rejected") return "Rejected";
+  return "Pending";
+};
 
 const normalizeCompany = (item) => ({
   id: item._id,
@@ -31,7 +43,7 @@ const normalizeCompany = (item) => ({
   companyDescription: item.description || "",
   joinReason: item.joinReason || "",
   requestDate: item.createdAt ? item.createdAt.slice(0, 10) : "",
-  status: normalizeCompanyAccountStatus(item.status),
+  status: companyAccountToRequestStatus(item.status),
 });
 
 function AdminCompanies() {
@@ -62,20 +74,6 @@ function AdminCompanies() {
     fetchCompanies();
   }, []);
 
-  const stats = useMemo(() => {
-    const total = companies.length;
-    const pending = companies.filter((item) => item.status === "Pending").length;
-    const active = companies.filter((item) => item.status === "Active").length;
-    const rejected = companies.filter((item) => item.status === "Rejected").length;
-
-    return [
-      { id: 1, title: "Total Companies", value: total, subtitle: "All accounts" },
-      { id: 2, title: "Pending", value: pending, subtitle: "Not activated" },
-      { id: 3, title: "Active", value: active, subtitle: "Can use the portal" },
-      { id: 4, title: "Rejected", value: rejected, subtitle: "Declined" },
-    ];
-  }, [companies]);
-
   const filteredCompanies = useMemo(() => {
     if (activeFilter === "All") return companies;
     return companies.filter((item) => item.status === activeFilter);
@@ -95,7 +93,10 @@ function AdminCompanies() {
     setIsSaving(true);
 
     try {
-      const res = await updateCompanyStatus(companyId, status);
+      const res = await updateCompanyStatus(
+        companyId,
+        requestStatusToCompanyAccount(status)
+      );
       const updatedCompany = normalizeCompany(res.data.company);
 
       setCompanies((prev) =>
@@ -135,14 +136,8 @@ function AdminCompanies() {
       )}
 
       <section className="portal-panel admin-companies-page">
-        <div className="admin-companies-stats">
-          {stats.map((item) => (
-            <PortalStatCard key={item.id} item={item} />
-          ))}
-        </div>
-
         <div className="admin-companies-filters">
-          {["All", "Pending", "Active", "Rejected"].map((filter) => {
+          {["All", "Under Review", "Accepted", "Rejected"].map((filter) => {
             const count =
               filter === "All"
                 ? companies.length

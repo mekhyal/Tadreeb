@@ -2,11 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { FaUserCircle } from "react-icons/fa";
 
 function AdminParticipantModal({ participant, onClose, onSave }) {
-  const [adminStatus, setAdminStatus] = useState(
-    participant?.adminStatus || participant?.companyStatus || "Review"
-  );
   const [visibleToStudent, setVisibleToStudent] = useState(
-    participant?.visibleToStudent || false
+    participant?.visibleToStudent !== false
   );
 
   useEffect(() => {
@@ -30,7 +27,6 @@ function AdminParticipantModal({ participant, onClose, onSave }) {
 
   const handleSave = () => {
     onSave(participant.id, {
-      adminStatus,
       visibleToStudent,
     });
   };
@@ -97,26 +93,17 @@ function AdminParticipantModal({ participant, onClose, onSave }) {
             </div>
           </div>
 
-          <div className="admin-participant-review-grid">
+          <div className="admin-participant-review-grid admin-participant-review-grid--single">
             <div className="admin-participant-review-box">
               <label>Company Status</label>
-              <div className={`admin-review-badge ${participant.companyStatus.toLowerCase()}`}>
+              <div
+                className={`admin-review-badge ${String(
+                  participant.companyStatus
+                )
+                  .toLowerCase()
+                  .replace(/\s+/g, "-")}`}
+              >
                 {participant.companyStatus}
-              </div>
-            </div>
-
-            <div className="admin-participant-review-box">
-              <label>Admin Status</label>
-              <div className="admin-user-status-select-wrap">
-                <select
-                  className="admin-user-status-select"
-                  value={adminStatus}
-                  onChange={(e) => setAdminStatus(e.target.value)}
-                >
-                  <option value="Review">Review</option>
-                  <option value="Accepted">Accepted</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
               </div>
             </div>
           </div>

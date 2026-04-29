@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import PortalLayout from "../../components/portal/PortalLayout";
 import PortalTopbar from "../../components/portal/PortalTopbar";
-import PortalStatCard from "../../components/portal/PortalStatCard";
 import AdminUserModal from "../../components/admin/AdminUserModal";
 import AdminUserDetailsCard from "../../components/admin/AdminUserDetailsCard";
 import {
@@ -13,7 +12,6 @@ import {
   createAdmin,
   updateCompanyStatus,
   updateStudentStatus,
-  updateAdminStatus,
 } from "../../api/adminAPI";
 import { normalizeCompanyAccountStatus } from "../../utils/companyAccountStatus";
 
@@ -35,6 +33,8 @@ const toneFromId = (id) => {
   for (let i = 0; i < s.length; i++) h = (h + s.charCodeAt(i)) % 4;
   return h;
 };
+
+const shortSystemId = (id) => String(id || "").slice(-5).toUpperCase();
 
 const adminNavItems = [
   { key: "dashboard", label: "Dashboard", path: "/admin/dashboard" },
@@ -61,11 +61,11 @@ const studentStatusLabel = (s) => {
 
 const normalizeStudent = (item) => ({
   id: String(item._id),
-  systemId: item.universityID || String(item._id).slice(-6).toUpperCase(),
+  systemId: shortSystemId(item._id),
   name: `${item.firstName || ""} ${item.lastName || ""}`.trim(),
   email: item.email || "",
   role: "Student",
-  status: studentStatusLabel(item.status),
+  status: studentStatusLabel(item.status) === "Active" ? "Active" : "Inactive",
   phone: item.mobileNo || "",
   location: item.country || item.universityName || "—",
   createdAt: formatYmd(item.createdAt),
@@ -80,26 +80,25 @@ const normalizeStudent = (item) => ({
 
 const normalizeCompany = (item) => ({
   id: String(item._id),
-  systemId: String(item._id).slice(-6).toUpperCase(),
+  systemId: shortSystemId(item._id),
   name: item.companyName || "",
   email: item.email || "",
   role: "Company",
-  status: normalizeCompanyAccountStatus(item.status),
+  status: normalizeCompanyAccountStatus(item.status) === "Active" ? "Active" : "Inactive",
   phone: item.phone || "",
   location: item.location || "",
   createdAt: formatYmd(item.createdAt),
-  companyId: String(item._id).slice(-6).toUpperCase(),
+  companyId: shortSystemId(item._id),
   industry: item.industry || "",
   website: item.website || "",
   companySize: item.size || "",
   foundedYear: item.foundedYear ?? "",
   contactPerson: item.contactPerson || "",
-  internshipAvailability: item.status || "Pending",
 });
 
 const normalizeAdmin = (item) => ({
   id: String(item._id),
-  systemId: String(item._id).slice(-6).toUpperCase(),
+  systemId: shortSystemId(item._id),
   name: `${item.firstName || ""} ${item.lastName || ""}`.trim(),
   email: item.email || "",
   role: "Admin",
@@ -107,12 +106,11 @@ const normalizeAdmin = (item) => ({
   phone: item.phone || "",
   location: item.country || "—",
   createdAt: formatYmd(item.createdAt),
-  adminId: String(item._id).slice(-6).toUpperCase(),
+  adminId: shortSystemId(item._id),
   jobTitle: item.jobTitle || "",
   gender: item.gender || "",
   country: item.country || "",
   language: item.language || "",
-  extraInfo: item.extraInfo || "",
 });
 
 function AdminUsers() {
@@ -167,35 +165,6 @@ function AdminUsers() {
     return filteredUsers.slice(start, start + USERS_PER_PAGE);
   }, [filteredUsers, currentPage]);
 
-  const computedStats = useMemo(() => {
-    return [
-      {
-        id: 1,
-        title: "All Users",
-        value: users.length,
-        subtitle: "System accounts",
-      },
-      {
-        id: 2,
-        title: "Students",
-        value: users.filter((item) => item.role === "Student").length,
-        subtitle: "Registered students",
-      },
-      {
-        id: 3,
-        title: "Companies",
-        value: users.filter((item) => item.role === "Company").length,
-        subtitle: "Company accounts",
-      },
-      {
-        id: 4,
-        title: "Admins",
-        value: users.filter((item) => item.role === "Admin").length,
-        subtitle: "System admins",
-      },
-    ];
-  }, [users]);
-
   const buildStudentPayload = (newUser) => {
     const { firstName, lastName } = splitName(newUser.name);
 
@@ -210,6 +179,7 @@ function AdminUsers() {
       universityName: newUser.universityName,
       major: newUser.major,
       year: newUser.year,
+      status: newUser.status,
       skills: newUser.skills
         .split(",")
         .map((skill) => skill.trim())
@@ -246,8 +216,7 @@ function AdminUsers() {
       gender: newUser.gender,
       country: newUser.country,
       language: newUser.language,
-      extraInfo: newUser.extraInfo,
-      status: newUser.status,
+      status: "Active",
     };
   };
 
@@ -323,24 +292,7 @@ function AdminUsers() {
       return;
     }
 
-    if (targetUser.role === "Admin") {
-      try {
-        const res = await updateAdminStatus(userId, newStatus);
-        const updated = normalizeAdmin(res.data.admin);
-        setUsers((prev) =>
-          prev.map((item) => (String(item.id) === String(userId) ? updated : item))
-        );
-        setSelectedUser(updated);
-        setToast("Admin status updated successfully.");
-      } catch (err) {
-        setToast(
-          err.response?.data?.message || "Could not update admin status."
-        );
-      } finally {
-        setTimeout(() => setToast(""), 3000);
-      }
-      return;
-    }
+    if (targetUser.role === "Admin") return;
 
     if (targetUser.role === "Company") {
       try {
@@ -379,12 +331,6 @@ function AdminUsers() {
       )}
 
       <section className="portal-panel admin-users-page">
-        <div className="admin-users-stats">
-          {computedStats.map((item, index) => (
-            <PortalStatCard key={item.id} item={item} index={index} />
-          ))}
-        </div>
-
         <div className="admin-users-toolbar">
           <div className="admin-users-filters">
             {["All", "Student", "Company", "Admin"].map((filter) => {
@@ -418,7 +364,7 @@ function AdminUsers() {
         <div className="admin-users-grid">
           <div className="portal-panel admin-users-table-panel">
             <div className="portal-panel__head">
-              <h2>System Users</h2>
+              <h2>All Users</h2>
             </div>
 
             {isLoading ? (

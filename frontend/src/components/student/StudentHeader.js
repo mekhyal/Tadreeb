@@ -67,9 +67,11 @@ function StudentHeader() {
     setIsNavigating(true);
 
     setTimeout(() => {
-      logout();
-      navigate("/");
+      navigate("/", { replace: true });
       window.scrollTo({ top: 0, behavior: "auto" });
+      setTimeout(() => {
+        logout();
+      }, 0);
     }, 450);
   };
 

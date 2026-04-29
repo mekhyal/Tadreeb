@@ -18,7 +18,7 @@ const adminNavItems = [
 ];
 
 const mapCompanyDecisionToLabel = (s) => {
-  if (s === "Under Review") return "Review";
+  if (s === "Under Review") return "Under Review";
   return s || "—";
 };
 
@@ -30,7 +30,7 @@ const normalizeAdminApplication = (raw) => {
     id: String(raw._id),
     name: [s.firstName, s.lastName].filter(Boolean).join(" ") || "Student",
     email: s.email || "",
-    studentId: s.universityID || "",
+    studentId: s.universityID || "N/A",
     year: s.year || "",
     major: s.major || "",
     skills: Array.isArray(s.skills) ? s.skills.join(", ") : s.skills || "",
@@ -40,7 +40,7 @@ const normalizeAdminApplication = (raw) => {
     companyStatus: mapCompanyDecisionToLabel(raw.status),
     companyNote: raw.decisionNote || "-",
     adminStatus: raw.adminStatus || "Review",
-    visibleToStudent: !!raw.visibleToStudent,
+    visibleToStudent: raw.visibleToStudent !== false,
   };
 };
 
@@ -52,7 +52,6 @@ function AdminParticipants() {
   const [activeFilter, setActiveFilter] = useState("All");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
 
   const loadParticipants = async () => {
     setIsLoading(true);
@@ -92,10 +91,8 @@ function AdminParticipants() {
   }, [filteredParticipants, currentPage]);
 
   const handleSaveParticipant = async (participantId, updates) => {
-    setIsSaving(true);
     try {
       const res = await updateAdminApplicationReview(participantId, {
-        adminStatus: updates.adminStatus,
         visibleToStudent: updates.visibleToStudent,
       });
       const next = normalizeAdminApplication(res.data.application);
@@ -111,7 +108,6 @@ function AdminParticipants() {
         err.response?.data?.message || "Could not save application review."
       );
     } finally {
-      setIsSaving(false);
       setTimeout(() => setToast(""), 3000);
     }
   };
@@ -183,11 +179,11 @@ function AdminParticipants() {
               <table className="company-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
+                    <th>Student Name</th>
                     <th>Student ID</th>
                     <th>Program</th>
                     <th>Company</th>
-                    <th>Final Status</th>
+                    <th>Company Status</th>
                     <th>Visible</th>
                   </tr>
                 </thead>
@@ -220,9 +216,13 @@ function AdminParticipants() {
                       <td>{item.company}</td>
                       <td>
                         <span
-                          className={`company-status-badge ${item.adminStatus.toLowerCase()}`}
+                          className={`company-status-badge ${String(
+                            item.companyStatus
+                          )
+                            .toLowerCase()
+                            .replace(/\s+/g, "-")}`}
                         >
-                          {item.adminStatus}
+                          {item.companyStatus}
                         </span>
                       </td>
                       <td>

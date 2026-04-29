@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 
-import { normalizeCompanyAccountStatus } from "../../utils/companyAccountStatus";
+import { getExternalUrl } from "../../utils/formatLinks";
 
 function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
-  const [status, setStatus] = useState(
-    () => normalizeCompanyAccountStatus(company?.status)
-  );
+  const [status, setStatus] = useState(() => company?.status || "Under Review");
+  const companyId = company?.id;
+  const companyStatus = company?.status;
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -15,10 +15,10 @@ function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
   }, []);
 
   useEffect(() => {
-    if (company) {
-      setStatus(normalizeCompanyAccountStatus(company.status));
+    if (companyId) {
+      setStatus(companyStatus || "Under Review");
     }
-  }, [company?.id]);
+  }, [companyId, companyStatus]);
 
   if (!company) return null;
 
@@ -80,7 +80,20 @@ function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
 
             <div>
               <label>Website</label>
-              <p>{company.website || "-"}</p>
+              <p>
+                {company.website ? (
+                  <a
+                    href={getExternalUrl(company.website)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="admin-external-link"
+                  >
+                    {company.website}
+                  </a>
+                ) : (
+                  "-"
+                )}
+              </p>
             </div>
 
             <div>
@@ -122,8 +135,8 @@ function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
           <div className="admin-company-modal__status-box">
             <label>Update Status</label>
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="Pending">Pending</option>
-              <option value="Active">Active</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Accepted">Accepted</option>
               <option value="Rejected">Rejected</option>
             </select>
           </div>

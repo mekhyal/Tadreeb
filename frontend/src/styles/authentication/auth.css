@@ -181,6 +181,15 @@
   font-size: 1rem;
 }
 
+.auth-password-toggle {
+  border: none;
+  cursor: pointer;
+}
+
+.auth-password-toggle:hover {
+  filter: brightness(1.05);
+}
+
 .auth-field-group input,
 .auth-field-group select {
   width: 100%;
@@ -200,6 +209,10 @@
   border-color: var(--bright-blue);
   background: var(--white);
   box-shadow: 0 0 0 4px rgba(66, 165, 245, 0.12);
+}
+
+.auth-field-group .auth-input-wrap input {
+  padding-right: 64px;
 }
 
 .auth-row-end {

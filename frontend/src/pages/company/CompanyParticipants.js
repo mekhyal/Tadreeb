@@ -9,6 +9,21 @@ import {
 
 const PARTICIPANTS_PER_PAGE = 8;
 
+const hasProgramStartedOrCompleted = (program) => {
+  if (!program) return false;
+  if (program.status === "Completed") return true;
+  if (!program.dateFrom) return false;
+
+  const start = new Date(program.dateFrom);
+  if (Number.isNaN(start.getTime())) return false;
+  start.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return today >= start;
+};
+
 const normalizeParticipant = (item) => {
   const student = item.studentID || {};
   const program = item.programID || {};
@@ -21,12 +36,13 @@ const normalizeParticipant = (item) => {
         : student.name || "Student",
     email: student.email || "",
     studentId: student.universityID || student.studentId || "N/A",
-    year: student.year || "N/A",
+    universityName: student.universityName || "N/A",
     major: student.major || "N/A",
     skills: Array.isArray(student.skills)
       ? student.skills.join(", ")
       : student.skills || "N/A",
     program: program.title || "Program",
+    isProgramDecisionLocked: hasProgramStartedOrCompleted(program),
     status: item.status || "Submitted",
     note: item.decisionNote || "-",
     dateApplied: item.appliedDate
@@ -159,9 +175,9 @@ function CompanyParticipants() {
               <table className="company-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>ID</th>
-                    <th>Year</th>
+                    <th>Student Name</th>
+                    <th>Student ID</th>
+                    <th>University Name</th>
                     <th>Program</th>
                     <th>Status</th>
                     <th>Note</th>
@@ -177,7 +193,7 @@ function CompanyParticipants() {
                     >
                       <td>{item.name}</td>
                       <td>{item.studentId}</td>
-                      <td>{item.year}</td>
+                      <td>{item.universityName}</td>
                       <td>{item.program}</td>
                       <td>
                         <span

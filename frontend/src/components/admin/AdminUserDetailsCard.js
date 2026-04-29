@@ -1,5 +1,6 @@
 import React from "react";
 import { FaUserCircle } from "react-icons/fa";
+import { getExternalUrl } from "../../utils/formatLinks";
 
 function AdminUserDetailsCard({ user, onStatusChange }) {
   if (!user) {
@@ -59,7 +60,20 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
           </div>
           <div>
             <label>Website</label>
-            <p>{user.website}</p>
+            <p>
+              {user.website ? (
+                <a
+                  href={getExternalUrl(user.website)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="admin-external-link"
+                >
+                  {user.website}
+                </a>
+              ) : (
+                "-"
+              )}
+            </p>
           </div>
           <div>
             <label>Company Size</label>
@@ -72,10 +86,6 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
           <div>
             <label>Contact Person</label>
             <p>{user.contactPerson}</p>
-          </div>
-          <div className="admin-user-details-wide">
-            <label>Internship Availability</label>
-            <p>{user.internshipAvailability}</p>
           </div>
         </div>
       );
@@ -106,10 +116,6 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
           </div>
         </div>
 
-        <div className="admin-user-details-full">
-          <label>Additional Info</label>
-          <p>{user.extraInfo}</p>
-        </div>
       </>
     );
   };
@@ -140,27 +146,20 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
 
         <div>
           <label>Status</label>
-          <div className="admin-user-status-select-wrap">
-            <select
-              className="admin-user-status-select"
-              value={user.status}
-              onChange={(e) => onStatusChange(user.id, e.target.value)}
-            >
-              {user.role === "Company" ? (
-                <>
-                  <option value="Pending">Pending</option>
-                  <option value="Active">Active</option>
-                  <option value="Rejected">Rejected</option>
-                </>
-              ) : (
-                <>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="Pending">Pending</option>
-                </>
-              )}
-            </select>
-          </div>
+          {user.role === "Admin" ? (
+            <span className="admin-user-fixed-status active">Active</span>
+          ) : (
+            <div className="admin-user-status-select-wrap">
+              <select
+                className="admin-user-status-select"
+                value={user.status}
+                onChange={(e) => onStatusChange(user.id, e.target.value)}
+              >
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </select>
+            </div>
+          )}
         </div>
 
         <div>

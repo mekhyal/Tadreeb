@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaEllipsisV, FaUsers, FaCalendarAlt } from "react-icons/fa";
+import { programStatusClass } from "../../utils/programStatus";
 
-function CompanyProgramCard({ program, onEdit, onComplete, onRemove }) {
+function CompanyProgramCard({
+  program,
+  onEdit,
+  onComplete,
+  onRemove,
+  footerContent,
+}) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
 
@@ -24,7 +31,7 @@ function CompanyProgramCard({ program, onEdit, onComplete, onRemove }) {
     <div className="company-program-card">
       <div className="company-program-card__top">
         <div className="company-program-card__header">
-          <img src={program.image} alt={program.title} />
+          <img src={program.displayImage || program.image} alt={program.title} />
 
           <div>
             <h3>{program.title}</h3>
@@ -79,18 +86,30 @@ function CompanyProgramCard({ program, onEdit, onComplete, onRemove }) {
       <p className="company-program-card__description">{program.description}</p>
 
       <div className="company-program-card__meta">
-        <div>
+        <div className="company-program-card__meta-row">
           <FaUsers />
           <span>
-            {program.applicantsCount != null
-              ? `${program.applicantsCount} applicant(s) · ${program.usedSeats} accepted / ${program.seats} seats`
-              : `${program.usedSeats} accepted / ${program.seats} seats`}
+            {program.applicantsCount != null ? (
+              <>
+                <strong>{program.applicantsCount}</strong> applicant(s),{" "}
+                <strong>{program.usedSeats}</strong> accepted of{" "}
+                <strong>{program.seats}</strong> seats
+              </>
+            ) : (
+              <>
+                <strong>{program.usedSeats}</strong> accepted of{" "}
+                <strong>{program.seats}</strong> seats
+              </>
+            )}
           </span>
         </div>
 
-        <div>
+        <div className="company-program-card__meta-row company-program-card__meta-row--stacked">
           <FaCalendarAlt />
-          <span>{program.dateTo}</span>
+          <span>
+            Register closes
+            <strong>{program.registrationDeadline || program.dateFrom}</strong>
+          </span>
         </div>
       </div>
 
@@ -98,9 +117,13 @@ function CompanyProgramCard({ program, onEdit, onComplete, onRemove }) {
         Open seats (after acceptances): <strong>{program.availableSeats}</strong>
       </div>
 
-      <span className={`company-program-status ${program.status.toLowerCase()}`}>
+      <span className={`company-program-status ${programStatusClass(program.status)}`}>
         {program.status}
       </span>
+
+      {footerContent && (
+        <div className="company-program-card__footer">{footerContent}</div>
+      )}
     </div>
   );
 }

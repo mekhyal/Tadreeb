@@ -145,6 +145,36 @@
   appearance: none;
 }
 
+.student-password-wrap {
+  position: relative;
+}
+
+.student-password-wrap input {
+  padding-right: 3.6rem;
+}
+
+.profile-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(25, 118, 210, 0.1);
+  color: var(--primary-blue);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.profile-password-toggle:hover {
+  background: rgba(25, 118, 210, 0.16);
+}
+
 .student-form-group input:focus,
 .student-form-group select:focus {
   border-color: var(--bright-blue);

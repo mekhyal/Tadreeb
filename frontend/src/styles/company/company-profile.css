@@ -1,5 +1,6 @@
 .company-profile-section {
   min-height: 75vh;
+  padding: 1.5rem;
 }
 
 .company-profile-header {
@@ -32,7 +33,49 @@
 .company-profile-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem 1.2rem;
+  gap: 1.2rem 1.35rem;
+  padding: 1.2rem;
+  border: 1px solid rgba(25, 118, 210, 0.08);
+  border-radius: 18px;
+  background: #fbfcfe;
+}
+
+.company-form-group--wide {
+  grid-column: 1 / -1;
+}
+
+.company-password-field {
+  max-width: 520px;
+}
+
+.company-password-wrap {
+  position: relative;
+}
+
+.company-password-wrap input {
+  padding-right: 3.6rem;
+}
+
+.profile-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 0.45rem;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(25, 118, 210, 0.1);
+  color: var(--primary-blue);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.25s ease;
+}
+
+.profile-password-toggle:hover {
+  background: rgba(25, 118, 210, 0.16);
 }
 
 .company-save-btn {
@@ -45,6 +88,11 @@
   font-weight: 700;
 }
 
+.company-save-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 .company-email-section {
   margin-top: 1.8rem;
 }
@@ -53,6 +101,10 @@
   display: flex;
   align-items: center;
   gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid rgba(25, 118, 210, 0.08);
+  border-radius: 16px;
+  background: #fbfcfe;
 }
 
 .company-email-icon {

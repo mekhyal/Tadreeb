@@ -5,23 +5,6 @@
   box-shadow: none;
 }
 
-.admin-companies-stats {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.85rem;
-  margin-bottom: 1rem;
-}
-
-.admin-companies-stats .portal-stat-card {
-  padding: 0.85rem;
-}
-
-.admin-companies-stats .portal-stat-card__icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-}
-
 .admin-companies-filters {
   display: flex;
   flex-wrap: wrap;
@@ -103,6 +86,10 @@
   color: #2875d1;
 }
 
+.admin-company-status-text.under-review {
+  color: #2875d1;
+}
+
 .admin-company-status-text.accepted {
   color: #1f9d6b;
 }
@@ -113,6 +100,10 @@
 
 .admin-company-status-text.active {
   color: #1f9d6b;
+}
+
+.admin-company-status-text.inactive {
+  color: #d93025;
 }
 
 .admin-company-view-btn {
@@ -128,10 +119,13 @@
 .admin-company-modal {
   width: 100%;
   max-width: 760px;
+  max-height: min(90vh, 820px);
   background: #ffffff;
   border-radius: 22px;
   box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .admin-company-modal__header {
@@ -146,6 +140,7 @@
   display: flex;
   align-items: center;
   gap: 0.85rem;
+  min-width: 0;
 }
 
 .admin-company-modal__avatar {
@@ -164,11 +159,13 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  min-width: 0;
 }
 
 .admin-company-modal__title-row h3 {
   margin: 0;
   color: var(--text-dark);
+  overflow-wrap: anywhere;
 }
 
 .admin-company-status-badge {
@@ -188,6 +185,11 @@
   color: #2875d1;
 }
 
+.admin-company-status-badge.under-review {
+  background: rgba(40, 117, 209, 0.14);
+  color: #2875d1;
+}
+
 .admin-company-status-badge.accepted {
   background: rgba(31, 157, 107, 0.14);
   color: #1f9d6b;
@@ -203,6 +205,11 @@
   color: #1f9d6b;
 }
 
+.admin-company-status-badge.inactive {
+  background: rgba(217, 48, 37, 0.14);
+  color: #d93025;
+}
+
 .admin-company-modal__close {
   width: 42px;
   height: 42px;
@@ -214,6 +221,8 @@
 
 .admin-company-modal__body {
   padding: 1.2rem;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .admin-company-modal__section-title {
@@ -248,6 +257,19 @@
   margin: 0;
   color: var(--text-dark);
   line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-external-link {
+  color: var(--deep-blue);
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-external-link:hover {
+  text-decoration: underline;
 }
 
 .admin-company-modal__full {
@@ -267,7 +289,9 @@
   display: flex;
   justify-content: flex-end;
   gap: 0.9rem;
-  padding: 0 1.2rem 1.2rem;
+  padding: 1rem 1.2rem 1.2rem;
+  border-top: 1px solid rgba(25, 118, 210, 0.08);
+  flex-shrink: 0;
 }
 
 .admin-company-modal__actions .secondary,
@@ -318,12 +342,6 @@
 .admin-pagination button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-@media (max-width: 1200px) {
-  .admin-companies-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 768px) {

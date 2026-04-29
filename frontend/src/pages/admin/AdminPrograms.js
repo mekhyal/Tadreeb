@@ -9,6 +9,12 @@ import {
   updateOpportunity,
   deleteOpportunity,
 } from "../../api/opportunityAPI";
+import {
+  getProgramDisplayStatus,
+  getRegistrationDeadlineValue,
+  programStatusRank,
+} from "../../utils/programStatus";
+import defaultProgramImage from "../../assets/default-program-image.jpg";
 
 const PROGRAMS_PER_PAGE = 6;
 
@@ -45,12 +51,11 @@ const normalizeProgram = (item) => {
     applicantsCount,
     dateFrom: item.dateFrom ? item.dateFrom.slice(0, 10) : "",
     dateTo: item.dateTo ? item.dateTo.slice(0, 10) : "",
+    registrationDeadline: getRegistrationDeadlineValue(item),
     image: item.imageURL || "",
+    displayImage: item.imageURL || defaultProgramImage,
     companyName: item.companyID?.companyName || "Unknown Company",
-    status:
-      item.status === "Completed" || availableSeats <= 0
-        ? "Completed"
-        : "Active",
+    status: getProgramDisplayStatus(item),
   };
 };
 
@@ -79,9 +84,9 @@ function AdminPrograms() {
 
   const sortedPrograms = useMemo(() => {
     return [...programs].sort((a, b) => {
-      if (a.status === "Completed" && b.status !== "Completed") return 1;
-      if (a.status !== "Completed" && b.status === "Completed") return -1;
-      return 0;
+      const statusOrder = programStatusRank(a.status) - programStatusRank(b.status);
+      if (statusOrder !== 0) return statusOrder;
+      return new Date(a.dateFrom || 0) - new Date(b.dateFrom || 0);
     });
   }, [programs]);
 
@@ -107,8 +112,9 @@ function AdminPrograms() {
         seats: Number(programData.seats),
         dateFrom: programData.dateFrom,
         dateTo: programData.dateTo,
-        imageURL: programData.image,
-        status: programData.status,
+        registrationDeadline: programData.registrationDeadline,
+        imageURL: programData.image.trim(),
+        status: programData.status === "Completed" ? "Completed" : "Active",
       };
 
       const res = await updateOpportunity(programData.id, payload);
@@ -231,19 +237,19 @@ function AdminPrograms() {
           <>
             <div className="admin-programs-grid">
               {paginatedPrograms.map((program, index) => (
-                <div key={program.id} className="admin-program-wrapper">
-                  <CompanyProgramCard
-                    program={program}
-                    colorIndex={index}
-                    onEdit={setEditingProgram}
-                    onComplete={handleConfirmComplete}
-                    onRemove={handleConfirmRemove}
-                  />
-
-                  <div className="admin-program-company-footer">
-                    Program by <strong>{program.companyName}</strong>
-                  </div>
-                </div>
+                <CompanyProgramCard
+                  key={program.id}
+                  program={program}
+                  colorIndex={index}
+                  onEdit={setEditingProgram}
+                  onComplete={handleConfirmComplete}
+                  onRemove={handleConfirmRemove}
+                  footerContent={
+                    <span className="admin-program-company-footer">
+                      Program by <strong>{program.companyName}</strong>
+                    </span>
+                  }
+                />
               ))}
             </div>
 

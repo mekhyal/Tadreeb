@@ -3,6 +3,7 @@ const Application = require('../models/Application');
 const Student = require('../models/Student');
 const Company = require('../models/Company');
 const Admin = require('../models/Admin');
+const { syncAutomaticApplicationStatuses } = require('../utils/applicationStatus');
 const {
   isValidEmail,
   isStrongPassword,
@@ -11,7 +12,7 @@ const {
 } = require('../utils/validators');
 
 // company account status (must match `models/Company.js`)
-const COMPANY_STATUS_VALUES = ['Pending', 'Active', 'Rejected'];
+const COMPANY_STATUS_VALUES = ['Pending', 'Active', 'Inactive', 'Rejected'];
 
 // student status (stored lowercase in DB; frontend sends Title Case)
 const STUDENT_STATUS_DISPLAY = ['Active', 'Inactive', 'Pending'];
@@ -19,9 +20,6 @@ const mapStudentStatusToDb = (s) => {
   const m = { Active: 'active', Inactive: 'inactive', Pending: 'pending' };
   return m[s] || null;
 };
-
-// admin status (schema enum matches these strings)
-const ADMIN_STATUS_VALUES = ['Active', 'Inactive', 'Pending'];
 
 // create Admin account
 const createAdmin = async (req, res) => {
@@ -73,7 +71,7 @@ const createAdmin = async (req, res) => {
       country,
       language,
       extraInfo,
-      status: status || 'Active',
+      status: 'Active',
     });
 
     const adminSafe = await Admin.findById(admin._id).select('-password').lean();
@@ -200,6 +198,7 @@ const createAdmin = async (req, res) => {
           major,
           year,
           skills,
+          status,
         } = req.body;
     
         // validation
@@ -232,6 +231,16 @@ const createAdmin = async (req, res) => {
         if (existingByUniId) {
           return res.status(400).json({ message: 'University ID already registered' });
         }
+
+        let dbStatus = 'active';
+        if (status !== undefined) {
+          if (!STUDENT_STATUS_DISPLAY.includes(status)) {
+            return res.status(400).json({
+              message: `Invalid status. Allowed values: ${STUDENT_STATUS_DISPLAY.join(', ')}`,
+            });
+          }
+          dbStatus = mapStudentStatusToDb(status);
+        }
     
         // hash password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -250,7 +259,7 @@ const createAdmin = async (req, res) => {
           year,
           skills,
           role: 'student',
-          status: 'active',
+          status: dbStatus,
         });
 
         const studentSafe = await Student.findById(student._id).select('-password').lean();
@@ -379,56 +388,21 @@ const updateStudentStatus = async (req, res) => {
   }
 };
 
-// update admin account status
-const updateAdminStatus = async (req, res) => {
-  try {
-    const { status } = req.body;
-
-    if (!isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: 'Invalid admin ID' });
-    }
-
-    if (!status || !ADMIN_STATUS_VALUES.includes(status)) {
-      return res.status(400).json({
-        message: `Invalid status. Allowed values: ${ADMIN_STATUS_VALUES.join(', ')}`,
-      });
-    }
-
-    const admin = await Admin.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
-    ).select('-password');
-
-    if (!admin) {
-      return res.status(404).json({ message: 'Admin not found' });
-    }
-
-    return res.status(200).json({
-      message: 'Admin status updated',
-      admin,
-    });
-  } catch (error) {
-    if (error.name === 'ValidationError') {
-      return res.status(400).json({ message: error.message });
-    }
-    return res.status(500).json({ message: error.message });
-  }
-};
-
 const ADMIN_APP_STATUSES = ['Review', 'Accepted', 'Rejected'];
 
 // All applications, for the Admin Participants review UI
 const getAdminApplications = async (req, res) => {
   try {
     const applications = await Application.find()
-      .populate('studentID', 'firstName lastName email universityName year major skills')
+      .populate('studentID', 'firstName lastName email universityName universityID year major skills')
       .populate({
         path: 'programID',
-        select: 'title dateFrom dateTo',
+        select: 'title dateFrom dateTo registrationDeadline status',
         populate: { path: 'companyID', select: 'companyName email' },
       })
       .sort({ createdAt: -1 });
+
+    await syncAutomaticApplicationStatuses(applications);
 
     return res.status(200).json(applications);
   } catch (error) {
@@ -445,16 +419,17 @@ const reviewAdminApplication = async (req, res) => {
 
     const { adminStatus, visibleToStudent, adminNote } = req.body;
 
-    if (!adminStatus || !ADMIN_APP_STATUSES.includes(adminStatus)) {
+    if (adminStatus !== undefined && !ADMIN_APP_STATUSES.includes(adminStatus)) {
       return res.status(400).json({
         message: `adminStatus must be one of: ${ADMIN_APP_STATUSES.join(', ')}`,
       });
     }
 
-    const update = {
-      adminStatus,
-      visibleToStudent: !!visibleToStudent,
-    };
+    const update = {};
+    if (adminStatus !== undefined) update.adminStatus = adminStatus;
+    if (visibleToStudent !== undefined) {
+      update.visibleToStudent = !!visibleToStudent;
+    }
     if (adminNote !== undefined) {
       update.adminNote = String(adminNote);
     }
@@ -464,10 +439,10 @@ const reviewAdminApplication = async (req, res) => {
       update,
       { new: true, runValidators: true }
     )
-      .populate('studentID', 'firstName lastName email universityName year major skills')
+      .populate('studentID', 'firstName lastName email universityName universityID year major skills')
       .populate({
         path: 'programID',
-        select: 'title',
+        select: 'title dateFrom dateTo registrationDeadline status',
         populate: { path: 'companyID', select: 'companyName' },
       });
 
@@ -496,7 +471,6 @@ module.exports = {
     getAdmins,
     updateCompanyStatus,
     updateStudentStatus,
-    updateAdminStatus,
     getAdminApplications,
     reviewAdminApplication,
 };

@@ -24,7 +24,22 @@ function CompanyParticipantModal({ participant, onClose, onSave, isSaving }) {
 
   if (!participant) return null;
 
+  const decisionLocked = Boolean(participant.isProgramDecisionLocked);
+  const hasFinalDecision = ["Accepted", "Rejected"].includes(status);
+
   const handleSave = () => {
+    if (decisionLocked) {
+      setError(
+        "Status updates are closed because this program is already active or completed."
+      );
+      return;
+    }
+
+    if (!hasFinalDecision) {
+      setError("Please choose Accepted or Rejected before saving.");
+      return;
+    }
+
     if (!status) {
       setError("Status is required.");
       return;
@@ -75,8 +90,8 @@ function CompanyParticipantModal({ participant, onClose, onSave, isSaving }) {
             </div>
 
             <div className="company-detail-box">
-              <label>Year</label>
-              <strong>{participant.year}</strong>
+              <label>University Name</label>
+              <strong>{participant.universityName}</strong>
             </div>
 
             <div className="company-detail-box">
@@ -114,16 +129,26 @@ function CompanyParticipantModal({ participant, onClose, onSave, isSaving }) {
               <label>Status</label>
               <select
                 value={status}
+                disabled={decisionLocked}
                 onChange={(e) => {
                   setStatus(e.target.value);
                   setError("");
                 }}
               >
-                <option value="Under Review">Under Review</option>
+                {!["Accepted", "Rejected"].includes(status) && (
+                  <option value={status}>{status}</option>
+                )}
                 <option value="Accepted">Accepted</option>
                 <option value="Rejected">Rejected</option>
               </select>
             </div>
+
+            {decisionLocked && (
+              <p className="company-form-warning">
+                Status updates are closed because this program is already active
+                or completed.
+              </p>
+            )}
 
             {error && <p className="company-form-error">{error}</p>}
           </div>
@@ -138,7 +163,7 @@ function CompanyParticipantModal({ participant, onClose, onSave, isSaving }) {
             type="button"
             className="primary"
             onClick={handleSave}
-            disabled={isSaving}
+            disabled={isSaving || decisionLocked || !hasFinalDecision}
           >
             {isSaving ? "Saving..." : "Save Update"}
           </button>

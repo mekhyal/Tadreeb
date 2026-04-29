@@ -1,6 +1,9 @@
 import React from "react";
+import { programStatusClass } from "../../utils/programStatus";
 
 function StudentCard({ program, onOpen }) {
+  const isRegistering = program.status === "Register Now";
+
   return (
     <div className="student-program-card">
       <div className="student-program-card__image">
@@ -9,9 +12,7 @@ function StudentCard({ program, onOpen }) {
 
       <div className="student-program-card__content">
         <span
-          className={`student-program-badge ${
-            program.status === "Complete" ? "complete" : "register"
-          }`}
+          className={`student-program-badge ${programStatusClass(program.status)}`}
         >
           {program.status}
         </span>
@@ -24,10 +25,13 @@ function StudentCard({ program, onOpen }) {
           <span>
             Date: {program.startDate} To {program.endDate}
           </span>
+          <span className="student-program-meta__highlight">
+            Register closes on: <strong>{program.registrationDeadline}</strong>
+          </span>
           <span>Open to: {program.openTo}</span>
-          <span>
-            Openings: up to {program.seats} — {program.availableSeats} still available
-            (filled after the company accepts you)
+          <span className="student-program-meta__openings">
+            Seats: <strong>{program.availableSeats}</strong> available of{" "}
+            <strong>{program.seats}</strong>
           </span>
           <span>by {program.company}</span>
         </div>
@@ -37,7 +41,7 @@ function StudentCard({ program, onOpen }) {
           className="student-learn-more-btn"
           onClick={() => onOpen(program)}
         >
-          Learn more
+          {isRegistering ? "Learn more and apply" : "Learn more"}
         </button>
       </div>
     </div>

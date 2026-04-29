@@ -76,6 +76,10 @@
   margin-bottom: 0.75rem;
 }
 
+.admin-participant-review-grid--single {
+  grid-template-columns: 1fr;
+}
+
 .admin-participant-review-box {
   background: #f8fbff;
   border: 1px solid rgba(25, 118, 210, 0.08);
@@ -116,6 +120,17 @@
 .admin-review-badge.rejected {
   background: rgba(217, 48, 37, 0.12);
   color: #d93025;
+}
+
+.admin-review-badge.submitted,
+.admin-review-badge.under-review {
+  background: #fff4cc;
+  color: #9a6700;
+}
+
+.admin-review-badge.not-reviewed {
+  background: #e8edf2;
+  color: #5f6f84;
 }
 
 .admin-participant-note-box {

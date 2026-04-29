@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { FaUserCircle, FaEnvelope, FaCheckCircle } from "react-icons/fa";
+import {
+  FaUserCircle,
+  FaEnvelope,
+  FaCheckCircle,
+  FaEye,
+  FaEyeSlash,
+} from "react-icons/fa";
 import StudentTopbar from "../../components/student/StudentTopbar";
 import StudentFooter from "../../components/student/StudentFooter";
 import { useAuth } from "../../context/AuthContext";
@@ -109,6 +115,7 @@ function StudentProfile() {
   const [showSavePopup, setShowSavePopup] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isUpdatingEmail, setIsUpdatingEmail] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const savedProfile = {
     firstName: user?.firstName || "",
@@ -440,14 +447,24 @@ function StudentProfile() {
 
           <div className="student-form-group">
             <label>Password</label>
-            <input
-              name="password"
-              type="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter new password"
-              maxLength={LIMITS.passwordMax}
-            />
+            <div className="student-password-wrap">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="Enter new password"
+                maxLength={LIMITS.passwordMax}
+              />
+              <button
+                type="button"
+                className="profile-password-toggle"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
             {errors.password && <p className="student-form-error">{errors.password}</p>}
           </div>
 

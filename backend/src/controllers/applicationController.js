@@ -1,11 +1,35 @@
 const Application = require('../models/Application');
 const Opportunity = require('../models/Opportunity');
 const { isValidObjectId } = require('../utils/validators');
+const {
+  FINAL_APPLICATION_STATUSES,
+  getRegistrationDeadline,
+  syncAutomaticApplicationStatuses,
+} = require('../utils/applicationStatus');
 
 // statuses that count toward "seat occupied" / "student enrolled"
 const ACCEPTED_STATUSES = ['Accepted'];
-// statuses a student is allowed to cancel from (Accepted/Rejected are final per spec)
-const CANCELLABLE_STATUSES = new Set(['Submitted', 'Under Review']);
+
+const isRegistrationOpen = (program) => {
+  const closesAt = getRegistrationDeadline(program);
+  if (!closesAt) return true;
+  return closesAt >= new Date();
+};
+
+const hasProgramStartedOrCompleted = (program) => {
+  if (!program) return false;
+  if (program.status === 'Completed') return true;
+  if (!program.dateFrom) return false;
+
+  const start = new Date(program.dateFrom);
+  if (Number.isNaN(start.getTime())) return false;
+  start.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return today >= start;
+};
 
 // Apply to opportunity (Abdulaziz)
 // What happens when a student applies to a program:
@@ -34,7 +58,13 @@ const applyToProgram = async (req, res) => {
     }
 
     if (program.status === 'Completed') {
-      return res.status(400).json({ message: 'This program is already full or completed' });
+      return res.status(400).json({ message: 'This program has been completed' });
+    }
+
+    if (!isRegistrationOpen(program)) {
+      return res.status(400).json({
+        message: 'Registration is closed for this program',
+      });
     }
 
     const existingApplication = await Application.findOne({
@@ -52,8 +82,6 @@ const applyToProgram = async (req, res) => {
       status: { $in: ACCEPTED_STATUSES },
     });
     if (acceptedCount >= program.seats) {
-      program.status = 'Completed';
-      await program.save();
       return res.status(400).json({ message: 'No seats available for this program' });
     }
 
@@ -62,7 +90,7 @@ const applyToProgram = async (req, res) => {
     const overlappingAccepted = await Application.findOne({
       studentID: req.user.id,
       status: { $in: ACCEPTED_STATUSES },
-    }).populate('programID', 'dateFrom dateTo title');
+    }).populate('programID', 'dateFrom dateTo registrationDeadline title');
 
     if (overlappingAccepted && overlappingAccepted.programID) {
       const a = overlappingAccepted.programID;
@@ -102,7 +130,7 @@ const getMyApplications = async (req, res) => {
       // nested populate so the student page can show the program's company name
       .populate({
         path: 'programID',
-        select: 'title subtitle description location dateFrom dateTo qualifications seats companyID',
+        select: 'title subtitle description location dateFrom dateTo registrationDeadline qualifications seats status companyID',
         populate: {
           path: 'companyID',
           select: 'companyName email industry location',
@@ -110,6 +138,15 @@ const getMyApplications = async (req, res) => {
       })
       .populate('studentID', 'firstName lastName email major')
       .sort({ createdAt: -1 });
+
+    await syncAutomaticApplicationStatuses(applications);
+
+    applications.forEach((application) => {
+      if (application.visibleToStudent === false) {
+        application.status = 'Under Review';
+        application.decisionNote = '-';
+      }
+    });
 
     return res.status(200).json(applications);
   } catch (error) {
@@ -126,9 +163,11 @@ const getCompanyApplications = async (req, res) => {
     const applications = await Application.find({
       programID: { $in: programIds },
     })
-      .populate('studentID', 'firstName lastName email major universityName year skills')
-      .populate('programID', 'title location dateFrom dateTo seats qualifications')
+      .populate('studentID', 'firstName lastName email major universityName universityID year skills')
+      .populate('programID', 'title location dateFrom dateTo registrationDeadline seats qualifications status')
       .sort({ createdAt: -1 });
+
+    await syncAutomaticApplicationStatuses(applications);
 
     return res.status(200).json(applications);
   } catch (error) {
@@ -145,6 +184,12 @@ const updateApplicationStatus = async (req, res) => {
 
     const { status, decisionNote } = req.body;
 
+    if (status !== undefined && !FINAL_APPLICATION_STATUSES.includes(status)) {
+      return res.status(400).json({
+        message: 'Company decision must be Accepted or Rejected.',
+      });
+    }
+
     const application = await Application.findById(req.params.id).populate('programID');
 
     if (!application) {
@@ -154,6 +199,13 @@ const updateApplicationStatus = async (req, res) => {
     const program = application.programID;
     if (program.companyID.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not allowed to update this application' });
+    }
+
+    if (hasProgramStartedOrCompleted(program)) {
+      return res.status(400).json({
+        message:
+          'Application status can only be updated before the program starts. This program is already active or completed.',
+      });
     }
 
     const previousStatus = application.status;
@@ -179,30 +231,6 @@ const updateApplicationStatus = async (req, res) => {
 
     await application.save();
 
-    // keep the program's status in sync with seat occupancy:
-    // - flip to Completed when the last seat is filled by an Accepted decision
-    // - flip back to Active if a Completed program now has free seats again
-    if (status && status !== previousStatus) {
-      const acceptedAfter = await Application.countDocuments({
-        programID: program._id,
-        status: 'Accepted',
-      });
-
-      let nextProgramStatus = program.status;
-      if (acceptedAfter >= program.seats) {
-        nextProgramStatus = 'Completed';
-      } else if (program.status === 'Completed' && acceptedAfter < program.seats) {
-        nextProgramStatus = 'Active';
-      }
-
-      if (nextProgramStatus !== program.status) {
-        await Opportunity.updateOne(
-          { _id: program._id },
-          { $set: { status: nextProgramStatus } }
-        );
-      }
-    }
-
     return res.status(200).json({
       message: 'Application updated successfully',
       application,
@@ -222,7 +250,7 @@ const cancelApplication = async (req, res) => {
       return res.status(400).json({ message: 'Invalid application ID' });
     }
 
-    const application = await Application.findById(req.params.id);
+    const application = await Application.findById(req.params.id).populate('programID');
 
     if (!application) {
       return res.status(404).json({ message: 'Application not found' });
@@ -232,9 +260,12 @@ const cancelApplication = async (req, res) => {
       return res.status(403).json({ message: 'Not allowed to cancel this application' });
     }
 
-    if (!CANCELLABLE_STATUSES.has(application.status)) {
+    const program = application.programID;
+
+    if (!isRegistrationOpen(program)) {
       return res.status(400).json({
-        message: `Cannot cancel an application with status "${application.status}"`,
+        message:
+          'Registration is closed for this program, so you cannot remove this application yourself. Please contact Tadreeb support and we will help you with the request.',
       });
     }
 

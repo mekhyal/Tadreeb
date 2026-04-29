@@ -10,6 +10,10 @@ import {
   getAdminApplications,
 } from "../../api/adminAPI";
 import { getOpportunities } from "../../api/opportunityAPI";
+import {
+  PROGRAM_STATUS,
+  getProgramDisplayStatus,
+} from "../../utils/programStatus";
 
 const adminNavItems = [
   { key: "dashboard", label: "Dashboard", path: "/admin/dashboard" },
@@ -32,7 +36,7 @@ function AdminDashboard() {
   const [stats, setStats] = useState({
     programs: 0,
     students: 0,
-    acceptedApps: 0,
+    activePrograms: 0,
   });
   const [snapshotRows, setSnapshotRows] = useState([]);
   const [overview, setOverview] = useState([]);
@@ -62,28 +66,30 @@ function AdminDashboard() {
         const applications = Array.isArray(appsRes.data) ? appsRes.data : [];
         const opportunities = Array.isArray(oppsRes.data) ? oppsRes.data : [];
 
-        const acceptedApps = applications.filter(
-          (a) => a.status === "Accepted"
+        const activePrograms = opportunities.filter(
+          (program) => getProgramDisplayStatus(program) === PROGRAM_STATUS.active
         ).length;
 
         setStats({
           programs: opportunities.length,
           students: students.length,
-          acceptedApps,
+          activePrograms,
         });
         setTotalApplications(applications.length);
 
-        const snap = applications.slice(0, 4).map((raw) => {
+        const snap = applications.slice(0, 5).map((raw) => {
           const s = raw.studentID || {};
           const p = raw.programID || {};
           const c = p.companyID || {};
+          const name =
+            [s.firstName, s.lastName].filter(Boolean).join(" ").trim() ||
+            "Student";
           return {
             id: String(raw._id),
-            name:
-              [s.firstName, s.lastName].filter(Boolean).join(" ").trim() ||
-              "Student",
+            name,
+            initial: name.charAt(0).toUpperCase(),
             email: s.email || "",
-            studentId: s.universityID || "",
+            studentId: s.universityID || "N/A",
             program: p.title || "—",
             company:
               typeof c === "object" && c
@@ -99,6 +105,9 @@ function AdminDashboard() {
         const reviewCount = applications.filter(
           (a) => a.status === "Under Review" || a.status === "Submitted"
         ).length;
+        const notReviewedCount = applications.filter(
+          (a) => a.status === "Not Reviewed"
+        ).length;
         const acceptedCount = applications.filter(
           (a) => a.status === "Accepted"
         ).length;
@@ -108,6 +117,11 @@ function AdminDashboard() {
 
         setOverview([
           { label: "Review", value: pct(reviewCount), type: "review" },
+          {
+            label: "Not Reviewed",
+            value: pct(notReviewedCount),
+            type: "not-reviewed",
+          },
           { label: "Accepted", value: pct(acceptedCount), type: "accepted" },
           { label: "Rejected", value: pct(rejectedCount), type: "rejected" },
         ]);
@@ -116,18 +130,21 @@ function AdminDashboard() {
           ...students.map((u) => ({
             id: String(u._id),
             name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+            initial: `${u.firstName || u.email || "S"}`.charAt(0).toUpperCase(),
             country: u.universityName || "—",
             createdAt: u.createdAt,
           })),
           ...companies.map((u) => ({
             id: String(u._id),
             name: u.companyName || u.email || "Company",
+            initial: (u.companyName || u.email || "C").charAt(0).toUpperCase(),
             country: u.location || "—",
             createdAt: u.createdAt,
           })),
           ...admins.map((u) => ({
             id: String(u._id),
             name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+            initial: `${u.firstName || u.email || "A"}`.charAt(0).toUpperCase(),
             country: u.country || "—",
             createdAt: u.createdAt,
           })),
@@ -173,9 +190,9 @@ function AdminDashboard() {
       },
       {
         id: 3,
-        title: "Accepted",
-        value: stats.acceptedApps,
-        subtitle: "Accepted applications",
+        title: "Active Internship Program",
+        value: stats.activePrograms,
+        subtitle: "Programs currently running",
         type: "participants",
       },
     ],
@@ -217,8 +234,8 @@ function AdminDashboard() {
               <table className="company-table">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th>ID</th>
+                    <th>Student Name</th>
+                    <th>Student ID</th>
                     <th>Program</th>
                     <th>Company</th>
                     <th>Status</th>
@@ -234,7 +251,9 @@ function AdminDashboard() {
                             className={`company-person-avatar tone-${toneFromId(
                               item.id
                             )}`}
-                          ></div>
+                          >
+                            {item.initial}
+                          </div>
                           <div>
                             <strong>{item.name}</strong>
                             <span>{item.email}</span>
@@ -246,7 +265,7 @@ function AdminDashboard() {
                       <td>{item.company}</td>
                       <td>
                         <span
-                          className={`admin-status-text ${String(
+                          className={`company-status-badge ${String(
                             item.status
                           )
                             .toLowerCase()
@@ -304,7 +323,9 @@ function AdminDashboard() {
                         className={`company-person-avatar tone-${toneFromId(
                           item.id
                         )}`}
-                      ></div>
+                      >
+                        {item.initial}
+                      </div>
 
                       <div>
                         <strong>{item.name}</strong>
