@@ -1,95 +1,274 @@
 # Tadreeb
 
-Tadreeb is a training and internship platform that connects university students with companies in Kuwait. Students discover programs and apply; companies publish opportunities, review applicants, and accept up to a fixed seat count; administrators manage accounts and oversight.
+Tadreeb is a MERN training and internship platform for university students, companies, and administrators. Students discover and apply to opportunities, companies publish programs and review participants, and admins manage the platform from a dedicated portal.
 
-## Team
+This repository contains the full Tadreeb application:
 
-- Abdullah Al-Mekhyal  
-- Yousef Joudah  
-- Abdulaziz Alshammeri  
+- `frontend/` - React single-page application.
+- `backend/` - Express REST API connected to MongoDB.
 
-## Stack
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Roles](#roles)
+- [Key Features](#key-features)
+- [Technology Stack](#technology-stack)
+- [Repository Structure](#repository-structure)
+- [Requirements](#requirements)
+- [Environment Setup](#environment-setup)
+- [Run Locally](#run-locally)
+- [Build](#build)
+- [Documentation](#documentation)
+- [Security Notes](#security-notes)
+- [Team](#team)
+
+---
+
+## Overview
+
+Tadreeb supports the full internship workflow:
+
+1. Students create accounts, browse programs, apply, and manage applications.
+2. Companies request to join, manage programs, and review applicants.
+3. Admins oversee users, company requests, programs, and participant visibility.
+
+The system includes role-based authentication, protected dashboards, program lifecycle logic, seat tracking, registration deadlines, responsive layouts, and profile management for each role.
+
+---
+
+## Roles
+
+| Role | Main Responsibilities |
+| --- | --- |
+| Student | Browse programs, apply, remove eligible applications, view status, manage profile |
+| Company | Manage programs, view participants, accept/reject applicants, manage profile |
+| Admin | Manage users, companies, programs, participants, visibility, and platform overview |
+
+---
+
+## Key Features
+
+### Public Experience
+
+- Public home page with sections for hero, about, audiences, partners, stats, and contact.
+- Student login and signup.
+- Company request form with confirmation before submission.
+- Responsive navbar and mobile menu behavior.
+
+### Authentication And Access
+
+- Role-based authentication for students, companies, and admins.
+- Protected routes for role-specific portals.
+- Public-only routes for login, signup, and company request pages.
+- Password visibility toggles across auth and profile forms.
+- Logout confirmation and redirect to the public home page.
+
+### Student Experience
+
+- Search and filter available programs.
+- View program lifecycle status: Register Now, Selection Phase, Active, Completed.
+- Apply only while registration is open.
+- Remove applications only while registration is open.
+- View active applications and completed programs in separate sections.
+- Update profile details and email through controlled profile flows.
+
+### Company Experience
+
+- Dashboard with application snapshot and summary cards.
+- Create, edit, delete, and view programs.
+- Manage seats, dates, registration deadlines, rules, qualifications, and images.
+- View participants with student details, program, status, and notes.
+- Accept or reject applications before the program becomes active/completed.
+- Update company profile with validation and save confirmation.
+
+### Admin Experience
+
+- Dashboard with recent users, recent applications, and active internship program count.
+- Manage all programs across companies.
+- Manage participant visibility and company decision notes.
+- Review company requests using Under Review, Accepted, and Rejected labels.
+- Manage users and login access for student and company accounts.
+- Manage admin profile with validation and save behavior.
+
+---
+
+## Technology Stack
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | React (Create React App), React Router, Context API, Axios |
-| Backend | Node.js, Express, MongoDB (Mongoose), JWT, bcryptjs |
-| Database | MongoDB (local or Atlas) |
+| Frontend | React, React Router, Axios, Context API, React Icons, Bootstrap |
+| Backend | Node.js, Express, MongoDB, Mongoose |
+| Authentication | JWT, bcryptjs |
+| Database | MongoDB local or MongoDB Atlas |
+| Styling | CSS organized by role and feature |
 
-This is **not** a static `index.html` site: the UI is a SPA under `frontend/`, backed by the REST API under `backend/`.
+---
 
-## Repository layout
+## Repository Structure
 
-```
+```text
 Tadreeb/
-├── README.md                 # this file
-├── frontend/                 # React client
-│   ├── README.md
-│   ├── .env.example          # REACT_APP_API_URL, etc.
-│   └── src/
-├── backend/                  # Express API
-│   ├── README.md             # full API & setup details
-│   ├── .env.example
-│   └── src/
-│       ├── server.js
-│       ├── controllers/
-│       ├── models/
-│       ├── routes/
-│       └── middleware/
-└── …                         # docs / LaTeX milestones (if present)
+|-- README.md
+|-- TADREEB_UPDATES.md
+|-- frontend/
+|   |-- README.md
+|   |-- package.json
+|   |-- .env.example
+|   `-- src/
+|       |-- api/
+|       |-- assets/
+|       |-- components/
+|       |-- context/
+|       |-- pages/
+|       |-- styles/
+|       `-- utils/
+`-- backend/
+    |-- README.md
+    |-- package.json
+    |-- .env.example
+    `-- src/
+        |-- config/
+        |-- controllers/
+        |-- middleware/
+        |-- models/
+        |-- routes/
+        |-- utils/
+        `-- server.js
 ```
 
-There is **no** MySQL `schema.sql` in this tree; data lives in **MongoDB** collections defined by Mongoose models.
+---
 
-## Quick start (development)
+## Requirements
 
-### 1. MongoDB
+| Tool | Recommended Version |
+| --- | --- |
+| Node.js | 18.x or 20.x |
+| npm | 9+ |
+| MongoDB | 6.x or newer, local or Atlas |
 
-Run MongoDB locally or create a cluster on [MongoDB Atlas](https://www.mongodb.com/cloud/atlas). Put the URI in `backend/.env` as `MONGO_URI`.
+---
 
-### 2. Backend
+## Environment Setup
+
+### Backend Environment
+
+Create `backend/.env` from the example file:
 
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env: MONGO_URI, JWT_SECRET, optionally CORS_ORIGIN for production
+```
 
+Common backend variables:
+
+```env
+PORT=5001
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_secret
+CORS_ORIGIN=http://localhost:3000
+```
+
+### Frontend Environment
+
+Create `frontend/.env` from the example file:
+
+```bash
+cd frontend
+cp .env.example .env
+```
+
+Frontend API variable:
+
+```env
+REACT_APP_API_URL=http://localhost:5001/api
+```
+
+Restart the frontend server after changing `.env`.
+
+---
+
+## Run Locally
+
+Run the backend first:
+
+```bash
+cd backend
 npm install
 npm run dev
 ```
 
-API default: **http://localhost:5001** (health: `GET /`).
+Default API URL:
 
-### 3. Frontend
+```text
+http://localhost:5001
+```
+
+Run the frontend in a second terminal:
 
 ```bash
 cd frontend
-cp .env.example .env   # if present; set REACT_APP_API_URL=http://localhost:5001/api
 npm install
 npm start
 ```
 
-App default: **http://localhost:3000**.
+Default frontend URL:
 
-### 4. First admin
+```text
+http://localhost:3000
+```
 
-The backend README describes bootstrapping the first admin via `POST /api/admin/create-admin`, then protecting that route in production.
+---
+
+## Build
+
+Create a frontend production build:
+
+```bash
+cd frontend
+npm run build
+```
+
+Start the backend in production mode:
+
+```bash
+cd backend
+npm start
+```
+
+---
 
 ## Documentation
 
-- **Backend API, env vars, troubleshooting:** [backend/README.md](backend/README.md)  
-- **Frontend routes, features, run/build:** [frontend/README.md](frontend/README.md)  
+Detailed documentation is split by app layer:
 
-## Branch workflow
+- [Frontend README](frontend/README.md) - routes, UI structure, setup, styling, validation, and frontend architecture.
+- [Backend README](backend/README.md) - API setup, environment variables, routes, domain rules, and troubleshooting.
 
-| Branch | Purpose |
-| --- | --- |
-| `main` | Stable release |
-| `dev` | Integration |
-| `feature/*` | Feature work |
+---
 
-Typical flow: branch from `dev` → PR to `dev` → merge to `main` after testing.
+## Security Notes
+
+- Passwords are hashed on the backend before storage.
+- JWT tokens are used for protected API access.
+- Role-based route guards protect portal pages on the frontend.
+- Backend middleware protects API routes by role.
+- Company and student login access can be controlled by admin account status.
+- Use a strong `JWT_SECRET` and never commit real `.env` files.
+- Use HTTPS in production.
+
+
+---
+
+## Team
+
+- Abdullah Al-Mekhyal
+- Yousef Joudah
+- Abdulaziz Alshammeri
+
+---
 
 ## Course
 
-**CS335 — Web Development**, Kuwait University.
+CS335 - Web Development, Kuwait University.
