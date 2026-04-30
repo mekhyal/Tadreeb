@@ -59,7 +59,7 @@ function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
 
           <div className="admin-company-modal__grid">
             <div>
-              <label>Company ID</label>
+              <label>Request ID</label>
               <p>{company.requestId}</p>
             </div>
 
@@ -119,6 +119,11 @@ function AdminCompanyDetailsModal({ company, onClose, onSave, isSaving }) {
             <div>
               <label>Request Date</label>
               <p>{company.requestDate}</p>
+            </div>
+
+            <div>
+              <label>Information Confirmed</label>
+              <p>{company.confirmInfo ? "Yes" : "No"}</p>
             </div>
           </div>
 

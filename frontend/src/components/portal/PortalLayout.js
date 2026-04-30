@@ -33,12 +33,10 @@ function PortalLayout({
     setLoadingText("Logging out...");
 
     setTimeout(() => {
+      logout();
       navigate("/", { replace: true });
       window.scrollTo({ top: 0, behavior: "auto" });
-      setTimeout(() => {
-        logout();
-        setLoadingText("");
-      }, 0);
+      setLoadingText("");
     }, 450);
   };
 

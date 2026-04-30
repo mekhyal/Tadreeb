@@ -2,8 +2,10 @@ import React, { useEffect, useMemo, useState } from "react";
 import PortalLayout from "../../components/portal/PortalLayout";
 import PortalTopbar from "../../components/portal/PortalTopbar";
 import AdminCompanyDetailsModal from "../../components/admin/AdminCompanyDetailsModal";
-import { getCompanies, updateCompanyStatus } from "../../api/adminAPI";
-import { normalizeCompanyAccountStatus } from "../../utils/companyAccountStatus";
+import {
+  getCompanyRequests,
+  updateCompanyRequestStatus,
+} from "../../api/adminAPI";
 
 const COMPANIES_PER_PAGE = 8;
 
@@ -15,35 +17,35 @@ const adminNavItems = [
   { key: "users", label: "Users", path: "/admin/users" },
 ];
 
-const companyAccountToRequestStatus = (status) => {
-  const normalized = normalizeCompanyAccountStatus(status);
-  if (normalized === "Active") return "Accepted";
-  if (normalized === "Rejected") return "Rejected";
+const companyRequestToDisplayStatus = (status) => {
+  if (status === "Approved") return "Accepted";
+  if (status === "Rejected") return "Rejected";
   return "Under Review";
 };
 
-const requestStatusToCompanyAccount = (status) => {
-  if (status === "Accepted") return "Active";
+const requestStatusToApiStatus = (status) => {
+  if (status === "Accepted") return "Accepted";
   if (status === "Rejected") return "Rejected";
-  return "Pending";
+  return "Under Review";
 };
 
 const normalizeCompany = (item) => ({
   id: item._id,
   requestId: item._id?.slice(-6).toUpperCase(),
   companyName: item.companyName || "",
-  companyEmail: item.email || "",
+  companyEmail: item.officialEmail || "",
   industry: item.industry || "",
-  phone: item.phone || "",
+  phone: item.phoneNumber || "",
   website: item.website || "",
-  companySize: item.size || "",
+  companySize: item.companySize || "",
   location: item.location || "",
   foundedYear: item.foundedYear || "",
   contactPerson: item.contactPerson || "",
-  companyDescription: item.description || "",
+  companyDescription: item.companyDescription || "",
   joinReason: item.joinReason || "",
+  confirmInfo: !!item.confirmInfo,
   requestDate: item.createdAt ? item.createdAt.slice(0, 10) : "",
-  status: companyAccountToRequestStatus(item.status),
+  status: companyRequestToDisplayStatus(item.status),
 });
 
 function AdminCompanies() {
@@ -61,10 +63,10 @@ function AdminCompanies() {
     setError("");
 
     try {
-      const res = await getCompanies();
+      const res = await getCompanyRequests();
       setCompanies(res.data.map(normalizeCompany));
     } catch (err) {
-      setError(err.response?.data?.message || "Could not load companies.");
+      setError(err.response?.data?.message || "Could not load company requests.");
     } finally {
       setIsLoading(false);
     }
@@ -93,11 +95,11 @@ function AdminCompanies() {
     setIsSaving(true);
 
     try {
-      const res = await updateCompanyStatus(
+      const res = await updateCompanyRequestStatus(
         companyId,
-        requestStatusToCompanyAccount(status)
+        requestStatusToApiStatus(status)
       );
-      const updatedCompany = normalizeCompany(res.data.company);
+      const updatedCompany = normalizeCompany(res.data.request);
 
       setCompanies((prev) =>
         prev.map((item) => (item.id === companyId ? updatedCompany : item))

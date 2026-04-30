@@ -3,6 +3,7 @@ const Application = require('../models/Application');
 const Student = require('../models/Student');
 const Company = require('../models/Company');
 const Admin = require('../models/Admin');
+const CompanyRequest = require('../models/CompanyRequest');
 const { syncAutomaticApplicationStatuses } = require('../utils/applicationStatus');
 const {
   isValidEmail,
@@ -13,6 +14,12 @@ const {
 
 // company account status (must match `models/Company.js`)
 const COMPANY_STATUS_VALUES = ['Pending', 'Active', 'Inactive', 'Rejected'];
+const COMPANY_REQUEST_STATUSES = ['Pending', 'Approved', 'Rejected'];
+const COMPANY_REQUEST_DISPLAY_TO_DB = {
+  'Under Review': 'Pending',
+  Accepted: 'Approved',
+  Rejected: 'Rejected',
+};
 
 // student status (stored lowercase in DB; frontend sends Title Case)
 const STUDENT_STATUS_DISPLAY = ['Active', 'Inactive', 'Pending'];
@@ -300,6 +307,16 @@ const createAdmin = async (req, res) => {
     }
   };
 
+  // get all public company join requests
+  const getCompanyRequests = async (req, res) => {
+    try {
+      const requests = await CompanyRequest.find().sort({ createdAt: -1 });
+      return res.status(200).json(requests);
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  };
+
 // get admins 
 const getAdmins = async (req,res) => {
     try {
@@ -349,6 +366,44 @@ const updateCompanyStatus = async (req,res) => {
         return res.status(500).json({message: error.message });
     }
 }
+
+// update public company request review status
+const updateCompanyRequestStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    if (!isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid company request ID' });
+    }
+
+    const dbStatus = COMPANY_REQUEST_DISPLAY_TO_DB[status] || status;
+    if (!dbStatus || !COMPANY_REQUEST_STATUSES.includes(dbStatus)) {
+      return res.status(400).json({
+        message: `Invalid status. Allowed values: Under Review, Accepted, Rejected`,
+      });
+    }
+
+    const request = await CompanyRequest.findByIdAndUpdate(
+      req.params.id,
+      { status: dbStatus },
+      { new: true, runValidators: true }
+    );
+
+    if (!request) {
+      return res.status(404).json({ message: 'Company request not found' });
+    }
+
+    return res.status(200).json({
+      message: 'Company request status updated',
+      request,
+    });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: error.message });
+    }
+    return res.status(500).json({ message: error.message });
+  }
+};
 
 // update student account status (active / inactive / pending)
 const updateStudentStatus = async (req, res) => {
@@ -468,8 +523,10 @@ module.exports = {
     createStudent,
     getStudents,
     getCompanies,
+    getCompanyRequests,
     getAdmins,
     updateCompanyStatus,
+    updateCompanyRequestStatus,
     updateStudentStatus,
     getAdminApplications,
     reviewAdminApplication,

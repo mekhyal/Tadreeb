@@ -86,7 +86,14 @@
 }
 
 .portal-sidebar-link.logout {
-  opacity: 0.9;
+  color: #d93025;
+  font-weight: 700;
+  opacity: 1;
+}
+
+.portal-sidebar-link.logout:hover {
+  background: rgba(217, 48, 37, 0.08);
+  color: #d93025;
 }
 
 .portal-sidebar-icon {

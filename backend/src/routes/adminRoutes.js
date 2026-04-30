@@ -10,8 +10,10 @@ const {
   createStudent,
   getStudents,
   getCompanies,
+  getCompanyRequests,
   getAdmins,
   updateCompanyStatus,
+  updateCompanyRequestStatus,
   updateStudentStatus,
   getAdminApplications,
   reviewAdminApplication,
@@ -23,9 +25,11 @@ router.post('/create-company', protect, allowRoles('admin'), createCompany);
 
 router.get('/students', protect, allowRoles('admin'), getStudents);
 router.get('/companies', protect, allowRoles('admin'), getCompanies);
+router.get('/company-requests', protect, allowRoles('admin'), getCompanyRequests);
 router.get('/admins', protect, allowRoles('admin'), getAdmins);
 
 router.put('/companies/:id/status', protect, allowRoles('admin'), updateCompanyStatus);
+router.put('/company-requests/:id/status', protect, allowRoles('admin'), updateCompanyRequestStatus);
 router.put('/students/:id/status', protect, allowRoles('admin'), updateStudentStatus);
 
 router.get('/applications', protect, allowRoles('admin'), getAdminApplications);
