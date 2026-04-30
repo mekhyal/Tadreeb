@@ -46,7 +46,6 @@ The app supports three main experiences:
 - Login and signup pages.
 - Company request form at `/company-request`.
 - Company request form includes a confirmation dialog before submit.
-- Company request page navbar matches the public home navbar and supports mobile open/close behavior.
 
 ### Authentication
 
@@ -55,7 +54,6 @@ The app supports three main experiences:
 - Signup success state redirects to login with a green success message.
 - Password visibility toggle on login, signup, profile, and admin add-user password fields.
 - Logout confirmation for portal users.
-- Logout returns users to the public home page.
 
 ### Student Portal
 
