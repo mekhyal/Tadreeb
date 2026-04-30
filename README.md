@@ -211,15 +211,6 @@ npm start
 
 ---
 
-## Current Domain Behavior
-
-- Program registration deadline is required and must be before the program start date.
-- Program completion is automatic after the end date.
-- Deleting a program as a company or admin also deletes related applications/participants.
-- Students cannot apply to overlapping opportunities while they already have a `Submitted`, `Under Review`, `Not Reviewed`, or `Accepted` application for the same period.
-- Company/admin users pages show role-specific profile fields, so students do not have country/location fields and admins use country only.
-- The public Contact Us form currently validates and shows a success message on the frontend only; it does not persist messages to the backend.
-
 ## Course
 
 CS335 - Web Development, Kuwait University.
