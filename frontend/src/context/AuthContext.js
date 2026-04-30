@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { clearStoredAuth, isTokenExpired } from "../utils/authToken";
 
 const AuthContext = createContext(null);
 
@@ -7,18 +8,26 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const savedUser = localStorage.getItem("tadreeb_user");
+    const savedToken = localStorage.getItem("tadreeb_token");
 
-    if (savedUser) {
+    if (savedUser && savedToken && !isTokenExpired(savedToken)) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (error) {
-        localStorage.removeItem("tadreeb_user");
-        localStorage.removeItem("tadreeb_token");
+        clearStoredAuth();
       }
+    } else {
+      clearStoredAuth();
     }
   }, []);
 
   const login = (userData, token) => {
+    if (!token || isTokenExpired(token)) {
+      clearStoredAuth();
+      setUser(null);
+      return;
+    }
+
     setUser(userData);
     localStorage.setItem("tadreeb_user", JSON.stringify(userData));
     localStorage.setItem("tadreeb_token", token);
@@ -26,8 +35,7 @@ export function AuthProvider({ children }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem("tadreeb_user");
-    localStorage.removeItem("tadreeb_token");
+    clearStoredAuth();
   };
 
   const updateUser = (partial) => {

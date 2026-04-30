@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearStoredAuth, isTokenExpired } from "../utils/authToken";
 
 const BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5001/api";
 
@@ -13,6 +14,16 @@ api.interceptors.request.use((config) => {
   const token = localStorage.getItem("tadreeb_token");
 
   if (token) {
+    if (isTokenExpired(token)) {
+      clearStoredAuth();
+
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+
+      return config;
+    }
+
     config.headers.Authorization = `Bearer ${token}`;
   }
 
@@ -23,8 +34,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("tadreeb_token");
-      localStorage.removeItem("tadreeb_user");
+      clearStoredAuth();
       window.location.href = "/login";
     }
 
