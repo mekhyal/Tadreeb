@@ -136,6 +136,8 @@ Import the checked-in copy into the database configured in `backend/.env`:
 npm run db:import-copy
 ```
 
+---
+
 ## API Overview
 
 Base URL:

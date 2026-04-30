@@ -4,9 +4,9 @@ Tadreeb is a training and internship platform that connects university students 
 
 ## Team
 
-- Abdullah Al-Mekhyal  
-- Yousef Joudah  
-- Abdulaziz Alshammeri  
+- Abdullah Al-Mekhyal
+- Yousef Joudah
+- Abdulaziz Alshammeri
 
 ## Stack
 
@@ -44,21 +44,102 @@ Tadreeb/
     |-- README.md
     |-- package.json
     |-- .env.example
-    `-- src/
-        |-- config/
-        |-- controllers/
-        |-- middleware/
-        |-- models/
-        |-- routes/
-        |-- utils/
-        `-- server.js
+    |-- scripts/
+    |-- src/
+    |   |-- config/
+    |   |-- controllers/
+    |   |-- middleware/
+    |   |-- models/
+    |   |-- routes/
+    |   |-- utils/
+    |   `-- server.js
+```
+
+---
+
+## Requirements
+
+| Tool | Recommended Version |
+| --- | --- |
+| Node.js | 18.x or 20.x |
+| npm | 9+ |
+| MongoDB | 6.x or newer, local or Atlas |
+
+---
+
+## Environment Setup
+
+Create these two `.env` files before running the app.
+
+### Backend Environment
+
+Create `backend/.env`:
+
+```bash
+cd backend
+cp .env.example .env
+```
+
+Then paste this into `backend/.env` and replace `MONGO_URI` / `JWT_SECRET` as needed:
+
+```env
+PORT=5001
+MONGO_URI=mongodb://127.0.0.1:27017/tadreeb
+JWT_SECRET=replace_this_with_a_long_secret_for_local_testing
+CORS_ORIGIN=http://localhost:3000
+```
+
+If using MongoDB Atlas, replace `MONGO_URI` with the Atlas connection string.
+
+### Frontend Environment
+
+Create `frontend/.env`:
+
+```bash
+cd frontend
+cp .env.example .env
+```
+
+Then paste this into `frontend/.env`:
+
+```env
+REACT_APP_API_URL=http://localhost:5001/api
+```
+
+Restart the frontend server after changing `.env`.
+
+---
+
+## Database Copy
+
+A JSON copy of the current test database is included for GitHub/course evaluation:
+
+```text
+database/tadreeb-database-copy.json
+```
+
+The copy includes MongoDB collections for admins, students, companies, company requests, opportunities, and applications. Passwords in the JSON file are bcrypt hashes; use the plain-text test passwords listed below when logging in through the app.
+
+To import the checked-in database copy into the MongoDB database configured in `backend/.env`:
+
+```bash
+cd backend
+npm install
+npm run db:import-copy
+```
+
+To regenerate the database copy from the configured `backend/.env` database:
+
+```bash
+cd backend
+npm run db:export
 ```
 
 ---
 
 ## Quick Start For Evaluation
 
-Use two terminals.
+After creating both `.env` files and importing the database copy, use two terminals.
 
 Terminal 1 - backend API:
 
@@ -68,7 +149,7 @@ npm install
 npm run dev
 ```
 
-Backend runs at:
+Default API URL:
 
 ```text
 http://localhost:5001
@@ -82,16 +163,10 @@ npm install
 npm start
 ```
 
-Frontend runs at:
+Default frontend URL:
 
 ```text
 http://localhost:3000
-```
-
-Make sure `backend/.env` has a valid `MONGO_URI` and `JWT_SECRET`, and `frontend/.env` points to the backend:
-
-```env
-REACT_APP_API_URL=http://localhost:5001/api
 ```
 
 ---
@@ -107,111 +182,6 @@ These accounts are included in the test database and can be used to move between
 | Company | `company@tadreeb.com` | `Company123!` |
 
 Students can also create a new account from `/signup`.
-
----
-
-## Database Copy
-
-A JSON copy of the current test database is included for GitHub/course evaluation:
-
-```text
-database/tadreeb-database-copy.json
-```
-
-The copy includes MongoDB collections for admins, students, companies, company requests, opportunities, and applications. Passwords in the JSON file are bcrypt hashes; use the plain-text test passwords listed above when logging in through the app.
-
-To regenerate the database copy from the configured `backend/.env` database:
-
-```bash
-cd backend
-npm run db:export
-```
-
-To import the checked-in database copy into the configured MongoDB database:
-
-```bash
-cd backend
-npm run db:import-copy
-```
-
-## Requirements
-
-| Tool | Recommended Version |
-| --- | --- |
-| Node.js | 18.x or 20.x |
-| npm | 9+ |
-| MongoDB | 6.x or newer, local or Atlas |
-
----
-
-## Environment Setup
-
-### Backend Environment
-
-Create `backend/.env` from the example file:
-
-```bash
-cd backend
-cp .env.example .env
-```
-
-Common backend variables:
-
-```env
-PORT=5001
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret
-CORS_ORIGIN=http://localhost:3000
-```
-
-### Frontend Environment
-
-Create `frontend/.env` from the example file:
-
-```bash
-cd frontend
-cp .env.example .env
-```
-
-Frontend API variable:
-
-```env
-REACT_APP_API_URL=http://localhost:5001/api
-```
-
-Restart the frontend server after changing `.env`.
-
----
-
-## Run Locally
-
-Run the backend first:
-
-```bash
-cd backend
-npm install
-npm run dev
-```
-
-Default API URL:
-
-```text
-http://localhost:5001
-```
-
-Run the frontend in a second terminal:
-
-```bash
-cd frontend
-npm install
-npm start
-```
-
-Default frontend URL:
-
-```text
-http://localhost:3000
-```
 
 ---
 
@@ -235,8 +205,8 @@ npm start
 
 ## Documentation
 
-- **Backend API, env vars, troubleshooting:** [backend/README.md](backend/README.md)  
-- **Frontend routes, features, run/build:** [frontend/README.md](frontend/README.md)  
+- **Backend API, env vars, troubleshooting:** [backend/README.md](backend/README.md)
+- **Frontend routes, features, run/build:** [frontend/README.md](frontend/README.md)
 - **Database copy:** [database/README.md](database/README.md)
 
 ---
@@ -249,16 +219,6 @@ npm start
 - Students cannot apply to overlapping opportunities while they already have a `Submitted`, `Under Review`, `Not Reviewed`, or `Accepted` application for the same period.
 - Company/admin users pages show role-specific profile fields, so students do not have country/location fields and admins use country only.
 - The public Contact Us form currently validates and shows a success message on the frontend only; it does not persist messages to the backend.
-
-## Branch workflow
-
-| Branch | Purpose |
-| --- | --- |
-| `main` | Stable release |
-| `dev` | Integration |
-| `feature/*` | Feature work |
-
-Typical flow: branch from `dev` → PR to `dev` → merge to `main` after testing.
 
 ## Course
 
