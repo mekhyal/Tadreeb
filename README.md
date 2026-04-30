@@ -1,6 +1,6 @@
 # Tadreeb
 
-Tadreeb is a training and internship platform that connects university students with companies in Kuwait. Students discover programs and apply; companies publish opportunities, review applicants, and accept up to a fixed seat count; administrators manage accounts and oversight.
+Tadreeb is a training and internship platform that connects university students with companies in Kuwait. Students discover programs and apply, companies publish opportunities, review applicants, and accept up to a fixed seat count; administrators manage accounts and oversight.
 
 ## Team
 
