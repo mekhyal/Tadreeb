@@ -6,6 +6,7 @@ import StudentProgramModal from "../../components/student/StudentProgramModal";
 import StudentApplyConfirmModal from "../../components/student/StudentApplyConfirmModal";
 import { getOpportunities } from "../../api/opportunityAPI";
 import { applyToProgram, getMyApplications } from "../../api/applicationAPI";
+import DefaultImage from "../../assets/default-program-image.jpg";
 import {
   PROGRAM_STATUS,
   getProgramDisplayStatus,
@@ -14,6 +15,32 @@ import {
 } from "../../utils/programStatus";
 
 const PROGRAMS_PER_PAGE = 6;
+const DATE_CONFLICT_APPLICATION_STATUSES = new Set([
+  "Submitted",
+  "Under Review",
+  "Not Reviewed",
+  "Accepted",
+]);
+
+const datesOverlap = (firstStart, firstEnd, secondStart, secondEnd) => {
+  if (!firstStart || !firstEnd || !secondStart || !secondEnd) return false;
+
+  const aStart = new Date(firstStart);
+  const aEnd = new Date(firstEnd);
+  const bStart = new Date(secondStart);
+  const bEnd = new Date(secondEnd);
+
+  if (
+    Number.isNaN(aStart.getTime()) ||
+    Number.isNaN(aEnd.getTime()) ||
+    Number.isNaN(bStart.getTime()) ||
+    Number.isNaN(bEnd.getTime())
+  ) {
+    return false;
+  }
+
+  return aStart <= bEnd && aEnd >= bStart;
+};
 
 const normalizeProgram = (item) => {
   const company = item.companyID || {};
@@ -43,7 +70,7 @@ const normalizeProgram = (item) => {
     location: item.location || "",
     image:
       item.imageURL ||
-      "https://images.unsplash.com/photo-1522202176988-66273c2fd55f",
+      DefaultImage,
     status,
     category: item.category || "Software",
     openTo: item.openTo || "Students",
@@ -60,21 +87,50 @@ const normalizeProgram = (item) => {
 
 function buildStudentProgramList(programsRes, myAppsRes) {
   const statusByProgramId = new Map();
+  const activeApplications = [];
+
   (myAppsRes.data || []).forEach((app) => {
     const pid = app.programID?._id || app.programID;
     if (pid) {
       const key = String(pid);
       statusByProgramId.set(key, app.status || "Submitted");
     }
+
+    const program = app.programID;
+    if (
+      program &&
+      DATE_CONFLICT_APPLICATION_STATUSES.has(app.status || "Submitted")
+    ) {
+      activeApplications.push({
+        programId: String(program._id || program.id || ""),
+        title: program.title || "another opportunity",
+        status: app.status || "Submitted",
+        startDate: program.dateFrom ? program.dateFrom.slice(0, 10) : "",
+        endDate: program.dateTo ? program.dateTo.slice(0, 10) : "",
+      });
+    }
   });
 
   const normalizedPrograms = programsRes.data.map((item) => {
     const pid = String(item._id);
+    const normalized = normalizeProgram(item);
+    const conflictingApplication = activeApplications.find(
+      (app) =>
+        app.programId !== pid &&
+        datesOverlap(
+          app.startDate,
+          app.endDate,
+          normalized.startDate,
+          normalized.endDate
+        )
+    );
+
     return {
-      ...normalizeProgram(item),
+      ...normalized,
       id: pid,
       applied: statusByProgramId.has(pid),
       applicationStatus: statusByProgramId.get(pid) ?? null,
+      conflictingApplication: conflictingApplication || null,
     };
   });
 
@@ -329,6 +385,15 @@ function StudentHome() {
       return;
     }
 
+    if (targetProgram.conflictingApplication) {
+      setProgramMessage(
+        programId,
+        `This opportunity conflicts with your ${targetProgram.conflictingApplication.status.toLowerCase()} application for "${targetProgram.conflictingApplication.title}".`,
+        "error"
+      );
+      return;
+    }
+
     setIsApplying(true);
 
     try {
@@ -363,7 +428,8 @@ function StudentHome() {
     if (
       targetProgram.status !== PROGRAM_STATUS.register ||
       targetProgram.availableSeats <= 0 ||
-      targetProgram.applied
+      targetProgram.applied ||
+      targetProgram.conflictingApplication
     ) {
       runApplyLogic(programId);
       return;

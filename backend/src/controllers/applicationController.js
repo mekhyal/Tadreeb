@@ -4,15 +4,37 @@ const { isValidObjectId } = require('../utils/validators');
 const {
   FINAL_APPLICATION_STATUSES,
   getRegistrationDeadline,
+  isPastProgramEnd,
   syncAutomaticApplicationStatuses,
 } = require('../utils/applicationStatus');
 
 // statuses that count toward "seat occupied" / "student enrolled"
 const ACCEPTED_STATUSES = ['Accepted'];
+const DATE_CONFLICT_STATUSES = ['Submitted', 'Under Review', 'Not Reviewed', 'Accepted'];
+
+const datesOverlap = (firstStart, firstEnd, secondStart, secondEnd) => {
+  if (!firstStart || !firstEnd || !secondStart || !secondEnd) return false;
+
+  const aStart = new Date(firstStart);
+  const aEnd = new Date(firstEnd);
+  const bStart = new Date(secondStart);
+  const bEnd = new Date(secondEnd);
+
+  if (
+    Number.isNaN(aStart.getTime()) ||
+    Number.isNaN(aEnd.getTime()) ||
+    Number.isNaN(bStart.getTime()) ||
+    Number.isNaN(bEnd.getTime())
+  ) {
+    return false;
+  }
+
+  return aStart <= bEnd && aEnd >= bStart;
+};
 
 const isRegistrationOpen = (program) => {
   const closesAt = getRegistrationDeadline(program);
-  if (!closesAt) return true;
+  if (!closesAt) return false;
   return closesAt >= new Date();
 };
 
@@ -37,7 +59,7 @@ const hasProgramStartedOrCompleted = (program) => {
 // 2. Blocks completed programs
 // 3. Blocks duplicate application
 // 4. Enforces seat capacity (accepted applicants only)
-// 5. Blocks overlapping accepted enrollments
+// 5. Blocks overlapping active applications/enrollments
 // 6. Creates application
 const applyToProgram = async (req, res) => {
   try {
@@ -57,7 +79,7 @@ const applyToProgram = async (req, res) => {
       return res.status(404).json({ message: 'Program not found' });
     }
 
-    if (program.status === 'Completed') {
+    if (program.status === 'Completed' || isPastProgramEnd(program)) {
       return res.status(400).json({ message: 'This program has been completed' });
     }
 
@@ -85,22 +107,33 @@ const applyToProgram = async (req, res) => {
       return res.status(400).json({ message: 'No seats available for this program' });
     }
 
-    // overlap guard: a student already accepted into a program with overlapping dates
-    // should not be able to apply to another time-conflicting program
-    const overlappingAccepted = await Application.findOne({
+    // overlap guard: students cannot hold two active applications/enrollments
+    // for opportunities whose program dates conflict.
+    const activeApplications = await Application.find({
       studentID: req.user.id,
-      status: { $in: ACCEPTED_STATUSES },
+      status: { $in: DATE_CONFLICT_STATUSES },
     }).populate('programID', 'dateFrom dateTo registrationDeadline title');
 
-    if (overlappingAccepted && overlappingAccepted.programID) {
-      const a = overlappingAccepted.programID;
-      const overlaps =
-        a.dateFrom <= program.dateTo && a.dateTo >= program.dateFrom;
-      if (overlaps) {
-        return res.status(400).json({
-          message: `You are already enrolled in "${a.title}" with overlapping dates`,
-        });
-      }
+    const overlappingApplication = activeApplications.find((application) => {
+      const existingProgram = application.programID;
+      return datesOverlap(
+        existingProgram?.dateFrom,
+        existingProgram?.dateTo,
+        program.dateFrom,
+        program.dateTo
+      );
+    });
+
+    if (overlappingApplication?.programID) {
+      const existingProgram = overlappingApplication.programID;
+      const statusLabel =
+        overlappingApplication.status === 'Accepted'
+          ? 'accepted enrollment'
+          : 'application';
+
+      return res.status(400).json({
+        message: `You already have an ${statusLabel} for "${existingProgram.title}" during the same period`,
+      });
     }
 
     const application = await Application.create({

@@ -54,7 +54,7 @@ const opportunitySchema = new mongoose.Schema(
     },
     registrationDeadline: {
       type: Date,
-      default: null,
+      required: true,
     },
     imageURL: {
       type: String,

@@ -156,23 +156,12 @@ function CompanyPrograms() {
     }
   };
 
-  const handleConfirmComplete = (program) => {
-    setConfirmAction({
-      type: "complete",
-      program,
-      title: "Mark program as completed?",
-      message: `Are you sure you want to mark "${program.title}" as completed?`,
-      confirmText: "Yes, Complete",
-      variant: "success",
-    });
-  };
-
   const handleConfirmRemove = (program) => {
     setConfirmAction({
       type: "remove",
       program,
       title: "Remove program?",
-      message: `Are you sure you want to remove "${program.title}"? This action cannot be undone.`,
+      message: `Are you sure you want to remove "${program.title}"? All related student applications and participants will also be removed. This action cannot be undone.`,
       confirmText: "Yes, Remove",
       variant: "danger",
     });
@@ -182,31 +171,18 @@ function CompanyPrograms() {
     if (!confirmAction) return;
 
     try {
-      if (confirmAction.type === "complete") {
-        const res = await updateOpportunity(confirmAction.program.id, {
-          status: "Completed",
-        });
-
-        const updatedProgram = normalizeProgram(res.data.opportunity || res.data);
-
-        setPrograms((prev) =>
-          prev.map((item) =>
-            item.id === confirmAction.program.id ? updatedProgram : item
-          )
-        );
-
-        setToast("Program marked as completed.");
-      }
-
       if (confirmAction.type === "remove") {
-        await deleteOpportunity(confirmAction.program.id);
+        const res = await deleteOpportunity(confirmAction.program.id);
 
         const updated = programs.filter(
           (item) => item.id !== confirmAction.program.id
         );
 
         setPrograms(updated);
-        setToast("Program removed successfully.");
+        const removedCount = Number(res.data?.deletedApplications) || 0;
+        setToast(
+          `Program removed successfully. Removed ${removedCount} related application(s).`
+        );
 
         const nextTotalPages = Math.max(
           1,
@@ -275,7 +251,6 @@ function CompanyPrograms() {
                   program={program}
                   colorIndex={index}
                   onEdit={setEditingProgram}
-                  onComplete={handleConfirmComplete}
                   onRemove={handleConfirmRemove}
                 />
               ))}

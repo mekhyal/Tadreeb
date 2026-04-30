@@ -90,7 +90,7 @@ function StudentFooter() {
           <hr />
 
           <div className="student-footer-bottom">
-            <p>Tadreeb @ 202X. All rights reserved.</p>
+            <p>Tadreeb @ 2026. All rights reserved.</p>
 
             <div className="footer-socials" aria-label="Social media icons">
               <span className="social-icon"><FaYoutube /></span>

@@ -4,6 +4,80 @@ const Application = require('../models/Application');
 const { isValidObjectId } = require('../utils/validators');
 const { companyMayUsePortal } = require('../utils/companyAccountStatus');
 
+const isPastProgramEnd = (dateTo) => {
+  if (!dateTo) return false;
+
+  const end = new Date(dateTo);
+  if (Number.isNaN(end.getTime())) return false;
+  end.setHours(0, 0, 0, 0);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return today > end;
+};
+
+const withAutomaticProgramStatus = (program) => {
+  const row = typeof program.toObject === 'function' ? program.toObject() : { ...program };
+
+  if (row.status !== 'Completed' && isPastProgramEnd(row.dateTo)) {
+    row.status = 'Completed';
+  }
+
+  return row;
+};
+
+const isTransactionSupportError = (error) => {
+  const message = String(error?.message || '').toLowerCase();
+  return (
+    message.includes('transaction') ||
+    message.includes('replica set') ||
+    message.includes('sessions are not supported')
+  );
+};
+
+const deleteOpportunityAndApplications = async (opportunityId) => {
+  const session = await Opportunity.startSession();
+
+  try {
+    let deletedApplicationsCount = 0;
+
+    await session.withTransaction(async () => {
+      const deletedProgram = await Opportunity.deleteOne({ _id: opportunityId }).session(session);
+
+      if (deletedProgram.deletedCount !== 1) {
+        throw new Error('Program could not be deleted');
+      }
+
+      const deletedApplications = await Application.deleteMany({
+        programID: opportunityId,
+      }).session(session);
+
+      deletedApplicationsCount = deletedApplications.deletedCount || 0;
+    });
+
+    return deletedApplicationsCount;
+  } catch (error) {
+    if (!isTransactionSupportError(error)) {
+      throw error;
+    }
+
+    const deletedProgram = await Opportunity.deleteOne({ _id: opportunityId });
+
+    if (deletedProgram.deletedCount !== 1) {
+      throw new Error('Program could not be deleted');
+    }
+
+    const deletedApplications = await Application.deleteMany({
+      programID: opportunityId,
+    });
+
+    return deletedApplications.deletedCount || 0;
+  } finally {
+    await session.endSession();
+  }
+};
+
 const createOpportunity = async (req, res) => {
     try {
         const {
@@ -138,7 +212,7 @@ const getOpportunities = async (req, res) => {
           String(companyIdRaw) === String(viewer.id);
 
         const row = {
-          ...program.toObject(),
+          ...withAutomaticProgramStatus(program),
           usedSeats: acceptedCount,
           availableSeats: Math.max(0, program.seats - acceptedCount),
         };
@@ -189,7 +263,7 @@ const getOpportunityById = async (req, res) => {
       String(companyIdRaw) === String(viewer.id);
 
     const row = {
-      ...opportunity.toObject(),
+      ...withAutomaticProgramStatus(opportunity),
       usedSeats: acceptedCount,
       availableSeats: Math.max(0, opportunity.seats - acceptedCount),
     };
@@ -228,7 +302,13 @@ const updateOpportunity = async (req, res) => {
     const nextStart = req.body.dateFrom ? new Date(req.body.dateFrom) : opportunity.dateFrom;
     const nextEnd = req.body.dateTo ? new Date(req.body.dateTo) : opportunity.dateTo;
     const hasRegistrationDeadline =
-      req.body.registrationDeadline !== undefined || opportunity.registrationDeadline;
+      req.body.registrationDeadline !== undefined
+        ? Boolean(req.body.registrationDeadline)
+        : Boolean(opportunity.registrationDeadline);
+    if (!hasRegistrationDeadline) {
+      return res.status(400).json({ message: 'registrationDeadline is required' });
+    }
+
     const nextRegistrationDeadline = hasRegistrationDeadline
       ? req.body.registrationDeadline !== undefined
         ? new Date(req.body.registrationDeadline)
@@ -274,7 +354,7 @@ const updateOpportunity = async (req, res) => {
 
     return res.status(200).json({
       message: 'Program updated successfully',
-      opportunity: updatedOpportunity,
+      opportunity: withAutomaticProgramStatus(updatedOpportunity),
     });
   } catch (error) {
     if (error.name === 'ValidationError') {
@@ -304,9 +384,14 @@ const updateOpportunity = async (req, res) => {
       return res.status(403).json({ message: 'Not allowed to delete this program' });
     }
 
-    await opportunity.deleteOne();
+    const deletedApplicationsCount = await deleteOpportunityAndApplications(
+      opportunity._id
+    );
 
-    return res.status(200).json({ message: 'Program deleted successfully' });
+    return res.status(200).json({
+      message: 'Program and related applications deleted successfully',
+      deletedApplications: deletedApplicationsCount,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

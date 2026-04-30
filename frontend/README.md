@@ -42,6 +42,7 @@ The app supports three main experiences:
 ### Public Pages
 
 - Public home page with hero, about, audience, partners, stats, and contact sections.
+- Contact Us validates fields and shows a frontend success message; messages are not currently saved to the backend.
 - Login and signup pages.
 - Company request form at `/company-request`.
 - Company request form includes a confirmation dialog before submit.
@@ -62,6 +63,7 @@ The app supports three main experiences:
 - Clear search button resets the student search.
 - Program cards show lifecycle status, registration close date, seats, and details.
 - Apply flow includes confirmation before submission.
+- Students cannot apply to an opportunity that overlaps dates with an existing Submitted, Under Review, Not Reviewed, or Accepted application.
 - Applications page separates active applications and completed programs.
 - Application removal is available only while registration is open.
 - Student profile supports controlled save behavior, email update flow, field validation, and success/error messages.
@@ -69,7 +71,9 @@ The app supports three main experiences:
 ### Company Portal
 
 - Dashboard with application snapshot and summary data.
-- Program management with add, edit, delete, seats, registration deadline, image fallback, and validation.
+- Program management with add, edit, delete, seats, required registration deadline, image fallback, and validation.
+- Program cards become Completed automatically after the end date.
+- Deleting a program removes its related applications/participants through the API.
 - Participants page with student details, program, status, and notes.
 - Participant decision styles for Under Review, Accepted, and Rejected.
 - Company profile supports delayed save behavior, field validation, password update, and polished error placement.
@@ -80,7 +84,7 @@ The app supports three main experiences:
 - Program management across companies.
 - Participants management with company status visibility controls.
 - Companies page for request review labels: Under Review, Accepted, Rejected.
-- Users page for student/company/admin records and account access management.
+- Users page for student/company/admin records and account access management, with role-specific fields matching each role profile.
 - Admin profile with controlled save behavior and validation.
 
 ---
@@ -325,6 +329,13 @@ Program lifecycle helpers are in:
 ```text
 src/utils/programStatus.js
 ```
+
+Current lifecycle behavior:
+
+- Registration deadline is required for programs.
+- Register Now is shown while registration is open.
+- Active is shown while the program is running.
+- Completed is shown automatically after the program end date.
 
 Other frontend helpers include:
 

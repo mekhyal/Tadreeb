@@ -25,7 +25,9 @@ Tadreeb is a training and internship platform that connects university students 
 ```text
 Tadreeb/
 |-- README.md
-|-- TADREEB_UPDATES.md
+|-- database/
+|   |-- README.md
+|   `-- tadreeb-database-copy.json
 |-- frontend/
 |   |-- README.md
 |   |-- package.json
@@ -53,6 +55,84 @@ Tadreeb/
 ```
 
 ---
+
+## Quick Start For Evaluation
+
+Use two terminals.
+
+Terminal 1 - backend API:
+
+```bash
+cd backend
+npm install
+npm run dev
+```
+
+Backend runs at:
+
+```text
+http://localhost:5001
+```
+
+Terminal 2 - frontend app:
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+Frontend runs at:
+
+```text
+http://localhost:3000
+```
+
+Make sure `backend/.env` has a valid `MONGO_URI` and `JWT_SECRET`, and `frontend/.env` points to the backend:
+
+```env
+REACT_APP_API_URL=http://localhost:5001/api
+```
+
+---
+
+## Test Accounts
+
+These accounts are included in the test database and can be used to move between the three main roles.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | `admin@tadreeb.com` | `Admin123!` |
+| Student | `student@tadreeb.com` | `Student123!` |
+| Company | `company@tadreeb.com` | `Company123!` |
+
+Students can also create a new account from `/signup`.
+
+---
+
+## Database Copy
+
+A JSON copy of the current test database is included for GitHub/course evaluation:
+
+```text
+database/tadreeb-database-copy.json
+```
+
+The copy includes MongoDB collections for admins, students, companies, company requests, opportunities, and applications. Passwords in the JSON file are bcrypt hashes; use the plain-text test passwords listed above when logging in through the app.
+
+To regenerate the database copy from the configured `backend/.env` database:
+
+```bash
+cd backend
+npm run db:export
+```
+
+To import the checked-in database copy into the configured MongoDB database:
+
+```bash
+cd backend
+npm run db:import-copy
+```
 
 ## Requirements
 
@@ -157,6 +237,18 @@ npm start
 
 - **Backend API, env vars, troubleshooting:** [backend/README.md](backend/README.md)  
 - **Frontend routes, features, run/build:** [frontend/README.md](frontend/README.md)  
+- **Database copy:** [database/README.md](database/README.md)
+
+---
+
+## Current Domain Behavior
+
+- Program registration deadline is required and must be before the program start date.
+- Program completion is automatic after the end date.
+- Deleting a program as a company or admin also deletes related applications/participants.
+- Students cannot apply to overlapping opportunities while they already have a `Submitted`, `Under Review`, `Not Reviewed`, or `Accepted` application for the same period.
+- Company/admin users pages show role-specific profile fields, so students do not have country/location fields and admins use country only.
+- The public Contact Us form currently validates and shows a success message on the frontend only; it does not persist messages to the backend.
 
 ## Branch workflow
 

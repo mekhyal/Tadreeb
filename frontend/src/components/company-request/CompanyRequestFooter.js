@@ -90,7 +90,7 @@ function CompanyRequestFooter() {
           <hr />
 
           <div className="company-request-footer__bottom">
-            <p>CompanyName @ 202X. All rights reserved.</p>
+            <p>Tadreeb @ 2026. All rights reserved.</p>
 
             <div className="company-request-footer__socials">
               <span><FaYoutube /></span>

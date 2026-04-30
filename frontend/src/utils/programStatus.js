@@ -12,21 +12,29 @@ const startOfDay = (value) => {
   return date;
 };
 
-const toDateInputValue = (date) => {
-  if (!date) return "";
-  return date.toISOString().slice(0, 10);
+const toDateInputValue = (value) => {
+  if (!value) return "";
+
+  if (typeof value === "string") {
+    const dateOnly = value.match(/^\d{4}-\d{2}-\d{2}/);
+    if (dateOnly) return dateOnly[0];
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 };
 
 export function getRegistrationDeadlineValue(program) {
   if (program?.registrationDeadline) {
-    const explicitDate = startOfDay(program.registrationDeadline);
-    return toDateInputValue(explicitDate);
+    return toDateInputValue(program.registrationDeadline);
   }
 
-  const start = startOfDay(program?.dateFrom);
-  if (!start) return "";
-  start.setDate(start.getDate() - 1);
-  return toDateInputValue(start);
+  return "";
 }
 
 export function getProgramDisplayStatus(program) {
@@ -40,6 +48,7 @@ export function getProgramDisplayStatus(program) {
   const today = startOfDay(new Date());
 
   if (!start || !end || !today) return PROGRAM_STATUS.selection;
+  if (today > end) return PROGRAM_STATUS.completed;
   if (registrationDeadline && today <= registrationDeadline) {
     return PROGRAM_STATUS.register;
   }

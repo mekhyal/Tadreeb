@@ -5,14 +5,11 @@ import { programStatusClass } from "../../utils/programStatus";
 function CompanyProgramCard({
   program,
   onEdit,
-  onComplete,
   onRemove,
   footerContent,
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
-
-  const isCompleted = program.status === "Completed";
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -46,18 +43,6 @@ function CompanyProgramCard({
 
           {showMenu && (
             <div className="company-program-card__dropdown">
-              {!isCompleted && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMenu(false);
-                    onComplete(program);
-                  }}
-                >
-                  Mark as Completed
-                </button>
-              )}
-
               <button
                 type="button"
                 onClick={() => {
@@ -108,7 +93,7 @@ function CompanyProgramCard({
           <FaCalendarAlt />
           <span>
             Register closes
-            <strong>{program.registrationDeadline || program.dateFrom}</strong>
+            <strong>{program.registrationDeadline || "Not set"}</strong>
           </span>
         </div>
       </div>

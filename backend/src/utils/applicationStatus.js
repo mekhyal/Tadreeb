@@ -19,12 +19,13 @@ const startOfDay = (value) => {
 const getRegistrationDeadline = (program) => {
   if (!program) return null;
   if (program.registrationDeadline) return endOfDay(program.registrationDeadline);
-  if (!program.dateFrom) return null;
+  return null;
+};
 
-  const fallback = endOfDay(program.dateFrom);
-  if (!fallback) return null;
-  fallback.setDate(fallback.getDate() - 1);
-  return fallback;
+const isPastProgramEnd = (program) => {
+  const endDate = startOfDay(program?.dateTo);
+  const today = startOfDay(new Date());
+  return Boolean(endDate && today && today > endDate);
 };
 
 const getAutomaticApplicationStatus = (application) => {
@@ -35,7 +36,7 @@ const getAutomaticApplicationStatus = (application) => {
 
   const program = application.programID;
   if (!program) return application.status || 'Submitted';
-  if (program.status === 'Completed') return 'Not Reviewed';
+  if (program.status === 'Completed' || isPastProgramEnd(program)) return 'Not Reviewed';
 
   const today = startOfDay(new Date());
   const startDate = startOfDay(program.dateFrom);
@@ -71,5 +72,6 @@ module.exports = {
   FINAL_APPLICATION_STATUSES,
   getRegistrationDeadline,
   getAutomaticApplicationStatus,
+  isPastProgramEnd,
   syncAutomaticApplicationStatuses,
 };

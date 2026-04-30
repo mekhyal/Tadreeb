@@ -35,10 +35,6 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
             <label>Gender</label>
             <p>{user.gender}</p>
           </div>
-          <div>
-            <label>Country</label>
-            <p>{user.country}</p>
-          </div>
           <div className="admin-user-details-wide">
             <label>Skills</label>
             <p>{user.skills}</p>
@@ -167,10 +163,12 @@ function AdminUserDetailsCard({ user, onStatusChange }) {
           <p>{user.phone}</p>
         </div>
 
-        <div>
-          <label>Location</label>
-          <p>{user.location}</p>
-        </div>
+        {user.role === "Company" && (
+          <div>
+            <label>Location</label>
+            <p>{user.location}</p>
+          </div>
+        )}
 
         <div>
           <label>Created At</label>

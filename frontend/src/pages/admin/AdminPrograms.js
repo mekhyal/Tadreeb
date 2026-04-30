@@ -149,7 +149,7 @@ function AdminPrograms() {
       type: "remove",
       program,
       title: "Remove program?",
-      message: `Are you sure you want to delete "${program.title}"?`,
+      message: `Are you sure you want to delete "${program.title}"? All related student applications and participants will also be removed. This action cannot be undone.`,
       confirmText: "Yes, Remove",
       variant: "danger",
     });
@@ -174,7 +174,7 @@ function AdminPrograms() {
       }
 
       if (confirmAction.type === "remove") {
-        await deleteOpportunity(confirmAction.program.id);
+        const res = await deleteOpportunity(confirmAction.program.id);
 
         const updatedPrograms = programs.filter(
           (item) => item.id !== confirmAction.program.id
@@ -191,7 +191,10 @@ function AdminPrograms() {
           setCurrentPage(nextTotalPages);
         }
 
-        setToast("Program deleted successfully.");
+        const removedCount = Number(res.data?.deletedApplications) || 0;
+        setToast(
+          `Program deleted successfully. Removed ${removedCount} related application(s).`
+        );
       }
     } catch (err) {
       setToast(err.response?.data?.message || "Action failed.");

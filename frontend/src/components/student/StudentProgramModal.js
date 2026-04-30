@@ -16,7 +16,9 @@ function StudentProgramModal({ program, onClose, onApply, isApplying }) {
   if (!program) return null;
 
   const canApply =
-    program.status === PROGRAM_STATUS.register && program.availableSeats > 0;
+    program.status === PROGRAM_STATUS.register &&
+    program.availableSeats > 0 &&
+    !program.conflictingApplication;
 
   return (
     <div className="student-modal-overlay" onClick={onClose}>
@@ -95,7 +97,9 @@ function StudentProgramModal({ program, onClose, onApply, isApplying }) {
           {isApplying
             ? "Applying..."
             : !canApply
-            ? program.availableSeats <= 0
+            ? program.conflictingApplication
+              ? "Date Conflict"
+              : program.availableSeats <= 0
               ? "No Seats Available"
               : "Applications Closed"
             : program.applied
@@ -124,6 +128,8 @@ function StudentProgramModal({ program, onClose, onApply, isApplying }) {
           <p className="student-action-message error">
             {program.availableSeats <= 0
               ? "No seats are currently available for this program."
+              : program.conflictingApplication
+              ? `This opportunity conflicts with your ${program.conflictingApplication.status.toLowerCase()} application for "${program.conflictingApplication.title}".`
               : program.status === PROGRAM_STATUS.active
               ? "Application is active now."
               : "Registration is closed for this program."}

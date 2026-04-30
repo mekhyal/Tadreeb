@@ -29,6 +29,8 @@ const LIMITS = {
   passwordMax: PASSWORD_MAX_LENGTH,
   phone: 20,
   location: 80,
+  studentId: 30,
+  studentIdMin: 7,
   universityName: 100,
   major: 80,
   country: 80,
@@ -55,6 +57,8 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
   const [formData, setFormData] = useState({
     role: "",
     name: "",
+    firstName: "",
+    lastName: "",
     email: "",
     password: "",
     status: "Active",
@@ -65,7 +69,7 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
     major: "",
     year: "",
     gender: "",
-    country: "",
+    studentId: "",
     skills: "",
 
     industry: "",
@@ -133,12 +137,30 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       nextErrors.role = "Role is required.";
     }
 
-    if (!formData.name.trim()) {
-      nextErrors.name = "Name is required.";
-    } else if (formData.name.trim().length < 3) {
-      nextErrors.name = "Name must be at least 3 characters.";
+    if (formData.role === "Company") {
+      if (!formData.name.trim()) {
+        nextErrors.name = "Company name is required.";
+      } else if (formData.name.trim().length < 3) {
+        nextErrors.name = "Company name must be at least 3 characters.";
+      } else {
+        checkMax("name", "Company name", LIMITS.name, nextErrors);
+      }
     } else {
-      checkMax("name", "Name", LIMITS.name, nextErrors);
+      if (!formData.firstName.trim()) {
+        nextErrors.firstName = "First name is required.";
+      } else if (formData.firstName.trim().length < 2) {
+        nextErrors.firstName = "First name must be at least 2 characters.";
+      } else {
+        checkMax("firstName", "First name", LIMITS.name, nextErrors);
+      }
+
+      if (!formData.lastName.trim()) {
+        nextErrors.lastName = "Last name is required.";
+      } else if (formData.lastName.trim().length < 2) {
+        nextErrors.lastName = "Last name must be at least 2 characters.";
+      } else {
+        checkMax("lastName", "Last name", LIMITS.name, nextErrors);
+      }
     }
 
     const emailDomain = formData.email.trim().toLowerCase().split("@")[1] || "";
@@ -171,12 +193,14 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       checkMax("phone", "Phone", LIMITS.phone, nextErrors);
     }
 
-    if (!formData.location.trim()) {
-      nextErrors.location = "Location is required.";
-    } else if (formData.location.trim().length < 3) {
-      nextErrors.location = "Location must be at least 3 characters.";
-    } else {
-      checkMax("location", "Location", LIMITS.location, nextErrors);
+    if (formData.role === "Company") {
+      if (!formData.location.trim()) {
+        nextErrors.location = "Location is required.";
+      } else if (formData.location.trim().length < 3) {
+        nextErrors.location = "Location must be at least 3 characters.";
+      } else {
+        checkMax("location", "Location", LIMITS.location, nextErrors);
+      }
     }
   };
 
@@ -201,10 +225,12 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
       nextErrors.gender = "Gender is required.";
     }
 
-    if (!formData.country.trim()) {
-      nextErrors.country = "Country is required.";
+    if (!formData.studentId.trim()) {
+      nextErrors.studentId = "Student ID is required.";
+    } else if (formData.studentId.trim().length < LIMITS.studentIdMin) {
+      nextErrors.studentId = "Student ID must be more than 6 characters.";
     } else {
-      checkMax("country", "Country", LIMITS.country, nextErrors);
+      checkMax("studentId", "Student ID", LIMITS.studentId, nextErrors);
     }
 
     if (!formData.skills.trim()) {
@@ -291,13 +317,16 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
     const baseUser = {
       id: Date.now(),
       systemId: generateSystemId(),
-      name: formData.name.trim(),
+      name:
+        formData.role === "Company"
+          ? formData.name.trim()
+          : `${formData.firstName.trim()} ${formData.lastName.trim()}`.trim(),
       email: formData.email.trim().toLowerCase(),
       password: formData.password,
       role: formData.role,
       status: formData.role === "Admin" ? "Active" : formData.status,
       phone: formData.phone.trim(),
-      location: formData.location.trim(),
+      location: formData.role === "Company" ? formData.location.trim() : "",
       createdAt: new Date().toISOString().slice(0, 10),
     };
 
@@ -305,12 +334,11 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
 
     if (formData.role === "Student") {
       roleFields = {
-        studentId: generateRoleId("STU"),
+        studentId: formData.studentId.trim(),
         universityName: formData.universityName.trim(),
         major: formData.major.trim(),
         year: formData.year,
         gender: formData.gender,
-        country: formData.country.trim(),
         skills: formData.skills.trim(),
         status: formData.status,
       };
@@ -376,20 +404,67 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
                   <p>All fields are required for the selected role.</p>
                 </div>
 
-                <div className="company-form-grid">
-                  <div className="company-form-group">
-                    <label>Name</label>
-                    <input
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="Example: Abdulaziz"
-                      maxLength={LIMITS.name}
-                    />
-                    {errors.name && <p className="company-form-error">{errors.name}</p>}
-                  </div>
+                {formData.role === "Company" ? (
+                  <div className="company-form-grid">
+                    <div className="company-form-group">
+                      <label>Company Name</label>
+                      <input
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="Example: Tadreeb Company"
+                        maxLength={LIMITS.name}
+                      />
+                      {errors.name && <p className="company-form-error">{errors.name}</p>}
+                    </div>
 
-                  <div className="company-form-group">
+                    <div className="company-form-group">
+                      <label>Email</label>
+                      <input
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        placeholder="Example: user@email.com"
+                        maxLength={LIMITS.email}
+                      />
+                      {errors.email && <p className="company-form-error">{errors.email}</p>}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="company-form-grid">
+                    <div className="company-form-group">
+                      <label>First Name</label>
+                      <input
+                        name="firstName"
+                        value={formData.firstName}
+                        onChange={handleChange}
+                        placeholder="Enter first name"
+                        maxLength={LIMITS.name}
+                      />
+                      {errors.firstName && (
+                        <p className="company-form-error">{errors.firstName}</p>
+                      )}
+                    </div>
+
+                    <div className="company-form-group">
+                      <label>Last Name</label>
+                      <input
+                        name="lastName"
+                        value={formData.lastName}
+                        onChange={handleChange}
+                        placeholder="Enter last name"
+                        maxLength={LIMITS.name}
+                      />
+                      {errors.lastName && (
+                        <p className="company-form-error">{errors.lastName}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {formData.role !== "Company" && (
+                  <div className="company-form-grid">
+                    <div className="company-form-group">
                     <label>Email</label>
                     <input
                       name="email"
@@ -400,7 +475,8 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
                     />
                     {errors.email && <p className="company-form-error">{errors.email}</p>}
                   </div>
-                </div>
+                  </div>
+                )}
 
                 <div className="company-form-grid">
                   <div className="company-form-group">
@@ -457,19 +533,21 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
                     {errors.phone && <p className="company-form-error">{errors.phone}</p>}
                   </div>
 
-                  <div className="company-form-group">
-                    <label>Location</label>
-                    <input
-                      name="location"
-                      value={formData.location}
-                      onChange={handleChange}
-                      placeholder="Example: Kuwait"
-                      maxLength={LIMITS.location}
-                    />
-                    {errors.location && (
-                      <p className="company-form-error">{errors.location}</p>
-                    )}
-                  </div>
+                  {formData.role === "Company" && (
+                    <div className="company-form-group">
+                      <label>Location</label>
+                      <input
+                        name="location"
+                        value={formData.location}
+                        onChange={handleChange}
+                        placeholder="Example: Kuwait"
+                        maxLength={LIMITS.location}
+                      />
+                      {errors.location && (
+                        <p className="company-form-error">{errors.location}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {formData.role === "Student" && (
@@ -537,16 +615,16 @@ function AdminUserModal({ onClose, onSave, existingUsers = [] }) {
 
                     <div className="company-form-grid">
                       <div className="company-form-group">
-                        <label>Country</label>
+                        <label>Student ID</label>
                         <input
-                          name="country"
-                          value={formData.country}
+                          name="studentId"
+                          value={formData.studentId}
                           onChange={handleChange}
-                          placeholder="Example: Kuwait"
-                          maxLength={LIMITS.country}
+                          placeholder="Enter student ID"
+                          maxLength={LIMITS.studentId}
                         />
-                        {errors.country && (
-                          <p className="company-form-error">{errors.country}</p>
+                        {errors.studentId && (
+                          <p className="company-form-error">{errors.studentId}</p>
                         )}
                       </div>
 

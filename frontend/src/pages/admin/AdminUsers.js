@@ -67,14 +67,13 @@ const normalizeStudent = (item) => ({
   role: "Student",
   status: studentStatusLabel(item.status) === "Active" ? "Active" : "Inactive",
   phone: item.mobileNo || "",
-  location: item.country || item.universityName || "—",
+  location: "",
   createdAt: formatYmd(item.createdAt),
   studentId: item.universityID || "",
   universityName: item.universityName || "",
   major: item.major || "",
   year: item.year || "",
   gender: item.gender || "",
-  country: item.country || item.universityName || "—",
   skills: Array.isArray(item.skills) ? item.skills.join(", ") : item.skills || "",
 });
 
@@ -104,7 +103,7 @@ const normalizeAdmin = (item) => ({
   role: "Admin",
   status: item.status || "Active",
   phone: item.phone || "",
-  location: item.country || "—",
+  location: "",
   createdAt: formatYmd(item.createdAt),
   adminId: shortSystemId(item._id),
   jobTitle: item.jobTitle || "",
@@ -382,7 +381,7 @@ function AdminUsers() {
                         <th>Role</th>
                         <th>Status</th>
                         <th>Email</th>
-                        <th>Location</th>
+                        <th>Created At</th>
                       </tr>
                     </thead>
 
@@ -421,7 +420,7 @@ function AdminUsers() {
                             </span>
                           </td>
                           <td>{item.email}</td>
-                          <td>{item.location}</td>
+                          <td>{item.createdAt || "-"}</td>
                         </tr>
                       ))}
                     </tbody>
