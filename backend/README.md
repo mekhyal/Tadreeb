@@ -233,4 +233,3 @@ curl -i -X POST $BASE/api/admin/create-company \
 3. Set `CORS_ORIGIN` to real frontend origin(s).
 4. TLS in front of the API; rotate secrets if leaked.
 
-
