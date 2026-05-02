@@ -5,7 +5,7 @@ Tadreeb is a training and internship platform that connects university students 
 ## Team
 
 - Abdullah Al-Mekhyal
-- Yousef Joudah
+- Yousef Joudeh
 - Abdulaziz Alshammeri
 
 ## Stack
