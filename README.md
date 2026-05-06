@@ -91,6 +91,66 @@ CORS_ORIGIN=http://localhost:3000
 
 If using MongoDB Atlas, replace `MONGO_URI` with the Atlas connection string.
 
+
+### Check MongoDB is Running
+
+If you are using local MongoDB with:
+
+```env
+MONGO_URI=mongodb://127.0.0.1:27017/tadreeb
+```
+
+make sure MongoDB is running before starting the backend.
+
+#### Windows
+
+Open Services:
+
+`Windows + R` → `services.msc`
+
+Find `MongoDB Server` or `MongoDB`, then click Start.
+
+You can also check from CMD or PowerShell:
+
+```bash
+mongosh
+```
+
+#### Linux / Ubuntu
+
+Start MongoDB:
+
+```bash
+sudo systemctl start mongod
+```
+
+Check status:
+
+```bash
+sudo systemctl status mongod
+```
+
+If your system uses `mongodb` instead of `mongod`, use:
+
+```bash
+sudo systemctl start mongodb
+sudo systemctl status mongodb
+```
+
+#### macOS
+
+Start MongoDB using Homebrew:
+
+```bash
+brew services start mongodb-community
+```
+
+Check that it is running:
+
+```bash
+brew services list
+```
+
 ### Frontend Environment
 
 Create `frontend/.env`:
