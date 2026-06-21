@@ -1,0 +1,61 @@
+
+============================================
+  Testing 6 Code-Level Bugs
+============================================
+
+Setup done. Company ID: 69efe2d5abfb4dd5ba7272b8
+
+[1mBug 1: Mass Assignment — companyID Overwrite[0m
+Method: PUT /api/opportunities/:id
+Severity: CRITICAL
+  Created program: 69f645ff3ad4e8ee7af4ee94 (owned by 69efe2d5abfb4dd5ba7272b8)
+Status: 200
+Expected: 400 or field ignored — companyID should NOT be changeable
+Returned companyID: 
+PASSED — companyID was not changed.
+Response: {"message":"Program updated successfully","opportunity":{"_id":"69f645ff3ad4e8ee7af4ee94","title":"Hijacked Program","subtitle":"","description":"Testing companyID overwrite","rules":"","qualifications":"","location":"Kuwait","seats":5,"dateFrom":"2026-08-01T00:00:00.000Z","dateTo":"2026-10-01T00:00
+---
+
+[1mBug 2: Student Registration — Invalid mobileNo[0m
+Method: POST /api/auth/student/register
+Severity: HIGH
+Status: 201
+Expected: 400 — should reject invalid phone number
+Response: {"message":"Student registered successfully","token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ZjY0NWZmM2FkNGU4ZWU3YWY0ZWU5ZCIsInJvbGUiOiJzdHVkZW50IiwiaWF0IjoxNzc3NzQ3NDU1LCJleHAiOjE3NzgzNTIyN
+---
+
+[1mBug 3: Invalid Gender Value — Raw Error Exposure[0m
+Method: POST /api/auth/student/register
+Severity: HIGH (info leak)
+Status: 500
+Expected: 400 with clean message — NOT 500 with raw Mongoose error
+Response: {"message":"Student validation failed: gender: `Other` is not a valid enum value for path `gender`."}
+---
+
+[1mBug 4: Invalid Year Value — Raw Error Exposure[0m
+Method: POST /api/auth/student/register
+Severity: HIGH (info leak)
+Status: 500
+Expected: 400 with clean message — NOT 500 with raw Mongoose error
+Response: {"message":"Student validation failed: year: `Sixth` is not a valid enum value for path `year`."}
+---
+
+[1mBug 5: Company Request — Invalid Website URL[0m
+Method: POST /api/company-requests
+Severity: MEDIUM
+Status: 201
+Expected: 400 — should reject invalid URL
+Response: {"message":"Request submitted successfully","request":{"id":"69f645ff3ad4e8ee7af4eea5","status":"Pending"}}
+---
+
+[1mBug 6: Company Request — Invalid Phone Number[0m
+Method: POST /api/company-requests
+Severity: MEDIUM
+Status: 201
+Expected: 400 — should reject invalid phone
+Response: {"message":"Request submitted successfully","request":{"id":"69f645ff3ad4e8ee7af4eea7","status":"Pending"}}
+---
+
+============================================
+  Done! Check which ones actually failed.
+============================================
