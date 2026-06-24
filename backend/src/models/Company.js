@@ -21,6 +21,7 @@ const companySchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
+      minlength: [8, 'password must be at least 8 characters'],
       select: false,
     },
     industry: {
@@ -29,29 +30,44 @@ const companySchema = new mongoose.Schema(
       trim: true,
       maxlength: [100, 'industry is too long'],
     },
-    phone: {
+    commercialLicenseNo: {
       type: String,
       required: true,
       trim: true,
-      maxlength: [20, 'phone is too long'],
+      maxlength: [50, 'commercialLicenseNo is too long'],
+    },
+    contactNumber: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: [8, 'contactNumber is too long'],
+      match: [/^[9654]\d{7}$/, 'Invalid Kuwait mobile number'],
+    },
+    contactPerson: {
+      type: String,
+      default: '',
+      trim: true,
+      maxlength: [100, 'contactPerson is too long'],
     },
     website: {
       type: String,
       default: '',
       trim: true,
       maxlength: [200, 'website is too long'],
+      validate: {
+        validator: (v) => !v || /^(https?:\/\/)?([\w-]+\.)+[a-z]{2,}(\/\S*)?$/i.test(v),
+        message: 'Invalid website',
+      },
     },
     size: {
       type: String,
-      default: '',
-      trim: true,
-      maxlength: [50, 'size is too long'],
+      required: true,
+      enum: ['1-10', '11-50', '51-100', '101-200', '201-500', '500+'],
     },
-    location: {
+    headOfficeLocation: {
       type: String,
       required: true,
-      trim: true,
-      maxlength: [100, 'location is too long'],
+      enum: ['Al Asimah', 'Hawalli', 'Farwaniya', 'Mubarak Al-Kabeer', 'Ahmadi', 'Jahra'],
     },
     foundedYear: {
       type: Number,
@@ -64,23 +80,11 @@ const companySchema = new mongoose.Schema(
         message: 'foundedYear cannot be in the future',
       },
     },
-    contactPerson: {
-      type: String,
-      default: '',
-      trim: true,
-      maxlength: [100, 'contactPerson is too long'],
-    },
     description: {
       type: String,
       default: '',
       trim: true,
       maxlength: [2000, 'description is too long'],
-    },
-    joinReason: {
-      type: String,
-      default: '',
-      trim: true,
-      maxlength: [2000, 'joinReason is too long'],
     },
     status: {
       type: String,
@@ -90,6 +94,7 @@ const companySchema = new mongoose.Schema(
     role: {
       type: String,
       default: 'company',
+      immutable: true,
     },
   },
   { timestamps: true }
